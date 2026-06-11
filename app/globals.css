@@ -12,12 +12,9 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
+/* CSA is a light-mode design (every screen uses bg-gray-50 / text-gray-900).
+   We intentionally do NOT honour the OS dark-mode preference, because flipping
+   the text to near-white made form inputs invisible (white text on white field). */
 
 body {
   background: var(--background);
