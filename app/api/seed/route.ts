@@ -45,34 +45,37 @@ export async function POST(request: Request) {
   const auth = createAuth(db);
   const results: string[] = [];
 
+  // ── Wipe existing test data for a clean slate ────────────────────────────────
+  const testEmails = SEED_USERS.map((u) => `'${u.email}'`).join(",");
+  const existingUsers = await db
+    .prepare(`SELECT id FROM "user" WHERE email IN (${testEmails})`)
+    .all<{ id: string }>();
+  for (const { id } of existingUsers.results) {
+    await db.prepare(`DELETE FROM "user" WHERE id = ?`).bind(id).run();
+    await db.prepare(`DELETE FROM account WHERE userId = ?`).bind(id).run();
+    await db.prepare(`DELETE FROM session WHERE userId = ?`).bind(id).run();
+    await db.prepare(`DELETE FROM user_roles WHERE userId = ?`).bind(id).run();
+  }
+  await db.prepare("DELETE FROM checkIns WHERE id LIKE 'ci-%'").run();
+  await db.prepare("DELETE FROM weeklyWindows WHERE weekId LIKE '2026-W%'").run();
+  await db.prepare("DELETE FROM questions WHERE id LIKE 'q%'").run();
+  await db.prepare("DELETE FROM teams WHERE id = 'team-engineering'").run();
+  await db.prepare("DELETE FROM departments WHERE id = 'dept-engineering'").run();
+  results.push("Wiped existing seed data");
+
   // ── Create users via better-auth ─────────────────────────────────────────────
   const createdUsers: Array<{ id: string; email: string; role: typeof SEED_USERS[number]["role"] }> = [];
 
   for (const u of SEED_USERS) {
-    let userId: string | null = null;
-
-    // Check if already exists in better-auth's 'user' table
-    const existing = await db
-      .prepare("SELECT id FROM \"user\" WHERE email = ?")
-      .bind(u.email)
-      .first<{ id: string }>();
-
-    if (existing) {
-      userId = existing.id;
-      results.push(`Existing: ${u.email}`);
-    } else {
-      try {
-        const ctx = await auth.api.signUpEmail({
-          body: { email: u.email, password: PASSWORD, name: u.name },
-        });
-        userId = ctx.user.id;
-        results.push(`Created: ${u.email}`);
-      } catch (err) {
-        results.push(`Error creating ${u.email}: ${String(err)}`);
-      }
+    try {
+      const ctx = await auth.api.signUpEmail({
+        body: { email: u.email, password: PASSWORD, name: u.name },
+      });
+      createdUsers.push({ id: ctx.user.id, email: u.email, role: u.role });
+      results.push(`Created: ${u.email}`);
+    } catch (err) {
+      results.push(`Error creating ${u.email}: ${String(err)}`);
     }
-
-    if (userId) createdUsers.push({ id: userId, email: u.email, role: u.role });
   }
 
   // ── Assign non-default roles ─────────────────────────────────────────────────
