@@ -1,0 +1,9 @@
+name = "csa2"
+compatibility_date = "2024-09-23"
+compatibility_flags = ["nodejs_compat"]
+pages_build_output_dir = ".vercel/output/static"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "csa"
+database_id = "7f59a44e-5071-42a6-9cd4-87d0cd4c1827"
