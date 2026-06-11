@@ -1,11 +1,15 @@
 import { betterAuth } from "better-auth";
 import { Resend } from "resend";
+import { Kysely } from "kysely";
+import { D1Dialect } from "kysely-d1";
 
 export function createAuth(db: D1Database) {
+  const kysely = new Kysely({ dialect: new D1Dialect({ database: db }) });
+
   return betterAuth({
     database: {
       type: "sqlite",
-      db,
+      db: kysely,
     },
     emailAndPassword: {
       enabled: true,
@@ -18,55 +22,37 @@ export function createAuth(db: D1Database) {
           subject: "Reset your CSA password",
           html: `
             <p>Hi ${user.name},</p>
-            <p>Click the link below to reset your password. The link expires in 1 hour.</p>
+            <p>Click the link below to reset your password. It expires in 1 hour.</p>
             <p><a href="${url}">Reset password</a></p>
-            <p>If you didn't request this, you can ignore this email.</p>
+            <p>If you didn't request this, ignore this email.</p>
           `,
         });
       },
     },
     user: {
       additionalFields: {
-        onboardingComplete: {
-          type: "boolean",
-          defaultValue: false,
-          required: false,
-        },
-        onboardingPath: {
-          type: "string",
-          required: false,
-        },
-        teamId: {
-          type: "string",
-          required: false,
-        },
-        managerId: {
-          type: "string",
-          required: false,
-        },
-        departmentId: {
-          type: "string",
-          required: false,
-        },
-        currentCompany: {
-          type: "string",
-          required: false,
-        },
-        currentRole: {
-          type: "string",
-          required: false,
-        },
-        yearsOfExperience: {
-          type: "number",
-          required: false,
-        },
-        mentorName: {
-          type: "string",
-          required: false,
-        },
-        mentorEmail: {
-          type: "string",
-          required: false,
+        onboardingComplete: { type: "boolean", defaultValue: false },
+        onboardingPath:     { type: "string",  required: false },
+        teamId:             { type: "string",  required: false },
+        managerId:          { type: "string",  required: false },
+        departmentId:       { type: "string",  required: false },
+        currentCompany:     { type: "string",  required: false },
+        currentRole:        { type: "string",  required: false },
+        yearsOfExperience:  { type: "number",  required: false },
+        mentorName:         { type: "string",  required: false },
+        mentorEmail:        { type: "string",  required: false },
+      },
+    },
+    databaseHooks: {
+      user: {
+        create: {
+          after: async (user) => {
+            // Every new signup gets the employee role by default
+            await db
+              .prepare("INSERT OR IGNORE INTO user_roles (userId, role) VALUES (?, 'employee')")
+              .bind(user.id)
+              .run();
+          },
         },
       },
     },
