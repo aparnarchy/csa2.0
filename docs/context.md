@@ -352,9 +352,12 @@ Manager signs up + onboards → enters reportee emails → `invites` rows + emai
 | **11 Jun 2026** | **Delivered as a mobile-first PWA (installable, shared by link). Capacitor is the post-pilot path to app stores.** |
 | **11 Jun 2026** | **Real-time updates via polling for the pilot (no socket layer).** |
 | **11 Jun 2026** | **Privacy enforced in server code (no Firestore-style rules).** |
+| **11 Jun 2026** | **Auth library = better-auth (native D1 adapter, edge runtime compatible).** |
+| **11 Jun 2026** | **Invite email matching: allow any email at signup. An invite pre-links org structure only when emails match; anyone can sign up freely.** |
+| **11 Jun 2026** | **AI insights = Anthropic Claude API (Gemini dropped — org-blocked Google Cloud project creation).** |
 
 ---
 
 ## Current phase
 
-**Phase 0 — Setup.** Decisions locked. Nothing built yet. Start with: Next.js + Tailwind + PWA scaffold, git/GitHub, Cloudflare project (D1 + Wrangler + Pages), email-auth library, and a blank PWA deployed. See `build-plan.md`.
+**Phase 1 — Foundation.** Schema, email auth, server-side access control, role routing. See `build-plan.md`.
