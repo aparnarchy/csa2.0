@@ -19,6 +19,7 @@ from collections import deque
 
 import numpy as np
 from PIL import Image
+from scipy import ndimage
 
 SRC = "Mascot"
 OUT = "public/mascot"
@@ -26,9 +27,13 @@ WORK = 1200          # working resolution for the flood-fill pass
 FINAL = 600          # longest side of the output
 THRESH_DEFAULT = 48  # colour distance counted as "same as background"
 
-# Recolour the character's violet body/outline to this lavender (shading kept).
+# Recolour the character's violet body/outline to this colour (shading kept).
 # Set RECOLOR = None to skip and use the original purple art.
-RECOLOR = "#D7CEFF"
+RECOLOR = "#5D4FFF"
+
+# Drop opaque islands smaller than this fraction of the frame (stray specks /
+# watermark bits) before cropping, so the crop hugs the real character + props.
+MIN_ISLAND_FRAC = 0.004
 
 
 def _hex(h):
@@ -113,6 +118,24 @@ def remove_bg(im: Image.Image, thresh: int) -> Image.Image:
     return im
 
 
+def remove_small_islands(im: Image.Image, min_frac: float) -> Image.Image:
+    """Clear the alpha of small disconnected opaque blobs (stray specks /
+    leftover watermark bits), keeping the character and large props (hearts,
+    star, moon, clouds)."""
+    arr = np.array(im)  # RGBA
+    alpha = arr[..., 3]
+    mask = alpha > 16
+    lbl, n = ndimage.label(mask)
+    if n <= 1:
+        return im
+    counts = np.bincount(lbl.ravel())
+    counts[0] = 0  # label 0 is the transparent background
+    thr = max(700, int(min_frac * mask.size))
+    keep = counts >= thr
+    arr[..., 3] = np.where(keep[lbl], alpha, 0)
+    return Image.fromarray(arr, "RGBA")
+
+
 def process(src_name, out_name, thresh):
     global BG
     path = os.path.join(SRC, src_name)
@@ -131,6 +154,7 @@ def process(src_name, out_name, thresh):
     BG = tuple(sum(c[k] for c in corners) // 4 for k in range(3))
 
     im = remove_bg(im, thresh)
+    im = remove_small_islands(im, MIN_ISLAND_FRAC)
 
     bbox = im.getbbox()
     if bbox:

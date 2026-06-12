@@ -3,6 +3,29 @@ import { Resend } from "resend";
 import { Kysely } from "kysely";
 import { D1Dialect } from "kysely-d1";
 
+/**
+ * Which origins are allowed to sign in (better-auth's CSRF protection).
+ * - Always trusts a configured production URL (set BETTER_AUTH_URL when deployed).
+ * - In development, also trusts localhost and private-LAN addresses (wildcard
+ *   patterns), so the owner can open the dev server on a phone over Wi-Fi/hotspot
+ *   without an "invalid origin" error. These private ranges can't be forged by an
+ *   external attacker's browser, and they're omitted entirely in production.
+ */
+function resolveTrustedOrigins(): string[] {
+  const trusted: string[] = [];
+  if (process.env.BETTER_AUTH_URL) trusted.push(process.env.BETTER_AUTH_URL);
+  if (process.env.NODE_ENV !== "production") {
+    trusted.push(
+      "http://localhost:*",
+      "http://127.0.0.1:*",
+      "http://192.168.*",
+      "http://10.*",
+      "http://172.*",
+    );
+  }
+  return trusted;
+}
+
 export function createAuth(db: D1Database) {
   const kysely = new Kysely({ dialect: new D1Dialect({ database: db }) });
 
@@ -11,6 +34,7 @@ export function createAuth(db: D1Database) {
       type: "sqlite",
       db: kysely,
     },
+    trustedOrigins: resolveTrustedOrigins(),
     emailAndPassword: {
       enabled: true,
       requireEmailVerification: false,
