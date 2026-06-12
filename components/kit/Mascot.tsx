@@ -23,6 +23,8 @@ export function Mascot({
   sparkle?: boolean;
 }) {
   const isBadge = state === "annoyed";
+  const src = `/mascot/${state}.png`;
+  const fit = isBadge ? "cover" : "contain";
 
   return (
     <div className="relative" style={{ width: size, height: size }} aria-hidden>
@@ -42,13 +44,29 @@ export function Mascot({
         }`}
       >
         <Image
-          src={`/mascot/${state}.png`}
+          src={src}
           alt=""
           fill
           sizes={`${size}px`}
-          className={isBadge ? "object-cover" : "object-contain"}
+          className={fit === "cover" ? "object-cover" : "object-contain"}
           priority
           unoptimized
+        />
+        {/* Subtle white gloss/highlight, masked to the mascot's silhouette. */}
+        <div
+          className="pointer-events-none absolute inset-0"
+          style={{
+            backgroundImage:
+              "radial-gradient(60% 45% at 35% 24%, rgba(255,255,255,0.5), rgba(255,255,255,0) 60%)",
+            WebkitMaskImage: `url(${src})`,
+            maskImage: `url(${src})`,
+            WebkitMaskSize: fit,
+            maskSize: fit,
+            WebkitMaskRepeat: "no-repeat",
+            maskRepeat: "no-repeat",
+            WebkitMaskPosition: "center",
+            maskPosition: "center",
+          }}
         />
       </div>
     </div>

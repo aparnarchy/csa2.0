@@ -29,7 +29,7 @@ THRESH_DEFAULT = 48  # colour distance counted as "same as background"
 
 # Recolour the character's violet body/outline to this colour (shading kept).
 # Set RECOLOR = None to skip and use the original purple art.
-RECOLOR = "#5D4FFF"
+RECOLOR = "#B388FF"
 
 # Drop opaque islands smaller than this fraction of the frame (stray specks /
 # watermark bits) before cropping, so the crop hugs the real character + props.
