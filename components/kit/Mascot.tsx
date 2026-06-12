@@ -52,22 +52,6 @@ export function Mascot({
           priority
           unoptimized
         />
-        {/* Subtle white gloss/highlight, masked to the mascot's silhouette. */}
-        <div
-          className="pointer-events-none absolute inset-0"
-          style={{
-            backgroundImage:
-              "radial-gradient(60% 45% at 35% 24%, rgba(255,255,255,0.5), rgba(255,255,255,0) 60%)",
-            WebkitMaskImage: `url(${src})`,
-            maskImage: `url(${src})`,
-            WebkitMaskSize: fit,
-            maskSize: fit,
-            WebkitMaskRepeat: "no-repeat",
-            maskRepeat: "no-repeat",
-            WebkitMaskPosition: "center",
-            maskPosition: "center",
-          }}
-        />
       </div>
     </div>
   );
