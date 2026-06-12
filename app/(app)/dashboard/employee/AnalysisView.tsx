@@ -71,7 +71,7 @@ export function AnalysisView({
         eyebrow="Individual"
         title={mode === "company" ? "My Dashboard" : "Overall Career Happiness"}
         subtitle={mode === "company" ? "Current company" : "Aggregate across your career"}
-        avatar={<Mascot state={mascotForScore(data.overall, data.enoughData)} size={88} />}
+        avatar={<Mascot state={mascotForScore(data.overall, data.enoughData)} size={150} />}
       />
 
       <Card>

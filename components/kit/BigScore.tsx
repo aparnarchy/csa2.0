@@ -16,7 +16,7 @@ export function BigScore({
       <p className="text-[11px] font-medium uppercase tracking-wider text-brand">
         {caption ?? "Overall Happiness"}
       </p>
-      <span className="block font-display text-[68px] font-black leading-none tracking-tight text-ink">
+      <span className="block font-display text-[68px] font-black leading-none tracking-tight text-[#8B82F6]">
         <CountUp target={score} />
       </span>
       <p className="mt-1.5 text-xs font-semibold text-ink-2">

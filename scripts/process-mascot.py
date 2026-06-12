@@ -13,8 +13,11 @@ Per image:
 
 Run from repo root:  python3 scripts/process-mascot.py
 """
+import colorsys
 import os
 from collections import deque
+
+import numpy as np
 from PIL import Image
 
 SRC = "Mascot"
@@ -22,6 +25,39 @@ OUT = "public/mascot"
 WORK = 1200          # working resolution for the flood-fill pass
 FINAL = 600          # longest side of the output
 THRESH_DEFAULT = 48  # colour distance counted as "same as background"
+
+# Recolour the character's violet body/outline to this lavender (shading kept).
+# Set RECOLOR = None to skip and use the original purple art.
+RECOLOR = "#D7CEFF"
+
+
+def _hex(h):
+    h = h.lstrip("#")
+    return tuple(int(h[i:i + 2], 16) for i in (0, 2, 4))
+
+
+def recolor(im: Image.Image, target_hex: str) -> Image.Image:
+    """Shift only the violet pixels (body, limbs, outline) to `target_hex`,
+    keeping each pixel's brightness so shading survives. Reds/greens/yellows
+    (hearts, leaf, star, cheeks) and near-greys (eyes) are left alone."""
+    im = im.convert("RGBA")
+    alpha = im.getchannel("A")
+    hsv = np.asarray(im.convert("RGB").convert("HSV")).astype(np.int16)
+    H, S, V = hsv[..., 0], hsv[..., 1], hsv[..., 2]  # each 0–255
+
+    tr, tg, tb = _hex(target_hex)
+    th, ts, _tv = colorsys.rgb_to_hsv(tr / 255, tg / 255, tb / 255)
+    th255, ts255 = int(th * 255), int(ts * 255)
+
+    # violet hue band (~215°–290°) and saturated enough to be "the character"
+    mask = (H >= 150) & (H <= 205) & (S >= 64)
+    H[mask] = th255
+    S[mask] = ts255  # keep V (brightness) → shading preserved
+
+    out = np.stack([H, S, V], axis=-1).astype("uint8")
+    rgb = Image.fromarray(out, "HSV").convert("RGB").convert("RGBA")
+    rgb.putalpha(alpha)
+    return rgb
 
 # source filename -> (output name, threshold override)
 JOBS = {
@@ -81,6 +117,9 @@ def process(src_name, out_name, thresh):
     global BG
     path = os.path.join(SRC, src_name)
     im = Image.open(path).convert("RGBA")
+
+    if RECOLOR:
+        im = recolor(im, RECOLOR)
 
     # working downscale
     im.thumbnail((WORK, WORK), Image.LANCZOS)
