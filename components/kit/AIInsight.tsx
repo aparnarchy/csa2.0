@@ -4,12 +4,12 @@
  */
 export function AIInsight({ text }: { text?: string }) {
   return (
-    <div className="rounded-2xl border border-violet-100 bg-violet-50 p-4">
+    <div className="rounded-card bg-lav-soft p-4">
       <div className="flex items-center gap-2">
         <span className="text-lg" aria-hidden>✨</span>
-        <span className="text-sm font-semibold text-violet-700">AI insight</span>
+        <span className="text-sm font-bold text-brand">AI insight</span>
       </div>
-      <p className="mt-2 text-base text-violet-900/80">
+      <p className="mt-2 text-sm leading-relaxed text-ink-2">
         {text ?? "Your AI summary will appear here once enough check-ins are in. (Coming in Phase 5.)"}
       </p>
     </div>

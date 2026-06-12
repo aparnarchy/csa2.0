@@ -1,10 +1,14 @@
 import type { Metadata, Viewport } from "next";
-import { Geist } from "next/font/google";
+import { Nunito } from "next/font/google";
 import "./globals.css";
 
-const geist = Geist({
-  variable: "--font-geist-sans",
+// Display/number font (large scores, headings). Body font is the system stack,
+// defined as --font-body in globals.css. Both are central so a later design
+// change is one edit.
+const nunito = Nunito({
+  variable: "--font-nunito",
   subsets: ["latin"],
+  weight: ["600", "700", "800", "900"],
 });
 
 export const metadata: Metadata = {
@@ -32,8 +36,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${geist.variable} h-full`}>
-      <body className="min-h-full bg-white text-gray-900 antialiased">
+    <html lang="en" className={`${nunito.variable} h-full`}>
+      <body className="min-h-full bg-white text-ink antialiased">
         {children}
       </body>
     </html>

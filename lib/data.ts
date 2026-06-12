@@ -27,7 +27,25 @@ export interface PillarScore {
   score: number | null;
   delta: number | null;
   band: "green" | "amber" | "red" | null;
+  percentile: number | null;
   responseCount: number;
+}
+
+/** One survey question with its score and response breakdown (for insights). */
+export interface QuestionInsight {
+  id: string;
+  text: string;
+  pillarId: PillarId;
+  score: number;
+  responses: { key: "A" | "B" | "C"; text: string; pct: number }[];
+  recommendation: string;
+}
+
+/** The three percentile lenses the score pill cycles through. */
+export interface Percentiles {
+  org: number;
+  dept: number;
+  industry: number;
 }
 
 /** One point on a trend chart (overall + each pillar + reference lines). */
@@ -40,6 +58,7 @@ export interface TrendPoint {
   culture: number;
   compensation: number;
   orgAvg: number;
+  deptAvg: number;
   industryAvg: number;
 }
 
@@ -49,10 +68,12 @@ export interface EmployeeScores {
   overall: number | null;
   delta: number | null;
   percentile: number | null;
+  percentiles: Percentiles;
   participation: number; // %
   responseCount: number;
   streak: number;
   pillars: PillarScore[];
+  questions: QuestionInsight[];
   trend: TrendPoint[];
 }
 
@@ -114,6 +135,7 @@ function buildTrend(seedKey: string, target: number, points: number): TrendPoint
       culture: p("culture", 0.8),
       compensation: p("compensation", -0.9),
       orgAvg: round1(6.6 + (seeded("org" + weekId) - 0.5) * 0.4),
+      deptAvg: round1(6.9 + (seeded("dept" + weekId) - 0.5) * 0.4),
       industryAvg: 6.2,
     };
   });
@@ -130,7 +152,47 @@ function pillarScoresFrom(trend: TrendPoint[]): PillarScore[] {
       score,
       delta,
       band: scoreBand(score),
+      percentile: Math.max(20, Math.min(98, Math.round(score * 10 + 4))),
       responseCount: 6 + Math.floor(seeded(pillarId + last.weekId) * 8),
+    };
+  });
+}
+
+/** Build a believable A/B/C response split that leans with the score. */
+function mkResponses(score: number): QuestionInsight["responses"] {
+  if (score >= 8.5) return [{ key: "A", text: "Definitely yes", pct: 70 }, { key: "B", text: "Mostly yes", pct: 22 }, { key: "C", text: "Sometimes", pct: 8 }];
+  if (score >= 7)   return [{ key: "A", text: "Yes, often", pct: 50 }, { key: "B", text: "Sometimes", pct: 35 }, { key: "C", text: "Not really", pct: 15 }];
+  if (score >= 5.5) return [{ key: "A", text: "Partially", pct: 30 }, { key: "B", text: "Sometimes", pct: 40 }, { key: "C", text: "Rarely", pct: 30 }];
+  return [{ key: "A", text: "Not really", pct: 15 }, { key: "B", text: "Rarely", pct: 35 }, { key: "C", text: "No", pct: 50 }];
+}
+
+/** Sample question bank, three per pillar (replaced by real questions later). */
+const SAMPLE_QUESTIONS: { id: string; text: string; pillarId: PillarId; base: number }[] = [
+  { id: "q1",  pillarId: "meaningful_work", base: 9.0, text: "Do you get opportunities to tackle complex problems?" },
+  { id: "q2",  pillarId: "meaningful_work", base: 8.4, text: "Does your work feel connected to a bigger purpose?" },
+  { id: "q3",  pillarId: "meaningful_work", base: 7.8, text: "Does your role excite and challenge you?" },
+  { id: "q4",  pillarId: "growth",          base: 8.0, text: "Are you learning new skills in your current role?" },
+  { id: "q5",  pillarId: "growth",          base: 7.2, text: "Does your manager invest in your development?" },
+  { id: "q6",  pillarId: "growth",          base: 6.4, text: "Do you have a clear path to grow in this company?" },
+  { id: "q7",  pillarId: "culture",         base: 7.5, text: "Do you feel a sense of belonging on your team?" },
+  { id: "q8",  pillarId: "culture",         base: 7.0, text: "Do you feel psychologically safe raising concerns?" },
+  { id: "q9",  pillarId: "culture",         base: 6.6, text: "Do you feel recognised for good work?" },
+  { id: "q10", pillarId: "compensation",    base: 5.8, text: "Do you feel fairly compensated for your work?" },
+  { id: "q11", pillarId: "compensation",    base: 5.2, text: "Do you know how your pay compares to the market?" },
+  { id: "q12", pillarId: "compensation",    base: 6.2, text: "Are your benefits competitive in the market?" },
+];
+
+function questionInsights(seedKey: string): QuestionInsight[] {
+  return SAMPLE_QUESTIONS.map((q) => {
+    const wobble = (seeded(seedKey + q.id) - 0.5) * 1.2;
+    const score = Math.min(10, Math.max(1, round1(q.base + wobble)));
+    return {
+      id: q.id,
+      text: q.text,
+      pillarId: q.pillarId,
+      score,
+      responses: mkResponses(score),
+      recommendation: getSampleRecommendation(q.pillarId).text,
     };
   });
 }
@@ -160,10 +222,12 @@ export async function getEmployeeScores(
     overall,
     delta: prior === null ? null : round1(overall - prior),
     percentile: 72,
+    percentiles: { org: 91, dept: 88, industry: 78 },
     participation: 86,
     responseCount: points * 2,
     streak: 4,
     pillars: pillarScoresFrom(trend),
+    questions: questionInsights(userId),
     trend,
   };
 }
@@ -185,15 +249,10 @@ export async function getPillarDetail(
     pillarId,
     score,
     delta: prior === null ? null : round1(score - prior),
-    percentile: 64,
+    percentile: Math.max(20, Math.min(98, Math.round(score * 10 + 4))),
     band: scoreBand(score),
     trend,
-    questions: [
-      { id: "q1", text: "Do you get opportunities to tackle complex problems?", score: 8, kind: "strength" as const },
-      { id: "q3", text: "Are you learning new skills in your current role?",      score: 7, kind: "strength" as const },
-      { id: "q4", text: "Does your manager invest in your development?",          score: 4, kind: "concern" as const },
-      { id: "q5", text: "Do you have a clear path to grow in this company?",      score: 3, kind: "concern" as const },
-    ],
+    questions: questionInsights(userId + pillarId).filter((q) => q.pillarId === pillarId),
   };
 }
 
