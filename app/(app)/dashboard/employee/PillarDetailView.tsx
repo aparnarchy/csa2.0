@@ -65,7 +65,7 @@ export function PillarDetailView({
       <TrendChart data={detail?.trend ?? []} window={window} onWindowChange={setWindow} accent={meta.hex} />
 
       <Card>
-        <p className="mb-3 text-sm font-bold text-ink">Insights</p>
+        <p className="mb-3 text-sm font-bold text-brand">Insights</p>
         <div className="mb-4">
           <SegmentedToggle
             value={tab}

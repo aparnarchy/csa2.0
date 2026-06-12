@@ -3,6 +3,7 @@ export { Card } from "./Card";
 export { ScreenShell } from "./ScreenShell";
 export { GradientHeader } from "./GradientHeader";
 export { Avatar } from "./Avatar";
+export { Mascot } from "./Mascot";
 export { CountUp } from "./CountUp";
 export { BigScore } from "./BigScore";
 export { ScoreRing } from "./ScoreRing";

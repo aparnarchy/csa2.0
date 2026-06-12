@@ -3,11 +3,11 @@
 import { useEffect, useState } from "react";
 import {
   AIInsight,
-  Avatar,
   BigScore,
   Card,
   GradientHeader,
   InsightBarRow,
+  Mascot,
   NotEnoughData,
   PillarCard,
   ScreenShell,
@@ -15,6 +15,7 @@ import {
   TrendChart,
 } from "@/components/kit";
 import { getEmployeeScores, type EmployeeScores, type Window } from "@/lib/data";
+import { mascotForScore } from "@/lib/mascot";
 import type { PillarId, SessionUser } from "@/lib/types";
 import { PillarDetailView } from "./PillarDetailView";
 
@@ -70,7 +71,7 @@ export function AnalysisView({
         eyebrow="Individual"
         title={mode === "company" ? "My Dashboard" : "Overall Career Happiness"}
         subtitle={mode === "company" ? "Current company" : "Aggregate across your career"}
-        avatar={<Avatar expression={data.overall && data.overall >= 7 ? "happy" : "sad"} size={72} />}
+        avatar={<Mascot state={mascotForScore(data.overall, data.enoughData)} size={88} />}
       />
 
       <Card>
@@ -126,12 +127,12 @@ export function AnalysisView({
             </div>
           </Card>
 
-          <TrendChart data={data.trend} window={window} onWindowChange={setWindow} />
-
           <AIInsight />
 
+          <TrendChart data={data.trend} window={window} onWindowChange={setWindow} />
+
           <Card>
-            <p className="mb-3 text-sm font-bold text-ink">Insights</p>
+            <p className="mb-3 text-sm font-bold text-brand">Insights</p>
             <div className="mb-4">
               <SegmentedToggle
                 value={tab}

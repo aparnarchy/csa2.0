@@ -13,7 +13,7 @@ export function BigScore({
 }) {
   return (
     <div>
-      <p className="text-[11px] font-medium uppercase tracking-wider text-ink-3">
+      <p className="text-[11px] font-medium uppercase tracking-wider text-brand">
         {caption ?? "Overall Happiness"}
       </p>
       <span className="block font-display text-[68px] font-black leading-none tracking-tight text-ink">

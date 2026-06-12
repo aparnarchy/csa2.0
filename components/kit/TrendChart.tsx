@@ -70,7 +70,7 @@ export function TrendChart({
   return (
     <div className="rounded-card bg-white p-4 shadow-card">
       <div className="mb-3 flex items-center justify-between">
-        <p className="text-sm font-bold text-ink">Trend</p>
+        <p className="text-sm font-bold text-brand">Trend</p>
         <div className="flex gap-1.5">
           {!accent && <CustomDropdown value={series} onChange={(v) => setSeries(v as Series)} options={PILLAR_OPTS} />}
           {onWindowChange && (

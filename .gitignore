@@ -41,6 +41,9 @@ yarn-error.log*
 # prototype reference (local only)
 reference-prototype/
 
+# raw mascot source art (large originals; processed versions live in public/mascot/)
+/Mascot/
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts

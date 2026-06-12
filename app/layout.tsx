@@ -1,14 +1,22 @@
 import type { Metadata, Viewport } from "next";
-import { Nunito } from "next/font/google";
+import { Inter } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 
-// Display/number font (large scores, headings). Body font is the system stack,
-// defined as --font-body in globals.css. Both are central so a later design
-// change is one edit.
-const nunito = Nunito({
-  variable: "--font-nunito",
+// Title/display font = Satoshi (bundled variable woff2), body font = Inter.
+// Both are exposed as CSS vars and wired to --font-display / --font-body in
+// globals.css, so a later design change is one edit.
+const satoshi = localFont({
+  src: "./fonts/Satoshi-Variable.woff2",
+  variable: "--font-satoshi",
+  weight: "300 900",
+  display: "swap",
+});
+
+const inter = Inter({
+  variable: "--font-inter",
   subsets: ["latin"],
-  weight: ["600", "700", "800", "900"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {
@@ -36,7 +44,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${nunito.variable} h-full`}>
+    <html lang="en" className={`${satoshi.variable} ${inter.variable} h-full`}>
       <body className="min-h-full bg-white text-ink antialiased">
         {children}
       </body>
