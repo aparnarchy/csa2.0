@@ -5,11 +5,13 @@ import {
   Card,
   GradientHeader,
   InsightBarRow,
+  Mascot,
   SegmentedToggle,
   TrendChart,
 } from "@/components/kit";
 import { PILLARS } from "@/lib/pillars";
 import { getPillarDetail, type Window } from "@/lib/data";
+import { mascotForScore } from "@/lib/mascot";
 import type { PillarId, SessionUser } from "@/lib/types";
 
 type Detail = Awaited<ReturnType<typeof getPillarDetail>>;
@@ -43,26 +45,25 @@ export function PillarDetailView({
       <GradientHeader
         eyebrow="Pillar"
         title={meta.label}
-        accent={meta.hex}
-        accentTo={`${meta.hex}CC`}
         back={{ label: "Dashboard", onClick: onBack }}
+        avatar={detail ? <Mascot state={mascotForScore(detail.score, true)} size={120} /> : undefined}
       >
         {detail && (
           <div className="mt-3 flex items-end gap-3.5">
-            <span className="font-display text-[56px] font-black leading-none text-white">
+            <span className="font-display text-[56px] font-black leading-none text-[#8B82F6]">
               {detail.score.toFixed(1)}
             </span>
             <div className="pb-2.5">
-              <div className="text-sm font-bold text-white/90">
+              <div className="text-sm font-bold text-ink-2">
                 {up ? "↑" : "↓"} {Math.abs(detail.delta ?? 0).toFixed(1)}
               </div>
-              <div className="mt-0.5 text-xs text-white/65">{detail.percentile}th percentile</div>
+              <div className="mt-0.5 text-xs text-ink-3">{detail.percentile}th percentile</div>
             </div>
           </div>
         )}
       </GradientHeader>
 
-      <TrendChart data={detail?.trend ?? []} window={window} onWindowChange={setWindow} accent={meta.hex} />
+      <TrendChart data={detail?.trend ?? []} window={window} onWindowChange={setWindow} accent="#7C6FFF" />
 
       <Card>
         <p className="mb-3 text-sm font-bold text-brand">Insights</p>
