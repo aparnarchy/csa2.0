@@ -10,8 +10,8 @@ const SPARKLES: { pos: React.CSSProperties; size: number; delay: string }[] = [
 
 /**
  * The owner's mascot character, picked by `state`, gently floating with a few
- * twinkling sparkles around it. Most poses are free-floating cut-outs; the
- * `annoyed` pose came on a coloured background so it renders as a round badge.
+ * twinkling sparkles around it. Each pose is a free-floating cut-out on a
+ * uniform square canvas, so sizing/placement stays consistent across poses.
  */
 export function Mascot({
   state,
@@ -22,9 +22,7 @@ export function Mascot({
   size?: number;
   sparkle?: boolean;
 }) {
-  const isBadge = state === "annoyed";
   const src = `/mascot/${state}.png`;
-  const fit = isBadge ? "cover" : "contain";
 
   return (
     <div className="relative" style={{ width: size, height: size }} aria-hidden>
@@ -38,17 +36,13 @@ export function Mascot({
             ✦
           </span>
         ))}
-      <div
-        className={`mascot-float relative h-full w-full ${
-          isBadge ? "overflow-hidden rounded-full ring-2 ring-white/40" : ""
-        }`}
-      >
+      <div className="mascot-float relative h-full w-full">
         <Image
           src={src}
           alt=""
           fill
           sizes={`${size}px`}
-          className={fit === "cover" ? "object-cover" : "object-contain"}
+          className="object-contain"
           priority
           unoptimized
         />

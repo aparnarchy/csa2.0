@@ -29,7 +29,7 @@ THRESH_DEFAULT = 48  # colour distance counted as "same as background"
 
 # Recolour the character's violet body/outline to this colour (shading kept).
 # Set RECOLOR = None to skip and use the original purple art.
-RECOLOR = "#B388FF"
+RECOLOR = "#8D80FF"
 
 # Drop opaque islands smaller than this fraction of the frame (stray specks /
 # watermark bits) before cropping, so the crop hugs the real character + props.
@@ -65,12 +65,13 @@ def recolor(im: Image.Image, target_hex: str) -> Image.Image:
     return rgb
 
 # source filename -> (output name, threshold override)
+# NOTE: annoyed.png is intentionally excluded for now — the source art needs to
+# be redone (it was a cropped face on a coloured background, unlike the others).
 JOBS = {
     "Welcome.png": ("welcome.png", THRESH_DEFAULT),
     "happy.png":   ("happy.png",   THRESH_DEFAULT),
     "Sad.png":     ("sad.png",     THRESH_DEFAULT),
     "angry.png":   ("angry.png",   THRESH_DEFAULT),
-    "annoyed.png": ("annoyed.png", 70),  # solid maroon bg, needs a wider tolerance
 }
 
 
@@ -159,6 +160,14 @@ def process(src_name, out_name, thresh):
     bbox = im.getbbox()
     if bbox:
         im = im.crop(bbox)
+
+    # Pad onto a uniform square canvas so every pose has the same shape — this
+    # keeps sizing/placement consistent when rendered in a square box.
+    w, h = im.size
+    side = int(round(max(w, h) * 1.06))
+    canvas = Image.new("RGBA", (side, side), (0, 0, 0, 0))
+    canvas.paste(im, ((side - w) // 2, (side - h) // 2), im)
+    im = canvas
 
     im.thumbnail((FINAL, FINAL), Image.LANCZOS)
 

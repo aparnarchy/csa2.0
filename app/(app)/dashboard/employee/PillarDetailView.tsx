@@ -46,7 +46,8 @@ export function PillarDetailView({
         eyebrow="Pillar"
         title={meta.label}
         back={{ label: "Dashboard", onClick: onBack }}
-        avatar={detail ? <Mascot state={mascotForScore(detail.score, true)} size={120} /> : undefined}
+        avatar={detail ? <Mascot state={mascotForScore(detail.score, true)} size={168} /> : undefined}
+        avatarClassName="absolute right-1 top-9 z-10"
       >
         {detail && (
           <div className="mt-3 flex items-end gap-3.5">
