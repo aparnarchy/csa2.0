@@ -98,11 +98,8 @@ export function RootJourney({
     <div
       onClick={go}
       onWheel={onWheel}
-      className="fixed inset-0 z-[60] select-none overflow-hidden text-white"
-      style={{
-        minHeight: "100dvh",
-        background: "radial-gradient(125% 80% at 50% 0%, #3A2E73 0%, #1B1340 55%, #0C0822 100%)",
-      }}
+      className="fixed inset-x-0 top-0 z-[60] h-[100dvh] select-none overflow-hidden text-white"
+      style={{ background: "linear-gradient(180deg, #211746 0%, #130C32 55%, #090619 100%)" }}
     >
       <button
         type="button"
