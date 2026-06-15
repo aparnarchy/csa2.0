@@ -56,22 +56,15 @@ export function AnalysisView({
   const sortedQs = [...data.questions].sort((a, b) => b.score - a.score);
   const shownQs = tab === "strengths" ? sortedQs.slice(0, 3) : sortedQs.slice(-3).reverse();
   const up = (data.delta ?? 0) >= 0;
-  const insight = buildEmployeeInsight(data, session.name);
+  const insight = buildEmployeeInsight(data);
   const firstName = (session.name || "there").trim().split(/\s+/)[0];
 
   return (
     <ScreenShell active="insights">
       <GradientHeader
-        eyebrow={`Hi ${firstName} 👋`}
-        title={mode === "company" ? "My Dashboard" : "Overall Career Happiness"}
-        subtitle={mode === "company" ? "Current company" : "Aggregate across your career"}
-        avatar={
-          <Mascot
-            state={mascotForScore(data.overall, data.enoughData)}
-            size={148}
-            bubble={mode === "company" ? insight.bubble : undefined}
-          />
-        }
+        title={mode === "company" ? `Hey ${firstName} 👋` : "Overall Career Happiness"}
+        subtitle={mode === "company" ? "Kissflow" : "Across your career"}
+        avatar={<Mascot state={mascotForScore(data.overall, data.enoughData)} size={148} />}
       />
 
       <Card>
@@ -91,19 +84,51 @@ export function AnalysisView({
         <NotEnoughData />
       ) : (
         <>
-          {/* Insight-first: lead with what it means + one thing to try. */}
-          <Card>
-            <div className="flex items-start gap-2">
-              <span className="text-lg leading-none" aria-hidden>✨</span>
-              <p className="text-sm leading-relaxed text-ink">{insight.headline}</p>
-            </div>
-            {insight.action && (
-              <div className="mt-3 rounded-2xl bg-lav-soft p-3">
-                <p className="mb-1 text-[10px] font-bold uppercase tracking-wide text-brand">Try this week</p>
-                <p className="text-xs leading-relaxed text-ink-2">{insight.action}</p>
+          {/* Insight-first hero: short headline + scannable tiles, made to pop. */}
+          <div
+            className="rounded-card p-5 shadow-card"
+            style={{ background: "linear-gradient(160deg, #EFEAFF 0%, #E2D8FF 100%)" }}
+          >
+            <p className="font-display text-[26px] font-black leading-tight text-brand">
+              <span aria-hidden>{insight.emoji}</span> {insight.headline}
+            </p>
+
+            {(insight.brightSpot || insight.watchOut) && (
+              <div className="mt-4 grid grid-cols-2 gap-2.5">
+                {insight.brightSpot && (
+                  <div className="rounded-2xl bg-white/85 p-3">
+                    <p className="text-[10px] font-bold uppercase tracking-wide text-ink-3">✨ Bright spot</p>
+                    <p className="mt-1 text-xs font-bold text-ink">{insight.brightSpot.label}</p>
+                    <p className="font-display text-2xl font-black leading-none text-brand">
+                      {insight.brightSpot.score.toFixed(1)}
+                    </p>
+                  </div>
+                )}
+                {insight.watchOut && (
+                  <div className="rounded-2xl bg-white/85 p-3">
+                    <p className="text-[10px] font-bold uppercase tracking-wide text-ink-3">👀 Watch out</p>
+                    <p className="mt-1 text-xs font-bold text-ink">{insight.watchOut.label}</p>
+                    <p className="font-display text-2xl font-black leading-none text-brand">
+                      {insight.watchOut.score.toFixed(1)}
+                    </p>
+                  </div>
+                )}
               </div>
             )}
-          </Card>
+
+            {insight.comparison && (
+              <div className="mt-2.5 inline-flex items-center gap-1.5 rounded-full bg-white/85 px-3 py-1.5 text-xs font-bold text-brand">
+                🎉 {insight.comparison}
+              </div>
+            )}
+
+            {insight.action && (
+              <div className="mt-3 rounded-2xl bg-white p-3.5">
+                <p className="mb-1 text-[10px] font-bold uppercase tracking-wide text-brand">💡 Try this week</p>
+                <p className="text-[13px] leading-relaxed text-ink-2">{insight.action}</p>
+              </div>
+            )}
+          </div>
 
           <Card>
             <div className="mb-4 flex items-start justify-between">

@@ -40,7 +40,7 @@ export function GradientHeader({
       )}
 
       {eyebrow && <p className="mb-1.5 text-xs text-ink-3">{eyebrow}</p>}
-      <h1 className="font-display text-[22px] font-black leading-tight text-brand">{title}</h1>
+      <h1 className="font-display text-[28px] font-black leading-tight text-brand">{title}</h1>
       {subtitle && <p className="mt-1.5 text-[11px] text-ink-3">{subtitle}</p>}
       {children}
     </div>
