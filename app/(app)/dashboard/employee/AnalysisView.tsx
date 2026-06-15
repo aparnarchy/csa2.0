@@ -134,7 +134,7 @@ export function AnalysisView({
             )}
           </div>
 
-          {/* Oracle hook → opens the immersive Find the Root journey. */}
+          {/* Hook → opens the immersive Find the Root journey. */}
           {rca.available && (
             <button
               type="button"
@@ -142,10 +142,16 @@ export function AnalysisView({
               className="w-full rounded-card p-5 text-left shadow-card transition active:scale-[0.99]"
               style={{ background: "linear-gradient(135deg, #4A3DBF 0%, #7C6FFF 100%)" }}
             >
-              <p className="text-[11px] font-bold uppercase tracking-wide text-white/75">🔮 Your oracle</p>
-              <p className="mt-1.5 font-display text-lg font-black leading-snug text-white">{rca.hook.line}</p>
-              <p className="mt-1 text-[13px] leading-relaxed text-white/80">{rca.hook.sub}</p>
-              <span className="mt-3 inline-flex items-center gap-1 rounded-full bg-white/20 px-3 py-1.5 text-xs font-bold text-white">
+              <div className="flex items-center gap-4">
+                <span className="beacon flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-white/20 text-xl">
+                  🔎
+                </span>
+                <div className="min-w-0">
+                  <p className="font-display text-[15px] font-black leading-snug text-white">{rca.hook.line}</p>
+                  <p className="mt-1 text-[12px] leading-relaxed text-white/75">{rca.hook.sub}</p>
+                </div>
+              </div>
+              <span className="mt-3.5 inline-flex items-center gap-1 rounded-full bg-white/20 px-3 py-1.5 text-xs font-bold text-white">
                 Find the root →
               </span>
             </button>
