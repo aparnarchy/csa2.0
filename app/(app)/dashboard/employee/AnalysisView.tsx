@@ -16,8 +16,10 @@ import {
 import { getEmployeeScores, type EmployeeScores, type Window } from "@/lib/data";
 import { mascotForScore } from "@/lib/mascot";
 import { buildEmployeeInsight } from "@/lib/insight";
+import { buildRootAnalysis } from "@/lib/rca";
 import type { PillarId, SessionUser } from "@/lib/types";
 import { PillarDetailView } from "./PillarDetailView";
+import { RootJourney } from "./RootJourney";
 
 type Mode = "company" | "career";
 type Tab = "strengths" | "concerns";
@@ -34,6 +36,7 @@ export function AnalysisView({
   const [mode, setMode] = useState<Mode>("company");
   const [tab, setTab] = useState<Tab>("concerns");
   const [selectedPillar, setSelectedPillar] = useState<PillarId | null>(null);
+  const [showRoot, setShowRoot] = useState(false);
 
   // Time filter refreshes score + pillars + chart together.
   // (Sample data is recomputed client-side; becomes a server action on real D1.)
@@ -57,6 +60,7 @@ export function AnalysisView({
   const shownQs = tab === "strengths" ? sortedQs.slice(0, 3) : sortedQs.slice(-3).reverse();
   const up = (data.delta ?? 0) >= 0;
   const insight = buildEmployeeInsight(data);
+  const rca = buildRootAnalysis(data);
   const firstName = (session.name || "there").trim().split(/\s+/)[0];
 
   return (
@@ -130,6 +134,23 @@ export function AnalysisView({
             )}
           </div>
 
+          {/* Oracle hook → opens the immersive Find the Root journey. */}
+          {rca.available && (
+            <button
+              type="button"
+              onClick={() => setShowRoot(true)}
+              className="w-full rounded-card p-5 text-left shadow-card transition active:scale-[0.99]"
+              style={{ background: "linear-gradient(135deg, #4A3DBF 0%, #7C6FFF 100%)" }}
+            >
+              <p className="text-[11px] font-bold uppercase tracking-wide text-white/75">🔮 Your oracle</p>
+              <p className="mt-1.5 font-display text-lg font-black leading-snug text-white">{rca.hook.line}</p>
+              <p className="mt-1 text-[13px] leading-relaxed text-white/80">{rca.hook.sub}</p>
+              <span className="mt-3 inline-flex items-center gap-1 rounded-full bg-white/20 px-3 py-1.5 text-xs font-bold text-white">
+                Find the root →
+              </span>
+            </button>
+          )}
+
           <Card>
             <div className="mb-4 flex items-start justify-between">
               <BigScore score={data.overall} />
@@ -171,6 +192,10 @@ export function AnalysisView({
           {/* Trend chart moved to the very bottom (data for those who want it). */}
           <TrendChart data={data.trend} window={window} onWindowChange={setWindow} />
         </>
+      )}
+
+      {showRoot && rca.available && (
+        <RootJourney analysis={rca} onClose={() => setShowRoot(false)} />
       )}
     </ScreenShell>
   );

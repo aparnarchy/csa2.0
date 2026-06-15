@@ -69,11 +69,27 @@ body {
   0%, 100% { opacity: 0.25; transform: scale(0.7); }
   50%      { opacity: 1;    transform: scale(1.1); }
 }
+/* "Find the Root" oracle journey */
+@keyframes diveIn {
+  0%   { opacity: 0; transform: scale(0.35) translateY(48px); filter: blur(5px); }
+  100% { opacity: 1; transform: scale(1) translateY(0); filter: blur(0); }
+}
+@keyframes pulseRed {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.55); transform: scale(1); }
+  50%      { box-shadow: 0 0 0 16px rgba(239, 68, 68, 0); transform: scale(1.18); }
+}
+@keyframes bloom {
+  0%   { opacity: 0; transform: scale(0.92); }
+  100% { opacity: 1; transform: scale(1); }
+}
 
 .screen-enter { animation: fadeSlideUp 0.38s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards; }
 .mascot-float { animation: mascotFloat 3.2s ease-in-out infinite; }
 .bubble-pop   { animation: bubblePop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
 .twinkle      { animation: twinkle 2s ease-in-out infinite; }
+.dive-in      { animation: diveIn 0.55s cubic-bezier(0.22, 0.61, 0.36, 1) both; }
+.pulse-red    { animation: pulseRed 1.4s ease-in-out infinite; }
+.bloom        { animation: bloom 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
 
 /* Hide scrollbars on horizontal filter rows */
 .hide-scroll { scrollbar-width: none; }
