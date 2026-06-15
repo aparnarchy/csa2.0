@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import {
-  AIInsight,
   BigScore,
   Card,
   GradientHeader,
@@ -16,6 +15,7 @@ import {
 } from "@/components/kit";
 import { getEmployeeScores, type EmployeeScores, type Window } from "@/lib/data";
 import { mascotForScore } from "@/lib/mascot";
+import { buildEmployeeInsight } from "@/lib/insight";
 import type { PillarId, SessionUser } from "@/lib/types";
 import { PillarDetailView } from "./PillarDetailView";
 
@@ -33,7 +33,6 @@ export function AnalysisView({
   const [data, setData] = useState<EmployeeScores>(initial);
   const [mode, setMode] = useState<Mode>("company");
   const [tab, setTab] = useState<Tab>("concerns");
-  const [pctMode, setPctMode] = useState(0);
   const [selectedPillar, setSelectedPillar] = useState<PillarId | null>(null);
 
   // Time filter refreshes score + pillars + chart together.
@@ -54,24 +53,25 @@ export function AnalysisView({
     );
   }
 
-  const pctModes = [
-    { label: "Org", value: data.percentiles.org },
-    { label: "Dept", value: data.percentiles.dept },
-    { label: "Industry", value: data.percentiles.industry },
-  ];
-  const pct = pctModes[pctMode % pctModes.length];
-
   const sortedQs = [...data.questions].sort((a, b) => b.score - a.score);
   const shownQs = tab === "strengths" ? sortedQs.slice(0, 3) : sortedQs.slice(-3).reverse();
   const up = (data.delta ?? 0) >= 0;
+  const insight = buildEmployeeInsight(data, session.name);
+  const firstName = (session.name || "there").trim().split(/\s+/)[0];
 
   return (
     <ScreenShell active="insights">
       <GradientHeader
-        eyebrow="Individual"
+        eyebrow={`Hi ${firstName} 👋`}
         title={mode === "company" ? "My Dashboard" : "Overall Career Happiness"}
         subtitle={mode === "company" ? "Current company" : "Aggregate across your career"}
-        avatar={<Mascot state={mascotForScore(data.overall, data.enoughData)} size={148} />}
+        avatar={
+          <Mascot
+            state={mascotForScore(data.overall, data.enoughData)}
+            size={148}
+            bubble={mode === "company" ? insight.bubble : undefined}
+          />
+        }
       />
 
       <Card>
@@ -91,33 +91,32 @@ export function AnalysisView({
         <NotEnoughData />
       ) : (
         <>
+          {/* Insight-first: lead with what it means + one thing to try. */}
+          <Card>
+            <div className="flex items-start gap-2">
+              <span className="text-lg leading-none" aria-hidden>✨</span>
+              <p className="text-sm leading-relaxed text-ink">{insight.headline}</p>
+            </div>
+            {insight.action && (
+              <div className="mt-3 rounded-2xl bg-lav-soft p-3">
+                <p className="mb-1 text-[10px] font-bold uppercase tracking-wide text-brand">Try this week</p>
+                <p className="text-xs leading-relaxed text-ink-2">{insight.action}</p>
+              </div>
+            )}
+          </Card>
+
           <Card>
             <div className="mb-4 flex items-start justify-between">
               <BigScore score={data.overall} />
-
-              <div className="flex flex-col items-end gap-2 pt-1.5">
-                {data.delta !== null && (
-                  <div
-                    className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold"
-                    style={{ background: up ? "#E8FBF0" : "#FDECEC", color: up ? "#059669" : "#DC2626" }}
-                  >
-                    {up ? "↑" : "↓"} {Math.abs(data.delta).toFixed(1)}
-                    <span className="text-[10px] font-medium text-ink-3">vs last</span>
-                  </div>
-                )}
-                <div className="text-right">
-                  <span className="font-display text-sm font-extrabold text-brand">{data.participation}%</span>
-                  <p className="text-[10px] text-ink-3">participation</p>
+              {data.delta !== null && (
+                <div
+                  className="mt-1.5 inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold"
+                  style={{ background: up ? "#E8FBF0" : "#FDECEC", color: up ? "#059669" : "#DC2626" }}
+                >
+                  {up ? "↑" : "↓"} {Math.abs(data.delta).toFixed(1)}
+                  <span className="text-[10px] font-medium text-ink-3">vs last</span>
                 </div>
-                <button type="button" onClick={() => setPctMode((m) => m + 1)} className="text-right">
-                  <div className="flex items-center justify-end gap-1">
-                    <span className="text-sm text-brand-light">‹</span>
-                    <span className="font-display text-[13px] font-extrabold text-ink">{pct.value}th</span>
-                    <span className="text-sm text-brand-light">›</span>
-                  </div>
-                  <p className="text-[10px] text-ink-3">percentile / {pct.label}</p>
-                </button>
-              </div>
+              )}
             </div>
 
             <div className="grid grid-cols-2 gap-2">
@@ -126,10 +125,6 @@ export function AnalysisView({
               ))}
             </div>
           </Card>
-
-          <AIInsight />
-
-          <TrendChart data={data.trend} window={window} onWindowChange={setWindow} />
 
           <Card>
             <p className="mb-3 text-sm font-bold text-brand">Insights</p>
@@ -147,6 +142,9 @@ export function AnalysisView({
               <InsightBarRow key={q.id} q={q} isStrength={tab === "strengths"} />
             ))}
           </Card>
+
+          {/* Trend chart moved to the very bottom (data for those who want it). */}
+          <TrendChart data={data.trend} window={window} onWindowChange={setWindow} />
         </>
       )}
     </ScreenShell>

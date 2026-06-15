@@ -17,15 +17,22 @@ export function Mascot({
   state,
   size = 80,
   sparkle = true,
+  bubble,
 }: {
   state: MascotState;
   size?: number;
   sparkle?: boolean;
+  bubble?: string;
 }) {
   const src = `/mascot/${state}.png`;
 
   return (
     <div className="relative" style={{ width: size, height: size }} aria-hidden>
+      {bubble && (
+        <div className="absolute right-[78%] top-2 z-20 w-max max-w-[110px] rounded-2xl rounded-br-sm bg-white px-2.5 py-1.5 text-center text-[11px] font-extrabold leading-tight text-brand shadow-md">
+          {bubble}
+        </div>
+      )}
       {sparkle &&
         SPARKLES.map((s, i) => (
           <span
