@@ -15,6 +15,7 @@ export interface PillarRca {
   root: string; // the underlying cause (node 2 / root)
   actions: string[]; // 2–3 concrete things to do TODAY
   payoff: string; // the emotional + career upside of acting
+  feelings: string[]; // 2–3 short "you might be feeling…" words for the dashboard
 }
 
 export const RCA_KNOWLEDGE: Record<PillarId, PillarRca> = {
@@ -29,6 +30,7 @@ export const RCA_KNOWLEDGE: Record<PillarId, PillarRca> = {
       "Tonight, note one thing that felt meaningful today — train your brain to spot it.",
     ],
     payoff: "Even one meaningful task a day rebuilds momentum. People who feel their work matters stay longer, grow faster, and do their sharpest thinking.",
+    feelings: ["Flat", "Going through the motions", "Quietly checked out"],
   },
   growth: {
     symptom: "You might be coming to work a little bored lately",
@@ -41,6 +43,7 @@ export const RCA_KNOWLEDGE: Record<PillarId, PillarRca> = {
       "Write down the next role you'd want — naming the gap gives growth a target.",
     ],
     payoff: "A single stretch goal restarts that feeling of momentum — and momentum is what keeps work exciting and your career visibly moving.",
+    feelings: ["Bored", "Restless", "Prone to Monday blues"],
   },
   culture: {
     symptom: "You might be feeling a little on the outside lately",
@@ -53,6 +56,7 @@ export const RCA_KNOWLEDGE: Record<PillarId, PillarRca> = {
       "Have one real, non-work conversation with a colleague this week.",
     ],
     payoff: "Belonging is a buffer against almost everything else. Teams that feel seen are happier, braver, and far more likely to stick together.",
+    feelings: ["On the outside", "Unseen", "A bit drained"],
   },
   compensation: {
     symptom: "Something about the deal might be feeling a bit off",
@@ -65,5 +69,6 @@ export const RCA_KNOWLEDGE: Record<PillarId, PillarRca> = {
       "Book a 1:1 about growth and pay; ask what 'next level' looks like here.",
     ],
     payoff: "Clarity changes everything. Knowing your worth — and asking for it — turns quiet resentment into a concrete plan you control.",
+    feelings: ["Under-valued", "Second-guessing", "Holding back"],
   },
 };

@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useState } from "react";
 import {
   BigScore,
@@ -12,6 +11,7 @@ import {
   PillarCard,
   ScreenShell,
   SegmentedToggle,
+  StatCircle,
   TrendChart,
 } from "@/components/kit";
 import { getEmployeeScores, type EmployeeScores, type Window } from "@/lib/data";
@@ -22,7 +22,6 @@ import type { PillarId, SessionUser } from "@/lib/types";
 import { PillarDetailView } from "./PillarDetailView";
 import { RootJourney } from "./RootJourney";
 
-type Mode = "company" | "career";
 type Tab = "strengths" | "concerns";
 
 export function AnalysisView({
@@ -34,7 +33,6 @@ export function AnalysisView({
 }) {
   const [window, setWindow] = useState<Window>("3M");
   const [data, setData] = useState<EmployeeScores>(initial);
-  const [mode, setMode] = useState<Mode>("company");
   const [tab, setTab] = useState<Tab>("concerns");
   const [selectedPillar, setSelectedPillar] = useState<PillarId | null>(null);
   const [showRoot, setShowRoot] = useState(false);
@@ -66,110 +64,72 @@ export function AnalysisView({
 
   return (
     <ScreenShell active="insights">
+      {/* Merged greeting + insight headline, with the mascot (sub-screen sizing). */}
       <GradientHeader
-        title={mode === "company" ? `Hey ${firstName} 👋` : "Overall Career Happiness"}
-        subtitle={mode === "company" ? "Kissflow" : "Across your career"}
-        avatar={<Mascot state={mascotForScore(data.overall, data.enoughData)} size={148} />}
+        title={`${insight.headline}, ${firstName}!`}
+        avatar={<Mascot state={mascotForScore(data.overall, data.enoughData)} size={168} />}
+        avatarClassName="absolute right-1 top-9 z-10"
       />
 
-      {mode === "company" && (
-        <Link
-          href="/check-in"
-          className="flex items-center justify-between rounded-card bg-brand px-5 py-3.5 shadow-card transition active:scale-[0.99]"
-        >
-          <span className="flex items-center gap-2 text-sm font-bold text-white">
-            <span aria-hidden>📝</span> Your weekly check-in is ready
-          </span>
-          <span className="text-sm font-bold text-white">Start →</span>
-        </Link>
-      )}
-
-      <Card>
-        <SegmentedToggle
-          value={mode}
-          onChange={setMode}
-          options={[
-            { value: "company", label: "Current Company" },
-            { value: "career", label: "Overall Career" },
-          ]}
-        />
-      </Card>
-
-      {mode === "career" ? (
-        <NotEnoughData message="Overall Career builds from your career history — available once onboarding and past-company check-ins are in." />
-      ) : !data.enoughData || data.overall === null ? (
+      {!data.enoughData || data.overall === null ? (
         <NotEnoughData />
       ) : (
         <>
-          {/* Insight-first hero: short headline + scannable tiles, made to pop. */}
-          <div
-            className="rounded-card p-5 shadow-card"
-            style={{ background: "linear-gradient(160deg, #EFEAFF 0%, #E2D8FF 100%)" }}
-          >
-            <p className="font-display text-[26px] font-black leading-tight text-brand">
-              <span aria-hidden>{insight.emoji}</span> {insight.headline}
-            </p>
-
-            {(insight.brightSpot || insight.watchOut) && (
-              <div className="mt-4 grid grid-cols-2 gap-2.5">
-                {insight.brightSpot && (
-                  <div className="rounded-2xl bg-white/85 p-3">
-                    <p className="text-[10px] font-bold uppercase tracking-wide text-ink-3">✨ Bright spot</p>
-                    <p className="mt-1 text-xs font-bold text-ink">{insight.brightSpot.label}</p>
-                    <p className="font-display text-2xl font-black leading-none text-brand">
-                      {insight.brightSpot.score.toFixed(1)}
-                    </p>
-                  </div>
-                )}
-                {insight.watchOut && (
-                  <div className="rounded-2xl bg-white/85 p-3">
-                    <p className="text-[10px] font-bold uppercase tracking-wide text-ink-3">👀 Watch out</p>
-                    <p className="mt-1 text-xs font-bold text-ink">{insight.watchOut.label}</p>
-                    <p className="font-display text-2xl font-black leading-none text-brand">
-                      {insight.watchOut.score.toFixed(1)}
-                    </p>
-                  </div>
-                )}
-              </div>
+          {/* Bright Spot / Watch Out circles with gently drifting blobs behind. */}
+          <div className="grid grid-cols-2 gap-3">
+            {insight.brightSpot && (
+              <StatCircle
+                kind="bright"
+                label="Your Bright Spot"
+                score={insight.brightSpot.score}
+                pillar={insight.brightSpot.label}
+              />
             )}
-
-            {insight.comparison && (
-              <div className="mt-2.5 inline-flex items-center gap-1.5 rounded-full bg-white/85 px-3 py-1.5 text-xs font-bold text-brand">
-                🎉 {insight.comparison}
-              </div>
-            )}
-
-            {insight.action && (
-              <div className="mt-3 rounded-2xl bg-white p-3.5">
-                <p className="mb-1 text-[10px] font-bold uppercase tracking-wide text-brand">💡 Try this week</p>
-                <p className="text-[13px] leading-relaxed text-ink-2">{insight.action}</p>
-              </div>
+            {insight.watchOut && (
+              <StatCircle
+                kind="watch"
+                label="Watch out"
+                score={insight.watchOut.score}
+                pillar={insight.watchOut.label}
+              />
             )}
           </div>
 
-          {/* Hook → opens the immersive Find the Root journey. */}
+          {/* Oracle guessing box → opens the immersive Find the Root journey. */}
           {rca.available && (
             <button
               type="button"
               onClick={() => setShowRoot(true)}
-              className="w-full rounded-card p-5 text-left shadow-card transition active:scale-[0.99]"
-              style={{ background: "linear-gradient(135deg, #4A3DBF 0%, #7C6FFF 100%)" }}
+              className="w-full rounded-card bg-lav-soft p-5 text-left shadow-card transition active:scale-[0.99]"
             >
-              <div className="flex items-center gap-4">
-                <span className="beacon flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-white/20 text-xl">
-                  🔎
-                </span>
-                <div className="min-w-0">
-                  <p className="font-display text-[15px] font-black leading-snug text-white">{rca.hook.line}</p>
-                  <p className="mt-1 text-[12px] leading-relaxed text-white/75">{rca.hook.sub}</p>
+              <div className="flex items-center gap-3">
+                <div className="min-w-0 flex-1">
+                  <p className="flex items-center gap-1.5 text-[12px] font-semibold text-ink-2">
+                    <span aria-hidden>🔮</span> I&apos;m guessing you&apos;re currently feeling…
+                  </p>
+                  <div className="mt-2 space-y-1">
+                    {rca.feelings.map((f) => (
+                      <p key={f} className="font-display text-[15px] font-black uppercase tracking-wide text-brand">
+                        {f}
+                      </p>
+                    ))}
+                  </div>
                 </div>
+                <Mascot state="sad" size={104} sparkle={false} />
               </div>
-              <span className="mt-3.5 inline-flex items-center gap-1 rounded-full bg-white/20 px-3 py-1.5 text-xs font-bold text-white">
-                Find the root →
-              </span>
+              <span className="mt-2 block text-right text-xs font-bold text-brand">Let&apos;s find out why →</span>
             </button>
           )}
 
+          {/* Try this week — one concrete action from the lowest pillar. */}
+          {insight.action && (
+            <Card>
+              <p className="mb-1 text-[10px] font-bold uppercase tracking-wide text-brand">💡 Try this week</p>
+              <p className="text-[13px] leading-relaxed text-ink-2">{insight.action}</p>
+            </Card>
+          )}
+
+          {/* ── Everything below is unchanged ───────────────────────────────── */}
           <Card>
             <div className="mb-4 flex items-start justify-between">
               <BigScore score={data.overall} />
@@ -208,7 +168,6 @@ export function AnalysisView({
             ))}
           </Card>
 
-          {/* Trend chart moved to the very bottom (data for those who want it). */}
           <TrendChart data={data.trend} window={window} onWindowChange={setWindow} />
         </>
       )}

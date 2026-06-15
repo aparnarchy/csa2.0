@@ -8,6 +8,7 @@ export { CountUp } from "./CountUp";
 export { BigScore } from "./BigScore";
 export { ScoreRing } from "./ScoreRing";
 export { PillarCard } from "./PillarCard";
+export { StatCircle } from "./StatCircle";
 export { TrendChart } from "./TrendChart";
 export { CustomDropdown } from "./CustomDropdown";
 export { SegmentedToggle } from "./SegmentedToggle";

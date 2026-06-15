@@ -21,6 +21,7 @@ export interface RootAnalysis {
   available: boolean;
   pillarId: PillarId | null;
   hook: { line: string; sub: string };
+  feelings: string[];
   nodes: RcaNode[];
   actions: string[];
   payoff: string;
@@ -30,6 +31,7 @@ const UNAVAILABLE: RootAnalysis = {
   available: false,
   pillarId: null,
   hook: { line: "", sub: "" },
+  feelings: [],
   nodes: [],
   actions: [],
   payoff: "",
@@ -71,6 +73,7 @@ export function buildRootAnalysis(data: EmployeeScores): RootAnalysis {
     available: true,
     pillarId,
     hook: { line: kb.symptom, sub: `${kb.downstream} Let's find out why.` },
+    feelings: kb.feelings,
     nodes,
     actions: kb.actions,
     payoff: kb.payoff,
