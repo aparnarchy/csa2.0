@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import {
   BigScore,
@@ -70,6 +71,18 @@ export function AnalysisView({
         subtitle={mode === "company" ? "Kissflow" : "Across your career"}
         avatar={<Mascot state={mascotForScore(data.overall, data.enoughData)} size={148} />}
       />
+
+      {mode === "company" && (
+        <Link
+          href="/check-in"
+          className="flex items-center justify-between rounded-card bg-brand px-5 py-3.5 shadow-card transition active:scale-[0.99]"
+        >
+          <span className="flex items-center gap-2 text-sm font-bold text-white">
+            <span aria-hidden>📝</span> Your weekly check-in is ready
+          </span>
+          <span className="text-sm font-bold text-white">Start →</span>
+        </Link>
+      )}
 
       <Card>
         <SegmentedToggle

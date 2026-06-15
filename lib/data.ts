@@ -313,5 +313,71 @@ export function getSampleRecommendation(pillarId: PillarId): { pillarId: PillarI
   return { pillarId, text: text[pillarId] };
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Check-in flow (the weekly questions an employee answers)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** One tappable answer. Its `score` is hidden in the UI (per spec). */
+export interface CheckInOption {
+  key: "A" | "B" | "C";
+  text: string;
+  score: number;
+}
+
+/** A single check-in question with its A/B/C options. */
+export interface CheckInQuestion {
+  id: string;
+  text: string;
+  pillarId: PillarId;
+  options: CheckInOption[];
+}
+
+const DUE_CHECKINS: CheckInQuestion[] = [
+  {
+    id: "q5",
+    pillarId: "growth",
+    text: "Does your manager invest in your development?",
+    options: [
+      { key: "A", text: "Yes — we talk about my growth often", score: 9 },
+      { key: "B", text: "Sometimes, when I bring it up", score: 6 },
+      { key: "C", text: "Rarely or never", score: 3 },
+    ],
+  },
+  {
+    id: "q9",
+    pillarId: "culture",
+    text: "Do you feel recognised for good work?",
+    options: [
+      { key: "A", text: "Yes, my work gets noticed", score: 9 },
+      { key: "B", text: "Now and then", score: 6 },
+      { key: "C", text: "Not really", score: 3 },
+    ],
+  },
+];
+
+/** The questions due for this user this week. Own data only. */
+export async function getDueCheckIns(
+  session: SessionUser,
+  userId: string,
+): Promise<CheckInQuestion[]> {
+  assertOwner(session, userId);
+  return DUE_CHECKINS;
+}
+
+/**
+ * Record one answer. Sample no-op for now; the real D1 insert into `checkIns`
+ * (with weekId, timestamp, low-score recommendation lookup) lands in a later phase.
+ */
+export async function submitCheckIn(
+  session: SessionUser,
+  userId: string,
+  questionId: string,
+  score: number,
+): Promise<void> {
+  assertOwner(session, userId);
+  void questionId;
+  void score;
+}
+
 /** Re-export so screens can build ScoreResult-shaped deltas without a second import. */
 export { trendDelta, type ScoreResult };

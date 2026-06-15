@@ -1,0 +1,135 @@
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { Mascot, RecommendationCard } from "@/components/kit";
+import { PILLARS } from "@/lib/pillars";
+import { getSampleRecommendation, submitCheckIn, type CheckInQuestion } from "@/lib/data";
+import type { SessionUser } from "@/lib/types";
+
+/**
+ * The weekly check-in: one question at a time, A/B/C tappable cards (score
+ * hidden). A low answer (<7) shows an inline tip before continuing. Focused
+ * full-screen flow — no bottom nav.
+ */
+export function CheckInFlow({
+  session,
+  questions,
+}: {
+  session: SessionUser;
+  questions: CheckInQuestion[];
+}) {
+  const router = useRouter();
+  const [index, setIndex] = useState(0);
+  const [selected, setSelected] = useState<string | null>(null);
+  const [done, setDone] = useState(false);
+
+  const first = (session.name || "there").trim().split(/\s+/)[0];
+  const total = questions.length;
+
+  if (total === 0 || done) {
+    return (
+      <div className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col items-center justify-center gap-5 bg-lav-bg px-8 text-center">
+        <Mascot state="happy" size={150} />
+        <div>
+          <h1 className="font-display text-2xl font-black text-brand">
+            {total === 0 ? "You're all caught up!" : `Nice work, ${first}!`}
+          </h1>
+          <p className="mt-2 text-sm text-ink-2">
+            {total === 0
+              ? "No check-ins waiting right now — we'll nudge you when the next one's ready."
+              : "That's logged. Every answer sharpens your insights."}
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => router.push("/dashboard/employee")}
+          className="w-full rounded-2xl bg-brand py-3.5 font-display text-sm font-black text-white active:scale-[0.98]"
+        >
+          See my dashboard →
+        </button>
+      </div>
+    );
+  }
+
+  const q = questions[index];
+  const meta = PILLARS[q.pillarId];
+  const chosen = q.options.find((o) => o.key === selected) ?? null;
+  const lowScore = chosen ? chosen.score < 7 : false;
+
+  async function next() {
+    const c = q.options.find((o) => o.key === selected);
+    if (!c) return;
+    await submitCheckIn(session, session.id, q.id, c.score);
+    setSelected(null);
+    if (index + 1 < total) setIndex(index + 1);
+    else setDone(true);
+  }
+
+  return (
+    <div className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col bg-lav-bg px-5 pb-8 pt-5">
+      {/* top bar: close + progress */}
+      <div className="flex items-center gap-3">
+        <button
+          type="button"
+          onClick={() => router.push("/dashboard/employee")}
+          className="flex h-8 w-8 items-center justify-center rounded-full bg-white text-ink-3 shadow-card active:scale-90"
+          aria-label="Close"
+        >
+          ✕
+        </button>
+        <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-white">
+          <div
+            className="h-full rounded-full bg-brand transition-[width] duration-300"
+            style={{ width: `${((index + (chosen ? 1 : 0)) / total) * 100}%` }}
+          />
+        </div>
+        <span className="text-xs font-bold text-ink-3">
+          {index + 1}/{total}
+        </span>
+      </div>
+
+      {/* question */}
+      <div key={index} className="screen-enter mt-10 flex-1">
+        <p className="text-[11px] font-bold uppercase tracking-wide text-brand">{meta.label}</p>
+        <h1 className="mt-2 font-display text-[26px] font-black leading-tight text-ink">{q.text}</h1>
+
+        <div className="mt-7 space-y-3">
+          {q.options.map((o) => {
+            const isSel = o.key === selected;
+            return (
+              <button
+                key={o.key}
+                type="button"
+                onClick={() => setSelected(o.key)}
+                className={`w-full rounded-2xl border p-4 text-left text-sm font-semibold transition active:scale-[0.99] ${
+                  isSel
+                    ? "border-brand bg-lav-soft text-brand shadow-card"
+                    : "border-transparent bg-white text-ink shadow-card"
+                }`}
+              >
+                {o.text}
+              </button>
+            );
+          })}
+        </div>
+
+        {lowScore && (
+          <div className="mt-5">
+            <RecommendationCard pillarId={q.pillarId} text={getSampleRecommendation(q.pillarId).text} />
+          </div>
+        )}
+      </div>
+
+      {/* continue */}
+      <button
+        type="button"
+        onClick={next}
+        disabled={!chosen}
+        className="mt-6 w-full rounded-2xl bg-brand py-3.5 font-display text-sm font-black text-white transition active:scale-[0.98] disabled:opacity-40"
+      >
+        {index + 1 < total ? "Continue" : "Finish"}
+      </button>
+    </div>
+  );
+}
