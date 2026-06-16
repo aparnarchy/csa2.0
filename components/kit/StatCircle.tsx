@@ -1,7 +1,7 @@
 /**
- * A big rounded stat "circle" for the dashboard top — Bright Spot / Watch Out.
- * A softer lighter blob sits behind it and gently drifts (one calm animation
- * layer). Both share the brand purple; only the icon/label differ.
+ * A wavy, gently morphing "blob" score circle for the dashboard top — Bright
+ * Spot / Watch Out. A softer lighter blob sits behind it, morphing + drifting on
+ * its own rhythm (one calm animation layer). Both share the brand purple.
  */
 export function StatCircle({
   kind,
@@ -15,15 +15,14 @@ export function StatCircle({
   pillar: string;
 }) {
   const icon = kind === "bright" ? "☀️" : "❗";
-  const drift = kind === "bright" ? "drift-a" : "drift-b";
 
   return (
     <div className="relative aspect-square">
-      {/* lighter blob behind, gently drifting */}
-      <div className={`${drift} absolute inset-0 rounded-[40px] bg-[#CBC0FF]`} aria-hidden />
-      {/* foreground circle */}
+      {/* lighter blob behind, morphing + drifting on its own rhythm */}
+      <div className="blob-back absolute -inset-1 bg-[#CBC0FF]" aria-hidden />
+      {/* foreground wavy blob */}
       <div
-        className="relative flex h-full flex-col items-center justify-center rounded-[40px] p-4 text-center text-white shadow-card"
+        className="blob-front relative flex h-full flex-col items-center justify-center p-4 text-center text-white shadow-card"
         style={{ background: "linear-gradient(155deg, #9C8DFF 0%, #786AF4 100%)" }}
       >
         <p className="flex items-center gap-1 text-[12px] font-bold text-white/85">

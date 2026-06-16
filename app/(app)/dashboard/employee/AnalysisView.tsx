@@ -64,18 +64,26 @@ export function AnalysisView({
 
   return (
     <ScreenShell active="insights">
-      {/* Merged greeting + insight headline, with the mascot (sub-screen sizing). */}
+      {/* Title card — kept: greeting + "Dashboard" + insight + mascot (sub-screen sizing). */}
       <GradientHeader
-        title={`${insight.headline}, ${firstName}!`}
+        eyebrow="My Dashboard"
+        title={`Hey ${firstName} 👋`}
         avatar={<Mascot state={mascotForScore(data.overall, data.enoughData)} size={168} />}
-        avatarClassName="absolute right-1 top-9 z-10"
-      />
+        avatarClassName="absolute right-1 top-8 z-10"
+        className="min-h-[200px]"
+      >
+        {data.enoughData && data.overall !== null && (
+          <p className="mt-3 max-w-[58%] font-display text-lg font-black leading-tight text-brand">
+            {insight.headline}.
+          </p>
+        )}
+      </GradientHeader>
 
       {!data.enoughData || data.overall === null ? (
         <NotEnoughData />
       ) : (
         <>
-          {/* Bright Spot / Watch Out circles with gently drifting blobs behind. */}
+          {/* Bright Spot / Watch Out — wavy morphing blobs. */}
           <div className="grid grid-cols-2 gap-3">
             {insight.brightSpot && (
               <StatCircle

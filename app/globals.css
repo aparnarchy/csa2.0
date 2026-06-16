@@ -109,6 +109,18 @@ body {
 }
 .drift-a      { animation: driftA 9s ease-in-out infinite; }
 .drift-b      { animation: driftB 11s ease-in-out infinite; }
+
+/* Wavy, gently morphing blob shapes for the dashboard score circles */
+@keyframes blobMorph {
+  0%, 100% { border-radius: 42% 58% 62% 38% / 48% 42% 58% 52%; }
+  50%      { border-radius: 58% 42% 38% 62% / 42% 58% 42% 58%; }
+}
+@keyframes blobMorph2 {
+  0%, 100% { border-radius: 60% 40% 52% 48% / 55% 45% 55% 45%; }
+  50%      { border-radius: 40% 60% 48% 52% / 45% 55% 45% 55%; }
+}
+.blob-front { border-radius: 42% 58% 62% 38% / 48% 42% 58% 52%; animation: blobMorph 14s ease-in-out infinite; }
+.blob-back  { border-radius: 60% 40% 52% 48% / 55% 45% 55% 45%; animation: blobMorph2 18s ease-in-out infinite, driftB 12s ease-in-out infinite; }
 .bloom        { animation: bloom 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
 
 /* Hide scrollbars on horizontal filter rows */

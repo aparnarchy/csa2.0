@@ -13,6 +13,7 @@ export function GradientHeader({
   avatarClassName = "absolute -top-3 right-2 z-10",
   back,
   children,
+  className = "",
 }: {
   eyebrow?: string;
   title: string;
@@ -21,10 +22,11 @@ export function GradientHeader({
   avatarClassName?: string;
   back?: { label: string; onClick: () => void };
   children?: ReactNode;
+  className?: string;
 }) {
   return (
     <div
-      className="relative rounded-card px-5 pb-6 pt-5"
+      className={`relative rounded-card px-5 pb-6 pt-5 ${className}`}
       style={{ background: "linear-gradient(160deg, #EDE7FF 0%, #E1D7FF 100%)" }}
     >
       {avatar && <div className={avatarClassName}>{avatar}</div>}
