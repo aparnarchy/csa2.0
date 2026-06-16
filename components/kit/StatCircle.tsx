@@ -43,11 +43,11 @@ export function StatCircle({
           </svg>
           <p className="-mt-1 font-display text-[46px] font-black leading-none">{score.toFixed(1)}</p>
           {/* pillar, curved along the bottom */}
-          <svg viewBox="0 0 100 22" className="mt-1.5 w-[84%]" aria-hidden>
+          <svg viewBox="0 0 100 24" className="mt-1.5 w-[94%]" aria-hidden>
             <defs>
-              <path id={`${arcId}-b`} d="M 8 4 Q 50 22 92 4" fill="none" />
+              <path id={`${arcId}-b`} d="M 6 4 Q 50 24 94 4" fill="none" />
             </defs>
-            <text fill="#ffffff" fillOpacity="0.85" fontSize="8" fontWeight="800" letterSpacing="0.8">
+            <text fill="#ffffff" fillOpacity="0.9" fontSize="10.5" fontWeight="800" letterSpacing="0.5">
               <textPath href={`#${arcId}-b`} startOffset="50%" textAnchor="middle">
                 {pillar}
               </textPath>

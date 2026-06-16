@@ -85,7 +85,7 @@ export function AnalysisView({
         <>
           {/* Bright Spot / Watch Out — GSAP-animated wavy blobs (tap to expand). */}
           {insight.brightSpot && insight.watchOut && (
-            <div className="mb-3">
+            <div className="pt-4 mb-7">
               <ScoreCircles
                 bright={{ score: insight.brightSpot.score, pillar: insight.brightSpot.label }}
                 watch={{ score: insight.watchOut.score, pillar: insight.watchOut.label }}
@@ -102,8 +102,8 @@ export function AnalysisView({
             >
               <div className="flex items-center gap-3">
                 <div className="min-w-0 flex-1">
-                  <p className="flex items-center gap-1.5 text-[12px] font-semibold text-ink-2">
-                    <span aria-hidden>🔮</span> I&apos;m guessing you&apos;re currently feeling…
+                  <p className="flex items-center gap-2 text-[12px] font-semibold text-ink-2">
+                    <span className="text-2xl leading-none" aria-hidden>🔮</span> I&apos;m guessing you&apos;re currently feeling…
                   </p>
                   <div className="mt-2 space-y-1">
                     {rca.feelings.map((f) => (
