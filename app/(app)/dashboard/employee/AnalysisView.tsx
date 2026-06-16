@@ -69,8 +69,8 @@ export function AnalysisView({
         eyebrow="My Dashboard"
         title={`Hey ${firstName} 👋`}
         avatar={<Mascot state={mascotForScore(data.overall, data.enoughData)} size={168} />}
-        avatarClassName="absolute right-1 top-8 z-10"
-        className="flex min-h-[200px] flex-col justify-center"
+        avatarClassName="absolute right-1 top-9 z-10"
+        className="flex min-h-[212px] flex-col justify-center"
       >
         {data.enoughData && data.overall !== null && (
           <p className="mt-3 max-w-[58%] font-display text-lg font-black leading-tight text-brand">
@@ -85,10 +85,12 @@ export function AnalysisView({
         <>
           {/* Bright Spot / Watch Out — GSAP-animated wavy blobs (tap to expand). */}
           {insight.brightSpot && insight.watchOut && (
-            <ScoreCircles
-              bright={{ score: insight.brightSpot.score, pillar: insight.brightSpot.label }}
-              watch={{ score: insight.watchOut.score, pillar: insight.watchOut.label }}
-            />
+            <div className="mb-3">
+              <ScoreCircles
+                bright={{ score: insight.brightSpot.score, pillar: insight.brightSpot.label }}
+                watch={{ score: insight.watchOut.score, pillar: insight.watchOut.label }}
+              />
+            </div>
           )}
 
           {/* Oracle guessing box → opens the immersive Find the Root journey. */}
