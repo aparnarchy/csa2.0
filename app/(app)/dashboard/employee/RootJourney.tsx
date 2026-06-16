@@ -8,7 +8,7 @@ import type { RootAnalysis } from "@/lib/rca";
 // are virtual "world" px; the camera maps the focused stop to screen centre.
 const BASEX = 520;
 const BASEY = 360;
-const GAPY = 640; // vertical distance between stops
+const GAPY = 660; // vertical distance between stops
 const AMP = 130; // horizontal zig-zag so the route reads like a map
 
 const pos = (i: number) => ({ x: BASEX + (i % 2 === 0 ? -AMP : AMP), y: BASEY + i * GAPY });
@@ -20,9 +20,9 @@ function vp() {
 
 /**
  * "Find the Root" — one continuous map. Each tap flies the camera from the
- * current stop to the next. The dive is just the symptom → factor stops; the
- * final tap reveals the root + actions together (so it's 3 taps total from the
- * dashboard, no redundant root-then-reveal).
+ * current stop to the next. The last stop (the root) holds the full answer +
+ * actions inline, so the whole thing lives on one zoom screen (no separate
+ * reveal page): 3 taps from the dashboard — symptom → factor → root.
  */
 export function RootJourney({
   analysis,
@@ -31,12 +31,11 @@ export function RootJourney({
   analysis: RootAnalysis;
   onClose: () => void;
 }) {
-  const diveNodes = analysis.nodes.slice(0, -1); // symptom, factor
-  const root = analysis.nodes[analysis.nodes.length - 1];
-  const diveLast = diveNodes.length - 1;
+  const nodes = analysis.nodes; // symptom, factor, root
+  const lastIndex = nodes.length - 1;
+  const root = nodes[lastIndex];
 
   const [level, setLevel] = useState(0);
-  const [revealed, setRevealed] = useState(false);
   const [dims, setDims] = useState(vp);
   const lock = useRef(false);
 
@@ -64,10 +63,8 @@ export function RootJourney({
     const a = pos(from);
     const b = pos(to);
     const mid = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
-    // 1) zoom out + drift toward the next stop (you glimpse the route)
     setCam({ t: focus(mid, 0.5), ms: 460, ease: "cubic-bezier(0.6, 0, 0.85, 0.4)" });
     setLevel(to);
-    // 2) zoom into the next stop
     window.setTimeout(
       () => setCam({ t: focus(b, 1), ms: 560, ease: "cubic-bezier(0.2, 0.7, 0.3, 1)" }),
       430,
@@ -75,16 +72,12 @@ export function RootJourney({
   }
 
   function go() {
-    if (revealed || lock.current) return;
-    if (level < diveLast) {
-      lock.current = true;
-      travel(level, level + 1);
-      window.setTimeout(() => {
-        lock.current = false;
-      }, 1000);
-    } else {
-      setRevealed(true);
-    }
+    if (lock.current || level >= lastIndex) return; // root is the last stop
+    lock.current = true;
+    travel(level, level + 1);
+    window.setTimeout(() => {
+      lock.current = false;
+    }, 1000);
   }
 
   function onWheel(e: WheelEvent) {
@@ -93,7 +86,7 @@ export function RootJourney({
 
   if (typeof document === "undefined") return null;
 
-  const svgH = BASEY + diveLast * GAPY + 400;
+  const svgH = BASEY + lastIndex * GAPY + 600;
 
   return createPortal(
     <div
@@ -115,90 +108,86 @@ export function RootJourney({
         ✕
       </button>
 
-      {!revealed && (
-        <>
-          {/* ONE canvas; the camera transform flies across it. */}
-          <div
-            className="absolute left-0 top-0 will-change-transform"
-            style={{ transform: cam.t, transformOrigin: "0 0", transition: `transform ${cam.ms}ms ${cam.ease}` }}
-          >
-            <svg width={1100} height={svgH} className="absolute left-0 top-0 overflow-visible">
-              <path
-                d={diveNodes.map((_, i) => `${i ? "L" : "M"} ${pos(i).x} ${pos(i).y}`).join(" ")}
-                fill="none"
-                stroke="rgba(179,136,255,0.4)"
-                strokeWidth={3}
-                strokeDasharray="2 13"
-                strokeLinecap="round"
-              />
-            </svg>
+      {/* ONE canvas; the camera transform flies across it. */}
+      <div
+        className="absolute left-0 top-0 will-change-transform"
+        style={{ transform: cam.t, transformOrigin: "0 0", transition: `transform ${cam.ms}ms ${cam.ease}` }}
+      >
+        <svg width={1100} height={svgH} className="absolute left-0 top-0 overflow-visible">
+          <path
+            d={nodes.map((_, i) => `${i ? "L" : "M"} ${pos(i).x} ${pos(i).y}`).join(" ")}
+            fill="none"
+            stroke="rgba(179,136,255,0.4)"
+            strokeWidth={3}
+            strokeDasharray="2 13"
+            strokeLinecap="round"
+          />
+        </svg>
 
-            {diveNodes.map((n, i) => (
-              <div
-                key={i}
-                className="absolute w-[320px] -translate-x-1/2 -translate-y-1/2 text-center"
-                style={{ left: pos(i).x, top: pos(i).y }}
-              >
-                {i === diveLast && <span className="siren mx-auto mb-6 block h-3 w-3 rounded-full bg-red-400/90" />}
-                <p className="mb-3 text-[11px] font-bold uppercase tracking-[0.2em] text-white/45">
-                  {n.depthLabel} · {i + 1}/{diveNodes.length}
-                </p>
-                <h2 className="font-display text-[30px] font-black leading-tight">{n.title}</h2>
-                <p className="mt-4 text-base leading-relaxed text-white/80">{n.body}</p>
-                {n.evidence && <p className="mt-4 text-xs italic leading-relaxed text-white/45">{n.evidence}</p>}
+        {/* dive stops: symptom, factor */}
+        {nodes.slice(0, lastIndex).map((n, i) => (
+          <div
+            key={i}
+            className="absolute w-[320px] -translate-x-1/2 -translate-y-1/2 text-center"
+            style={{ left: pos(i).x, top: pos(i).y }}
+          >
+            {i === lastIndex - 1 && (
+              <span className="siren mx-auto mb-6 block h-3 w-3 rounded-full bg-red-400/90" />
+            )}
+            <p className="mb-3 text-[11px] font-bold uppercase tracking-[0.2em] text-white/45">
+              {n.depthLabel} · {i + 1}/{nodes.length}
+            </p>
+            <h2 className="font-display text-[30px] font-black leading-tight">{n.title}</h2>
+            <p className="mt-4 text-base leading-relaxed text-white/80">{n.body}</p>
+            {n.evidence && <p className="mt-4 text-xs italic leading-relaxed text-white/45">{n.evidence}</p>}
+          </div>
+        ))}
+
+        {/* final stop: the root + actions, inline on the map */}
+        <div
+          className="absolute w-[330px] -translate-x-1/2 -translate-y-1/2"
+          style={{ left: pos(lastIndex).x, top: pos(lastIndex).y }}
+        >
+          <p className="text-center text-4xl">🌱</p>
+          <h2 className="mt-2 text-center font-display text-[26px] font-black leading-tight">
+            We found the root!
+          </h2>
+          <p className="mt-2 text-center text-[14px] leading-relaxed text-white/85">{root.body}</p>
+          {root.evidence && (
+            <p className="mt-1.5 text-center text-xs italic leading-relaxed text-white/45">{root.evidence}</p>
+          )}
+
+          <p className="mt-5 text-xs font-bold uppercase tracking-wide text-[#B388FF]">💡 Do this today</p>
+          <div className="mt-2 space-y-2">
+            {analysis.actions.map((a, i) => (
+              <div key={i} className="flex gap-3 rounded-2xl bg-white/10 p-3">
+                <span className="font-display text-sm font-black text-[#B388FF]">{i + 1}</span>
+                <p className="text-[13px] leading-relaxed text-white/90">{a}</p>
               </div>
             ))}
           </div>
 
-          <div className="mascot-float pointer-events-none absolute bottom-10 left-0 right-0 text-center text-sm font-semibold text-white/55">
-            {level >= diveLast ? "tap to reveal the root ↓" : "tap to travel deeper ↓"}
+          <div className="mt-3 rounded-2xl bg-white/5 p-3.5">
+            <p className="mb-1 text-[10px] font-bold uppercase tracking-wide text-white/45">Why it&apos;s worth it</p>
+            <p className="text-[13px] leading-relaxed text-white/80">{analysis.payoff}</p>
           </div>
-        </>
-      )}
 
-      {revealed && (
-        <div
-          className="bloom flex h-full flex-col overflow-y-auto px-6"
-          style={{
-            paddingTop: "calc(env(safe-area-inset-top) + 2.75rem)",
-            paddingBottom: "calc(env(safe-area-inset-bottom) + 2.5rem)",
-          }}
-        >
-          <p className="text-center text-5xl">🌱</p>
-          <h2 className="mt-3 text-center font-display text-[26px] font-black leading-tight">We found the root!</h2>
-          <p className="mx-auto mt-3 max-w-sm text-center text-[15px] leading-relaxed text-white/85">
-            {root.body}
-          </p>
-          {root.evidence && (
-            <p className="mx-auto mt-2 max-w-sm text-center text-xs italic leading-relaxed text-white/45">
-              {root.evidence}
-            </p>
-          )}
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onClose();
+            }}
+            className="mt-5 w-full rounded-2xl bg-white py-3.5 font-display text-sm font-black text-brand active:scale-[0.98]"
+          >
+            Back to my dashboard
+          </button>
+        </div>
+      </div>
 
-          <div className="mx-auto mt-7 w-full max-w-sm">
-            <p className="mb-3 text-xs font-bold uppercase tracking-wide text-[#B388FF]">💡 Do this today</p>
-            <div className="space-y-2.5">
-              {analysis.actions.map((a, i) => (
-                <div key={i} className="flex gap-3 rounded-2xl bg-white/10 p-3.5">
-                  <span className="font-display text-sm font-black text-[#B388FF]">{i + 1}</span>
-                  <p className="text-[13px] leading-relaxed text-white/90">{a}</p>
-                </div>
-              ))}
-            </div>
-
-            <div className="mt-5 rounded-2xl bg-white/5 p-4">
-              <p className="mb-1 text-[10px] font-bold uppercase tracking-wide text-white/45">Why it&apos;s worth it</p>
-              <p className="text-[13px] leading-relaxed text-white/80">{analysis.payoff}</p>
-            </div>
-
-            <button
-              type="button"
-              onClick={onClose}
-              className="mt-7 w-full rounded-2xl bg-white py-3.5 font-display text-sm font-black text-brand active:scale-[0.98]"
-            >
-              Back to my dashboard
-            </button>
-          </div>
+      {level < lastIndex && (
+        <div className="mascot-float pointer-events-none absolute bottom-10 left-0 right-0 text-center text-sm font-semibold text-white/55">
+          {level >= lastIndex - 1 ? "tap to reveal the root ↓" : "tap to travel deeper ↓"}
         </div>
       )}
     </div>,
