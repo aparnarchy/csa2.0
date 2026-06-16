@@ -6,10 +6,14 @@ import { StatCircle } from "@/components/kit";
 
 type Which = "bright" | "watch";
 
+const BASE = 1.04; // baseline 4% bigger
+const DUR = 1.0; // slow, elegant transition
+const EASE = "power2.inOut";
+
 /**
- * The two score blobs, animated with GSAP: a muted idle zoom in/out, and a
- * click-to-expand — tap one and it grows bigger while the other shrinks up to
- * the side. Tap it again (or the other) to swap / reset.
+ * The two score blobs, animated with GSAP. Baseline: side by side with a muted
+ * idle zoom. Tap one → it grows (the other shrinks up to the side) and the text
+ * scales proportionally with the circle. Tap again / the other to swap / reset.
  */
 export function ScoreCircles({
   bright,
@@ -26,20 +30,22 @@ export function ScoreCircles({
     const a = aRef.current;
     const b = bRef.current;
     if (!a || !b) return;
-    gsap.killTweensOf([a, b]);
+    const ca = a.querySelector(".sc-content");
+    const cb = b.querySelector(".sc-content");
+    if (!ca || !cb) return;
+    gsap.killTweensOf([a, b, ca, cb]);
 
     if (!expanded) {
-      // reset to equal, then a calm (muted) idle zoom in/out on both
       gsap.to([a, b], {
         flexGrow: 1,
-        scale: 1,
+        scale: BASE,
         y: 0,
         opacity: 1,
-        duration: 0.7,
-        ease: "power2.inOut",
+        duration: DUR,
+        ease: EASE,
         onComplete: () => {
           gsap.to([a, b], {
-            scale: 1.018,
+            scale: BASE + 0.016,
             duration: 2.8,
             ease: "sine.inOut",
             yoyo: true,
@@ -47,15 +53,20 @@ export function ScoreCircles({
           });
         },
       });
+      gsap.to([ca, cb], { scale: 1, duration: DUR, ease: EASE });
     } else {
       const big = expanded === "bright" ? a : b;
       const small = expanded === "bright" ? b : a;
-      // elegant, restrained expand: big a touch bigger, small not too small
-      gsap.to(big, { flexGrow: 1.75, scale: 1.02, y: 0, opacity: 1, duration: 0.85, ease: "power2.inOut" });
-      gsap.to(small, { flexGrow: 0.95, scale: 0.84, y: -10, opacity: 0.94, duration: 0.85, ease: "power2.inOut" });
+      const bigC = expanded === "bright" ? ca : cb;
+      const smallC = expanded === "bright" ? cb : ca;
+      // circle footprint via flexGrow; text scales proportionally via content
+      gsap.to(big, { flexGrow: 1.5, scale: BASE, y: 0, opacity: 1, duration: DUR, ease: EASE });
+      gsap.to(small, { flexGrow: 1.1, scale: BASE, y: -8, opacity: 0.95, duration: DUR, ease: EASE });
+      gsap.to(bigC, { scale: 1.15, duration: DUR, ease: EASE });
+      gsap.to(smallC, { scale: 0.85, duration: DUR, ease: EASE });
     }
 
-    return () => gsap.killTweensOf([a, b]);
+    return () => gsap.killTweensOf([a, b, ca, cb]);
   }, [expanded]);
 
   const toggle = (w: Which) => setExpanded((p) => (p === w ? null : w));
