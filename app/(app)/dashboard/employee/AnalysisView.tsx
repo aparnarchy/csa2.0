@@ -11,9 +11,9 @@ import {
   PillarCard,
   ScreenShell,
   SegmentedToggle,
-  StatCircle,
   TrendChart,
 } from "@/components/kit";
+import { ScoreCircles } from "./ScoreCircles";
 import { getEmployeeScores, type EmployeeScores, type Window } from "@/lib/data";
 import { mascotForScore } from "@/lib/mascot";
 import { buildEmployeeInsight } from "@/lib/insight";
@@ -70,7 +70,7 @@ export function AnalysisView({
         title={`Hey ${firstName} 👋`}
         avatar={<Mascot state={mascotForScore(data.overall, data.enoughData)} size={168} />}
         avatarClassName="absolute right-1 top-8 z-10"
-        className="min-h-[200px]"
+        className="flex min-h-[200px] flex-col justify-center"
       >
         {data.enoughData && data.overall !== null && (
           <p className="mt-3 max-w-[58%] font-display text-lg font-black leading-tight text-brand">
@@ -83,25 +83,13 @@ export function AnalysisView({
         <NotEnoughData />
       ) : (
         <>
-          {/* Bright Spot / Watch Out — wavy morphing blobs. */}
-          <div className="grid grid-cols-2 gap-3">
-            {insight.brightSpot && (
-              <StatCircle
-                kind="bright"
-                label="Your Bright Spot"
-                score={insight.brightSpot.score}
-                pillar={insight.brightSpot.label}
-              />
-            )}
-            {insight.watchOut && (
-              <StatCircle
-                kind="watch"
-                label="Watch out"
-                score={insight.watchOut.score}
-                pillar={insight.watchOut.label}
-              />
-            )}
-          </div>
+          {/* Bright Spot / Watch Out — GSAP-animated wavy blobs (tap to expand). */}
+          {insight.brightSpot && insight.watchOut && (
+            <ScoreCircles
+              bright={{ score: insight.brightSpot.score, pillar: insight.brightSpot.label }}
+              watch={{ score: insight.watchOut.score, pillar: insight.watchOut.label }}
+            />
+          )}
 
           {/* Oracle guessing box → opens the immersive Find the Root journey. */}
           {rca.available && (
@@ -129,12 +117,11 @@ export function AnalysisView({
             </button>
           )}
 
-          {/* Try this week — one concrete action from the lowest pillar. */}
+          {/* Try this week — plain purple italic text, no card. */}
           {insight.action && (
-            <Card>
-              <p className="mb-1 text-[10px] font-bold uppercase tracking-wide text-brand">💡 Try this week</p>
-              <p className="text-[13px] leading-relaxed text-ink-2">{insight.action}</p>
-            </Card>
+            <p className="px-1 text-sm italic leading-relaxed text-brand">
+              💡 Try this week: {insight.action}
+            </p>
           )}
 
           {/* ── Everything below is unchanged ───────────────────────────────── */}
