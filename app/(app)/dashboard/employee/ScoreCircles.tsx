@@ -35,8 +35,8 @@ export function ScoreCircles({
         scale: 1,
         y: 0,
         opacity: 1,
-        duration: 0.5,
-        ease: "power3.out",
+        duration: 0.7,
+        ease: "power2.inOut",
         onComplete: () => {
           gsap.to([a, b], {
             scale: 1.018,
@@ -50,8 +50,9 @@ export function ScoreCircles({
     } else {
       const big = expanded === "bright" ? a : b;
       const small = expanded === "bright" ? b : a;
-      gsap.to(big, { flexGrow: 2.6, scale: 1.05, y: 0, opacity: 1, duration: 0.55, ease: "power3.out" });
-      gsap.to(small, { flexGrow: 0.7, scale: 0.68, y: -20, opacity: 0.9, duration: 0.55, ease: "power3.out" });
+      // elegant, restrained expand: big a touch bigger, small not too small
+      gsap.to(big, { flexGrow: 1.75, scale: 1.02, y: 0, opacity: 1, duration: 0.85, ease: "power2.inOut" });
+      gsap.to(small, { flexGrow: 0.95, scale: 0.84, y: -10, opacity: 0.94, duration: 0.85, ease: "power2.inOut" });
     }
 
     return () => gsap.killTweensOf([a, b]);
