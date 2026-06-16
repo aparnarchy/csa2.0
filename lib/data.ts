@@ -340,6 +340,7 @@ export interface CheckInQuestion {
   text: string;
   pillarId: PillarId;
   options: CheckInOption[];
+  weekLabel?: string; // for catch-up questions, e.g. "Last week"
 }
 
 const DUE_CHECKINS: CheckInQuestion[] = [
@@ -374,19 +375,69 @@ export async function getDueCheckIns(
   return DUE_CHECKINS;
 }
 
+/** Questions left unanswered from previous weeks (oldest first). Own data only. */
+const UNANSWERED_CHECKINS: CheckInQuestion[] = [
+  {
+    id: "u1",
+    pillarId: "meaningful_work",
+    weekLabel: "2 weeks ago",
+    text: "Does your work feel connected to a bigger purpose?",
+    options: [
+      { key: "A", text: "Yes — I see the bigger picture", score: 9 },
+      { key: "B", text: "Sometimes", score: 6 },
+      { key: "C", text: "Not really", score: 3 },
+    ],
+  },
+  {
+    id: "u2",
+    pillarId: "culture",
+    weekLabel: "Last week",
+    text: "Do you feel psychologically safe raising concerns?",
+    options: [
+      { key: "A", text: "Yes, always", score: 9 },
+      { key: "B", text: "Depends on the topic", score: 6 },
+      { key: "C", text: "Rarely", score: 3 },
+    ],
+  },
+];
+
+export async function getUnansweredCheckIns(
+  session: SessionUser,
+  userId: string,
+): Promise<CheckInQuestion[]> {
+  assertOwner(session, userId);
+  return UNANSWERED_CHECKINS;
+}
+
 /**
  * Record one answer. Sample no-op for now; the real D1 insert into `checkIns`
- * (with weekId, timestamp, low-score recommendation lookup) lands in a later phase.
+ * (weekId, timestamp, isRetrospective, low-score recommendation) lands later.
+ * Catch-up answers pass isRetrospective = true (excluded from the streak).
  */
 export async function submitCheckIn(
   session: SessionUser,
   userId: string,
   questionId: string,
   score: number,
+  isRetrospective = false,
 ): Promise<void> {
   assertOwner(session, userId);
   void questionId;
   void score;
+  void isRetrospective;
+}
+
+/**
+ * Skip a question for now. Sample no-op; server-side, 3 consecutive skips of the
+ * same question permanently retire it (real logic lands with D1).
+ */
+export async function skipCheckIn(
+  session: SessionUser,
+  userId: string,
+  questionId: string,
+): Promise<void> {
+  assertOwner(session, userId);
+  void questionId;
 }
 
 /** Re-export so screens can build ScoreResult-shaped deltas without a second import. */
