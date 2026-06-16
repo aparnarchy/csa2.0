@@ -20,9 +20,9 @@ function vp() {
 
 /**
  * "Find the Root" — one continuous map. Each tap flies the camera from the
- * current stop to the next (zoom out, travel, zoom in), so it never feels like
- * separate screens. The last stop is a subtle red root with a wide siren pulse;
- * tapping it blooms open the answer.
+ * current stop to the next. The dive is just the symptom → factor stops; the
+ * final tap reveals the root + actions together (so it's 3 taps total from the
+ * dashboard, no redundant root-then-reveal).
  */
 export function RootJourney({
   analysis,
@@ -31,8 +31,9 @@ export function RootJourney({
   analysis: RootAnalysis;
   onClose: () => void;
 }) {
-  const nodes = analysis.nodes;
-  const lastIndex = nodes.length - 1;
+  const diveNodes = analysis.nodes.slice(0, -1); // symptom, factor
+  const root = analysis.nodes[analysis.nodes.length - 1];
+  const diveLast = diveNodes.length - 1;
 
   const [level, setLevel] = useState(0);
   const [revealed, setRevealed] = useState(false);
@@ -75,7 +76,7 @@ export function RootJourney({
 
   function go() {
     if (revealed || lock.current) return;
-    if (level < lastIndex) {
+    if (level < diveLast) {
       lock.current = true;
       travel(level, level + 1);
       window.setTimeout(() => {
@@ -92,7 +93,7 @@ export function RootJourney({
 
   if (typeof document === "undefined") return null;
 
-  const svgH = BASEY + lastIndex * GAPY + 400;
+  const svgH = BASEY + diveLast * GAPY + 400;
 
   return createPortal(
     <div
@@ -123,7 +124,7 @@ export function RootJourney({
           >
             <svg width={1100} height={svgH} className="absolute left-0 top-0 overflow-visible">
               <path
-                d={nodes.map((_, i) => `${i ? "L" : "M"} ${pos(i).x} ${pos(i).y}`).join(" ")}
+                d={diveNodes.map((_, i) => `${i ? "L" : "M"} ${pos(i).x} ${pos(i).y}`).join(" ")}
                 fill="none"
                 stroke="rgba(179,136,255,0.4)"
                 strokeWidth={3}
@@ -132,15 +133,15 @@ export function RootJourney({
               />
             </svg>
 
-            {nodes.map((n, i) => (
+            {diveNodes.map((n, i) => (
               <div
                 key={i}
                 className="absolute w-[320px] -translate-x-1/2 -translate-y-1/2 text-center"
                 style={{ left: pos(i).x, top: pos(i).y }}
               >
-                {n.isRoot && <span className="siren mx-auto mb-6 block h-3 w-3 rounded-full bg-red-400/90" />}
+                {i === diveLast && <span className="siren mx-auto mb-6 block h-3 w-3 rounded-full bg-red-400/90" />}
                 <p className="mb-3 text-[11px] font-bold uppercase tracking-[0.2em] text-white/45">
-                  {n.depthLabel} · {i + 1}/{nodes.length}
+                  {n.depthLabel} · {i + 1}/{diveNodes.length}
                 </p>
                 <h2 className="font-display text-[30px] font-black leading-tight">{n.title}</h2>
                 <p className="mt-4 text-base leading-relaxed text-white/80">{n.body}</p>
@@ -150,7 +151,7 @@ export function RootJourney({
           </div>
 
           <div className="mascot-float pointer-events-none absolute bottom-10 left-0 right-0 text-center text-sm font-semibold text-white/55">
-            {level >= lastIndex ? "tap the root to reveal ↓" : "tap to travel deeper ↓"}
+            {level >= diveLast ? "tap to reveal the root ↓" : "tap to travel deeper ↓"}
           </div>
         </>
       )}
@@ -166,8 +167,13 @@ export function RootJourney({
           <p className="text-center text-5xl">🌱</p>
           <h2 className="mt-3 text-center font-display text-[26px] font-black leading-tight">We found the root!</h2>
           <p className="mx-auto mt-3 max-w-sm text-center text-[15px] leading-relaxed text-white/85">
-            {nodes[lastIndex].body}
+            {root.body}
           </p>
+          {root.evidence && (
+            <p className="mx-auto mt-2 max-w-sm text-center text-xs italic leading-relaxed text-white/45">
+              {root.evidence}
+            </p>
+          )}
 
           <div className="mx-auto mt-7 w-full max-w-sm">
             <p className="mb-3 text-xs font-bold uppercase tracking-wide text-[#B388FF]">💡 Do this today</p>

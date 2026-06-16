@@ -166,6 +166,16 @@ function mkResponses(score: number): QuestionInsight["responses"] {
   return [{ key: "A", text: "Not really", pct: 15 }, { key: "B", text: "Rarely", pct: 35 }, { key: "C", text: "No", pct: 50 }];
 }
 
+/**
+ * An INDIVIDUAL picked exactly one answer, so their breakdown is 100% on the
+ * option matching their score and 0% on the rest (a distribution across options
+ * only makes sense for team aggregates, not one person).
+ */
+function singleAnswer(score: number): QuestionInsight["responses"] {
+  const selected = score >= 7 ? "A" : score >= 4 ? "B" : "C";
+  return mkResponses(score).map((o) => ({ ...o, pct: o.key === selected ? 100 : 0 }));
+}
+
 /** Sample question bank, three per pillar (replaced by real questions later). */
 const SAMPLE_QUESTIONS: { id: string; text: string; pillarId: PillarId; base: number }[] = [
   { id: "q1",  pillarId: "meaningful_work", base: 9.0, text: "Do you get opportunities to tackle complex problems?" },
@@ -191,7 +201,7 @@ function questionInsights(seedKey: string): QuestionInsight[] {
       text: q.text,
       pillarId: q.pillarId,
       score,
-      responses: mkResponses(score),
+      responses: singleAnswer(score),
       recommendation: getSampleRecommendation(q.pillarId).text,
     };
   });
