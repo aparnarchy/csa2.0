@@ -10,7 +10,6 @@ export function GradientHeader({
   title,
   subtitle,
   avatar,
-  avatarClassName = "absolute -top-3 right-2 z-10",
   back,
   children,
   className = "",
@@ -19,7 +18,6 @@ export function GradientHeader({
   title: string;
   subtitle?: string;
   avatar?: ReactNode;
-  avatarClassName?: string;
   back?: { label: string; onClick: () => void };
   children?: ReactNode;
   className?: string;
@@ -29,22 +27,28 @@ export function GradientHeader({
       className={`relative rounded-card px-5 pb-6 pt-5 ${className}`}
       style={{ background: "linear-gradient(160deg, #EDE7FF 0%, #E1D7FF 100%)" }}
     >
-      {avatar && <div className={avatarClassName}>{avatar}</div>}
+      {/* Text on the left, mascot on the right — a flex row so the mascot can
+          never overlap or hide the title (incl. long pillar names). */}
+      <div className="flex items-start gap-3">
+        <div className="min-w-0 flex-1">
+          {back && (
+            <button
+              type="button"
+              onClick={back.onClick}
+              className="mb-3 inline-flex items-center gap-1.5 rounded-[10px] bg-white/70 px-3 py-1.5 text-xs font-bold text-brand shadow-sm active:scale-95"
+            >
+              ← {back.label}
+            </button>
+          )}
 
-      {back && (
-        <button
-          type="button"
-          onClick={back.onClick}
-          className="mb-3 inline-flex items-center gap-1.5 rounded-[10px] bg-white/70 px-3 py-1.5 text-xs font-bold text-brand shadow-sm active:scale-95"
-        >
-          ← {back.label}
-        </button>
-      )}
+          {eyebrow && <p className="mb-1.5 text-xs text-ink-3">{eyebrow}</p>}
+          <h1 className="font-display text-[28px] font-black leading-tight text-brand">{title}</h1>
+          {subtitle && <p className="mt-1.5 text-[11px] text-ink-3">{subtitle}</p>}
+          {children}
+        </div>
 
-      {eyebrow && <p className="mb-1.5 text-xs text-ink-3">{eyebrow}</p>}
-      <h1 className="font-display text-[28px] font-black leading-tight text-brand">{title}</h1>
-      {subtitle && <p className="mt-1.5 text-[11px] text-ink-3">{subtitle}</p>}
-      {children}
+        {avatar && <div className="flex-shrink-0">{avatar}</div>}
+      </div>
     </div>
   );
 }

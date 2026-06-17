@@ -67,13 +67,12 @@ export function AnalysisView({
       {/* Title card — kept: greeting + "Dashboard" + insight + mascot (sub-screen sizing). */}
       <GradientHeader
         eyebrow="My Dashboard"
-        title={`Hey ${firstName} 👋`}
-        avatar={<Mascot state={mascotForScore(data.overall, data.enoughData)} size={168} />}
-        avatarClassName="absolute right-1 top-9 z-10"
+        title={`Hey ${firstName}`}
+        avatar={<Mascot state={mascotForScore(data.overall, data.enoughData)} size={132} />}
         className="flex min-h-[212px] flex-col justify-center"
       >
         {data.enoughData && data.overall !== null && (
-          <p className="mt-3 max-w-[58%] font-display text-lg font-black leading-tight text-brand">
+          <p className="mt-3 font-display text-lg font-black leading-tight text-brand">
             {insight.headline}.
           </p>
         )}

@@ -35,7 +35,9 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
-  themeColor: "#7C6FFF",
+  // Match the app's lavender background so the mobile browser's top bar blends
+  // in (a saturated purple here showed as a "cut-off" strip on light screens).
+  themeColor: "#EAE8FF",
 };
 
 export default function RootLayout({
