@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { Mascot } from "@/components/kit";
-import { PILLARS } from "@/lib/pillars";
 import { COPY } from "@/lib/copy";
 import { submitFollowUp, type OpenRecommendation } from "@/lib/data";
 import type { SessionUser } from "@/lib/types";
@@ -29,8 +28,6 @@ export function ReturnCheckIn({
   const [note, setNote] = useState("");
   const [celebrate, setCelebrate] = useState(false);
   const [saving, setSaving] = useState(false);
-
-  const meta = PILLARS[rec.pillarId];
 
   async function saveActed() {
     setSaving(true);
@@ -78,83 +75,80 @@ export function ReturnCheckIn({
   // ── The follow-up question ────────────────────────────────────────────────
   return (
     <div className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col bg-lav-bg px-5 pb-8 pt-6">
-      <div className="flex items-start justify-between">
-        <div className="pt-1">
-          <p className="text-[11px] font-bold uppercase tracking-wide text-brand">{t.eyebrow}</p>
-          <h1 className="mt-1 font-display text-[26px] font-black leading-tight text-ink">
-            {t.title}
-          </h1>
+      <div className="flex flex-1 flex-col justify-center">
+        <div className="flex items-start justify-between">
+          <div className="pt-1">
+            <p className="text-[13px] font-bold uppercase tracking-wide text-brand">{t.eyebrow}</p>
+            <h1 className="mt-1 font-display text-[31px] font-black leading-tight text-ink">
+              {t.title}
+            </h1>
+          </div>
+          <Mascot state="sad" size={115} float={false} />
         </div>
-        <Mascot state="sad" size={96} />
+
+        {/* recall the recommendation */}
+        <div className="mt-6 rounded-card bg-lav-soft p-5">
+          <span className="text-[13px] font-semibold text-ink-3">{rec.weekLabel}</span>
+          <p className="mt-3 text-sm leading-relaxed text-ink-3">{t.recallIntro}</p>
+          <p className="mt-2 text-base font-semibold italic leading-relaxed text-ink">
+            &ldquo;{rec.recommendation}&rdquo;
+          </p>
+        </div>
+
+        {/* the prompt */}
+        <p className="mt-7 font-display text-xl font-black text-ink">{t.prompt}</p>
+
+        <div className="mt-4 flex gap-3">
+          {[
+            { key: "yes", label: t.yesButton },
+            { key: "not_yet", label: t.notYetButton },
+          ].map((o) => {
+            const sel = answer === o.key;
+            return (
+              <button
+                key={o.key}
+                type="button"
+                onClick={() => setAnswer(o.key as "yes" | "not_yet")}
+                className={`flex-1 rounded-2xl border py-5 text-center text-base font-bold transition active:scale-[0.98] ${
+                  sel
+                    ? "border-brand bg-brand text-white shadow-card"
+                    : "border-transparent bg-white text-ink-2 shadow-card"
+                }`}
+              >
+                {o.label}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Yes → journal */}
+        {answer === "yes" && (
+          <div className="screen-enter mt-6">
+            <label className="text-base font-semibold text-ink-2">{t.journalLabel}</label>
+            <textarea
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              placeholder={t.journalPlaceholder}
+              className="mt-2 h-28 w-full resize-none rounded-2xl border border-gray-300 bg-white p-3.5 text-base text-ink placeholder-ink-4 focus:outline-none focus:ring-2 focus:ring-brand"
+            />
+          </div>
+        )}
+
+        {/* Not yet → gentle encouragement */}
+        {answer === "not_yet" && (
+          <div className="screen-enter mt-6 flex items-start gap-3 rounded-card bg-lav-soft p-4">
+            <span className="text-2xl leading-tight" aria-hidden>🍃</span>
+            <p className="text-base leading-relaxed text-brand">{t.encouragement}</p>
+          </div>
+        )}
       </div>
-
-      {/* recall the recommendation */}
-      <div className="mt-6 rounded-card bg-lav-soft p-4">
-        <div className="flex items-center gap-2">
-          <span className="rounded-full bg-white px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-brand">
-            {meta.label}
-          </span>
-          <span className="text-[11px] text-ink-3">{rec.weekLabel}</span>
-        </div>
-        <p className="mt-3 text-xs leading-relaxed text-ink-3">{t.recallIntro}</p>
-        <p className="mt-2 text-sm font-semibold italic leading-relaxed text-ink">
-          &ldquo;{rec.recommendation}&rdquo;
-        </p>
-      </div>
-
-      {/* the prompt */}
-      <p className="mt-7 font-display text-lg font-black text-ink">{t.prompt}</p>
-
-      <div className="mt-4 flex gap-3">
-        {[
-          { key: "yes", label: t.yesButton },
-          { key: "not_yet", label: t.notYetButton },
-        ].map((o) => {
-          const sel = answer === o.key;
-          return (
-            <button
-              key={o.key}
-              type="button"
-              onClick={() => setAnswer(o.key as "yes" | "not_yet")}
-              className={`flex-1 rounded-2xl border py-4 text-center text-sm font-bold transition active:scale-[0.98] ${
-                sel
-                  ? "border-brand bg-brand text-white shadow-card"
-                  : "border-transparent bg-white text-ink-2 shadow-card"
-              }`}
-            >
-              {o.label}
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Yes → journal */}
-      {answer === "yes" && (
-        <div className="screen-enter mt-6">
-          <label className="text-sm font-semibold text-ink-2">{t.journalLabel}</label>
-          <textarea
-            value={note}
-            onChange={(e) => setNote(e.target.value)}
-            placeholder={t.journalPlaceholder}
-            className="mt-2 h-24 w-full resize-none rounded-2xl border border-gray-300 bg-white p-3.5 text-sm text-ink placeholder-ink-4 focus:outline-none focus:ring-2 focus:ring-brand"
-          />
-        </div>
-      )}
-
-      {/* Not yet → gentle encouragement */}
-      {answer === "not_yet" && (
-        <div className="screen-enter mt-6 flex items-start gap-3 rounded-card bg-lav-soft p-4">
-          <span className="text-xl leading-tight" aria-hidden>🍃</span>
-          <p className="text-sm leading-relaxed text-brand">{t.encouragement}</p>
-        </div>
-      )}
 
       {/* primary action */}
       <button
         type="button"
         onClick={answer === "yes" ? saveActed : saveNotActed}
         disabled={!answer || saving}
-        className="mt-auto w-full rounded-2xl bg-brand py-3.5 font-display text-sm font-black text-white transition active:scale-[0.98] disabled:opacity-40"
+        className="w-full rounded-2xl bg-brand py-4 font-display text-base font-black text-white transition active:scale-[0.98] disabled:opacity-40"
       >
         {answer === "not_yet" ? t.notYetSaveButton : t.saveButton}
       </button>

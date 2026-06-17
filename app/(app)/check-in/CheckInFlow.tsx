@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Mascot, RecommendationCard } from "@/components/kit";
-import { PILLARS } from "@/lib/pillars";
 import { COPY, fill } from "@/lib/copy";
 import { getSampleRecommendation, submitCheckIn, type CheckInQuestion } from "@/lib/data";
 import type { SessionUser } from "@/lib/types";
@@ -54,7 +53,6 @@ export function CheckInFlow({
   }
 
   const q = questions[index];
-  const meta = PILLARS[q.pillarId];
   const chosen = q.options.find((o) => o.key === selected) ?? null;
   const lowScore = chosen ? chosen.score < 7 : false;
 
@@ -88,12 +86,11 @@ export function CheckInFlow({
       {/* greeting + question, vertically centred */}
       <div key={index} className="screen-enter flex flex-1 flex-col justify-center">
         <div className="flex flex-col items-center text-center">
-          <Mascot state="welcome" size={180} float={false} />
+          <Mascot state="welcome" size={198} float={false} />
           <p className="mt-2 font-display text-base font-black text-brand">
             {fill(t.greeting, { name: first })}
           </p>
           <h1 className="mt-2 font-display text-[24px] font-bold leading-snug text-brand">{q.text}</h1>
-          <p className="mt-2.5 text-[10px] font-bold uppercase tracking-wide text-ink-4">{meta.label}</p>
         </div>
 
         <div className="mt-8 space-y-3">

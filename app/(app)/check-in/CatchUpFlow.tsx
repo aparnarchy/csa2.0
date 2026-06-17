@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { Mascot, RecommendationCard } from "@/components/kit";
-import { PILLARS } from "@/lib/pillars";
 import { COPY } from "@/lib/copy";
 import { getSampleRecommendation, skipCheckIn, submitCheckIn, type CheckInQuestion } from "@/lib/data";
 import type { SessionUser } from "@/lib/types";
@@ -70,7 +69,6 @@ export function CatchUpFlow({
             {t.chipPrefix} · {q.weekLabel ?? t.defaultWeekLabel}
           </span>
           <h1 className="mt-3 font-display text-[24px] font-bold leading-snug text-brand">{q.text}</h1>
-          <p className="mt-2.5 text-[10px] font-bold uppercase tracking-wide text-ink-4">{PILLARS[q.pillarId].label}</p>
         </div>
 
         <div className="mt-8 space-y-3">
