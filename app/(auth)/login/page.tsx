@@ -2,8 +2,11 @@
 
 import { useState } from "react";
 import { authClient } from "@/lib/auth-client";
+import { COPY } from "@/lib/copy";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+
+const t = COPY.login;
 
 export default function LoginPage() {
   const router = useRouter();
@@ -19,7 +22,7 @@ export default function LoginPage() {
 
     const { error } = await authClient.signIn.email({ email, password });
     if (error) {
-      setError("Invalid email or password.");
+      setError(t.errorMessage);
       setLoading(false);
       return;
     }
@@ -30,12 +33,12 @@ export default function LoginPage() {
     <div className="min-h-screen bg-gray-50 flex flex-col justify-center px-6 py-12">
       <div className="mx-auto w-full max-w-sm">
         <h1 className="text-3xl font-bold text-center text-gray-900 mb-8">
-          Sign in to CSA
+          {t.pageTitle}
         </h1>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-base font-medium text-gray-700 mb-1">
-              Email
+              {t.emailLabel}
             </label>
             <input
               type="email"
@@ -43,12 +46,12 @@ export default function LoginPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="w-full border border-gray-300 rounded-xl px-4 py-3 text-base text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-violet-500"
-              placeholder="you@example.com"
+              placeholder={t.emailPlaceholder}
             />
           </div>
           <div>
             <label className="block text-base font-medium text-gray-700 mb-1">
-              Password
+              {t.passwordLabel}
             </label>
             <input
               type="password"
@@ -56,7 +59,7 @@ export default function LoginPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="w-full border border-gray-300 rounded-xl px-4 py-3 text-base text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-violet-500"
-              placeholder="••••••••"
+              placeholder={t.passwordPlaceholder}
             />
           </div>
           {error && <p className="text-base text-red-600">{error}</p>}
@@ -65,17 +68,17 @@ export default function LoginPage() {
             disabled={loading}
             className="w-full bg-violet-600 text-white rounded-xl py-3 text-base font-semibold disabled:opacity-50"
           >
-            {loading ? "Signing in…" : "Sign in"}
+            {loading ? t.signInButtonLoading : t.signInButton}
           </button>
         </form>
         <div className="mt-6 text-center space-y-2">
           <Link href="/reset-password" className="block text-base text-violet-600">
-            Forgot password?
+            {t.forgotPasswordLink}
           </Link>
           <p className="text-base text-gray-500">
-            No account?{" "}
+            {t.noAccountText}{" "}
             <Link href="/signup" className="text-violet-600 font-medium">
-              Sign up
+              {t.signUpLink}
             </Link>
           </p>
         </div>

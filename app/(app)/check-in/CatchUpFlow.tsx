@@ -3,8 +3,11 @@
 import { useState } from "react";
 import { RecommendationCard } from "@/components/kit";
 import { PILLARS } from "@/lib/pillars";
+import { COPY } from "@/lib/copy";
 import { getSampleRecommendation, skipCheckIn, submitCheckIn, type CheckInQuestion } from "@/lib/data";
 import type { SessionUser } from "@/lib/types";
+
+const t = COPY.catchup;
 
 /**
  * Catch-up on questions missed in previous weeks (oldest first). Save & next
@@ -62,7 +65,7 @@ export function CatchUpFlow({
 
       <div key={index} className="screen-enter mt-8 flex-1">
         <span className="inline-block rounded-full bg-lav-soft px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-brand">
-          Catch-up · {q.weekLabel ?? "earlier"}
+          {t.chipPrefix} · {q.weekLabel ?? t.defaultWeekLabel}
         </span>
         <p className="mt-4 text-[11px] font-bold uppercase tracking-wide text-brand">{PILLARS[q.pillarId].label}</p>
         <h1 className="mt-2 font-display text-[26px] font-black leading-tight text-ink">{q.text}</h1>
@@ -100,14 +103,14 @@ export function CatchUpFlow({
         disabled={!chosen}
         className="mt-6 w-full rounded-2xl bg-brand py-3.5 font-display text-sm font-black text-white transition active:scale-[0.98] disabled:opacity-40"
       >
-        Save &amp; next
+        {t.saveButton}
       </button>
       <button
         type="button"
         onClick={skip}
         className="mt-3 w-full py-1 text-center text-sm font-semibold text-ink-3 active:scale-95"
       >
-        Skip this for now
+        {t.skipButton}
       </button>
     </div>
   );

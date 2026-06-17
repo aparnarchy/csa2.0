@@ -4,8 +4,11 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Mascot, RecommendationCard } from "@/components/kit";
 import { PILLARS } from "@/lib/pillars";
+import { COPY, fill } from "@/lib/copy";
 import { getSampleRecommendation, submitCheckIn, type CheckInQuestion } from "@/lib/data";
 import type { SessionUser } from "@/lib/types";
+
+const t = COPY.checkin;
 
 /**
  * The weekly check-in: one question at a time, A/B/C tappable cards (score
@@ -33,12 +36,10 @@ export function CheckInFlow({
         <Mascot state="happy" size={150} />
         <div>
           <h1 className="font-display text-2xl font-black text-brand">
-            {total === 0 ? "You're all caught up!" : `Nice work, ${first}!`}
+            {total === 0 ? t.doneAllCaughtUpTitle : fill(t.doneNiceWorkTitle, { name: first })}
           </h1>
           <p className="mt-2 text-sm text-ink-2">
-            {total === 0
-              ? "No check-ins waiting right now — we'll nudge you when the next one's ready."
-              : "That's logged. Every answer sharpens your insights."}
+            {total === 0 ? t.doneAllCaughtUpBody : t.doneLoggedBody}
           </p>
         </div>
         <button
@@ -46,7 +47,7 @@ export function CheckInFlow({
           onClick={() => router.push("/dashboard/employee")}
           className="w-full rounded-2xl bg-brand py-3.5 font-display text-sm font-black text-white active:scale-[0.98]"
         >
-          See my dashboard →
+          {t.seeDashboardButton}
         </button>
       </div>
     );
@@ -128,7 +129,7 @@ export function CheckInFlow({
         disabled={!chosen}
         className="mt-6 w-full rounded-2xl bg-brand py-3.5 font-display text-sm font-black text-white transition active:scale-[0.98] disabled:opacity-40"
       >
-        {index + 1 < total ? "Continue" : "Finish"}
+        {index + 1 < total ? t.continueButton : t.finishButton}
       </button>
     </div>
   );

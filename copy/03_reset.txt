@@ -1,0 +1,31 @@
+# ============================================================
+#  SCREEN 3 — RESET PASSWORD
+#  Edit ONLY the text under each [Label]. Keep the [Labels].
+#  {email} is filled in with the address they typed.
+# ============================================================
+
+# Section 1 — title + subtitle
+[Page title]
+Reset password
+[Subtitle]
+Enter your email and we'll send you a reset link.
+
+# Section 2 — email field
+[Email placeholder]
+you@example.com
+
+# Section 3 — the main button
+[Send button]
+Send reset link
+[Send button loading]
+Sending…
+
+# Section 4 — link back
+[Back to sign in link]
+Back to sign in
+
+# Section 5 — the confirmation shown after sending
+[Sent title]
+Check your email
+[Sent body]
+If an account exists for {email}, we sent a reset link. It expires in 1 hour.

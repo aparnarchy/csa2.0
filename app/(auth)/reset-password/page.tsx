@@ -2,7 +2,10 @@
 
 import { useState } from "react";
 import { authClient } from "@/lib/auth-client";
+import { COPY, fill } from "@/lib/copy";
 import Link from "next/link";
+
+const t = COPY.reset;
 
 export default function ResetPasswordPage() {
   const [email, setEmail] = useState("");
@@ -24,13 +27,10 @@ export default function ResetPasswordPage() {
     return (
       <div className="min-h-screen bg-gray-50 flex flex-col justify-center px-6 py-12">
         <div className="mx-auto w-full max-w-sm text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-3">Check your email</h1>
-          <p className="text-base text-gray-500">
-            If an account exists for <strong>{email}</strong>, we sent a reset link.
-            It expires in 1 hour.
-          </p>
+          <h1 className="text-2xl font-bold text-gray-900 mb-3">{t.sentTitle}</h1>
+          <p className="text-base text-gray-500">{fill(t.sentBody, { email })}</p>
           <Link href="/login" className="mt-6 block text-base text-violet-600">
-            Back to sign in
+            {t.backToSignInLink}
           </Link>
         </div>
       </div>
@@ -41,10 +41,10 @@ export default function ResetPasswordPage() {
     <div className="min-h-screen bg-gray-50 flex flex-col justify-center px-6 py-12">
       <div className="mx-auto w-full max-w-sm">
         <h1 className="text-3xl font-bold text-center text-gray-900 mb-2">
-          Reset password
+          {t.pageTitle}
         </h1>
         <p className="text-center text-base text-gray-500 mb-8">
-          Enter your email and we&apos;ll send you a reset link.
+          {t.subtitle}
         </p>
         <form onSubmit={handleSubmit} className="space-y-4">
           <input
@@ -53,18 +53,18 @@ export default function ResetPasswordPage() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             className="w-full border border-gray-300 rounded-xl px-4 py-3 text-base text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-violet-500"
-            placeholder="you@example.com"
+            placeholder={t.emailPlaceholder}
           />
           <button
             type="submit"
             disabled={loading}
             className="w-full bg-violet-600 text-white rounded-xl py-3 text-base font-semibold disabled:opacity-50"
           >
-            {loading ? "Sending…" : "Send reset link"}
+            {loading ? t.sendButtonLoading : t.sendButton}
           </button>
         </form>
         <Link href="/login" className="mt-6 block text-center text-base text-violet-600">
-          Back to sign in
+          {t.backToSignInLink}
         </Link>
       </div>
     </div>

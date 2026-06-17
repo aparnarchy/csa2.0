@@ -1,0 +1,58 @@
+# ============================================================
+#  SCREEN 4 — FIRST-TIME SETUP (onboarding)
+#  Edit ONLY the text under each [Label]. Keep the [Labels].
+# ============================================================
+
+# Section 1 — title + subtitle
+[Title]
+Let's set you up
+[Subtitle]
+A few quick details so your insights feel like yours.
+
+# Section 2 — name field
+[Name label]
+Your name
+[Name placeholder]
+Aparna
+
+# Section 3 — company field
+[Company label]
+Current company
+[Company placeholder]
+Kissflow
+
+# Section 4 — role field
+[Role label]
+Current role
+[Role placeholder]
+Product Manager
+
+# Section 5 — experience field
+[Experience label]
+Years of experience
+[Experience placeholder]
+5
+
+# Section 6 — optional manager box
+[Manager section title]
+Add a manager (optional)
+[Manager name placeholder]
+Manager's name
+[Manager email placeholder]
+Manager's email
+
+# Section 7 — optional mentor box
+[Mentor section title]
+Add a mentor (optional)
+[Mentor name placeholder]
+Mentor's name
+[Mentor email placeholder]
+Mentor's email
+
+# Section 8 — error + main button
+[Error message]
+Something went wrong. Please try again.
+[Submit button]
+Start using CSA →
+[Submit button loading]
+Saving…

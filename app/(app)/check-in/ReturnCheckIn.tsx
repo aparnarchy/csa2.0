@@ -3,8 +3,11 @@
 import { useState } from "react";
 import { Mascot } from "@/components/kit";
 import { PILLARS } from "@/lib/pillars";
+import { COPY } from "@/lib/copy";
 import { submitFollowUp, type OpenRecommendation } from "@/lib/data";
 import type { SessionUser } from "@/lib/types";
+
+const t = COPY.followup;
 
 /**
  * Return check-in (Phase 2.3). Shown only when an unacted low-score
@@ -58,17 +61,15 @@ export function ReturnCheckIn({
       <div className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col items-center justify-center gap-5 bg-lav-bg px-8 text-center">
         <Mascot state="happy" size={150} />
         <div>
-          <h1 className="font-display text-2xl font-black text-brand">Love that! 🎉</h1>
-          <p className="mt-2 text-sm text-ink-2">
-            Acting on small things is exactly how your score moves. That&apos;s saved to your journal.
-          </p>
+          <h1 className="font-display text-2xl font-black text-brand">{t.celebrateTitle}</h1>
+          <p className="mt-2 text-sm text-ink-2">{t.celebrateBody}</p>
         </div>
         <button
           type="button"
           onClick={onDone}
           className="w-full rounded-2xl bg-brand py-3.5 font-display text-sm font-black text-white active:scale-[0.98]"
         >
-          Continue →
+          {t.continueButton}
         </button>
       </div>
     );
@@ -79,9 +80,9 @@ export function ReturnCheckIn({
     <div className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col bg-lav-bg px-5 pb-8 pt-6">
       <div className="flex items-start justify-between">
         <div className="pt-1">
-          <p className="text-[11px] font-bold uppercase tracking-wide text-brand">Welcome back</p>
+          <p className="text-[11px] font-bold uppercase tracking-wide text-brand">{t.eyebrow}</p>
           <h1 className="mt-1 font-display text-[26px] font-black leading-tight text-ink">
-            Following up on your last nudge
+            {t.title}
           </h1>
         </div>
         <Mascot state="sad" size={96} />
@@ -95,23 +96,19 @@ export function ReturnCheckIn({
           </span>
           <span className="text-[11px] text-ink-3">{rec.weekLabel}</span>
         </div>
-        <p className="mt-3 text-xs leading-relaxed text-ink-3">
-          Your score here was a little lower than your recent average, so we suggested:
-        </p>
+        <p className="mt-3 text-xs leading-relaxed text-ink-3">{t.recallIntro}</p>
         <p className="mt-2 text-sm font-semibold italic leading-relaxed text-ink">
           &ldquo;{rec.recommendation}&rdquo;
         </p>
       </div>
 
       {/* the prompt */}
-      <p className="mt-7 font-display text-lg font-black text-ink">
-        Were you able to act on it?
-      </p>
+      <p className="mt-7 font-display text-lg font-black text-ink">{t.prompt}</p>
 
       <div className="mt-4 flex gap-3">
         {[
-          { key: "yes", label: "Yes ✓" },
-          { key: "not_yet", label: "Not yet" },
+          { key: "yes", label: t.yesButton },
+          { key: "not_yet", label: t.notYetButton },
         ].map((o) => {
           const sel = answer === o.key;
           return (
@@ -134,11 +131,11 @@ export function ReturnCheckIn({
       {/* Yes → journal */}
       {answer === "yes" && (
         <div className="screen-enter mt-6">
-          <label className="text-sm font-semibold text-ink-2">What did you do?</label>
+          <label className="text-sm font-semibold text-ink-2">{t.journalLabel}</label>
           <textarea
             value={note}
             onChange={(e) => setNote(e.target.value)}
-            placeholder="e.g. Asked my manager for a stretch project in our 1:1…"
+            placeholder={t.journalPlaceholder}
             className="mt-2 h-24 w-full resize-none rounded-2xl border border-gray-300 bg-white p-3.5 text-sm text-ink placeholder-ink-4 focus:outline-none focus:ring-2 focus:ring-brand"
           />
         </div>
@@ -148,9 +145,7 @@ export function ReturnCheckIn({
       {answer === "not_yet" && (
         <div className="screen-enter mt-6 flex items-start gap-3 rounded-card bg-lav-soft p-4">
           <span className="text-xl leading-tight" aria-hidden>🍃</span>
-          <p className="text-sm leading-relaxed text-brand">
-            No worries — life gets busy. Keep it in mind this week; even one small step counts.
-          </p>
+          <p className="text-sm leading-relaxed text-brand">{t.encouragement}</p>
         </div>
       )}
 
@@ -161,7 +156,7 @@ export function ReturnCheckIn({
         disabled={!answer || saving}
         className="mt-auto w-full rounded-2xl bg-brand py-3.5 font-display text-sm font-black text-white transition active:scale-[0.98] disabled:opacity-40"
       >
-        {answer === "not_yet" ? "Okay, got it" : "Save"}
+        {answer === "not_yet" ? t.notYetSaveButton : t.saveButton}
       </button>
     </div>
   );

@@ -3,6 +3,9 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Mascot } from "@/components/kit";
+import { COPY } from "@/lib/copy";
+
+const t = COPY.onboarding;
 
 const INPUT =
   "w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-base text-ink placeholder-ink-4 focus:outline-none focus:ring-2 focus:ring-brand";
@@ -36,7 +39,7 @@ export function OnboardingForm({ defaultName }: { defaultName: string }) {
       body: JSON.stringify(form),
     });
     if (!res.ok) {
-      setError("Something went wrong. Please try again.");
+      setError(t.errorMessage);
       setLoading(false);
       return;
     }
@@ -48,22 +51,22 @@ export function OnboardingForm({ defaultName }: { defaultName: string }) {
       <div className="flex flex-col items-center text-center">
         <Mascot state="welcome" size={132} sparkle={false} />
         <h1 className="mt-2 font-display text-[26px] font-black leading-tight text-brand">
-          Let&apos;s set you up
+          {t.title}
         </h1>
-        <p className="mt-1.5 text-sm text-ink-2">A few quick details so your insights feel like yours.</p>
+        <p className="mt-1.5 text-sm text-ink-2">{t.subtitle}</p>
       </div>
 
       <form onSubmit={submit} className="mt-7 space-y-5">
-        <Field label="Your name">
-          <input className={INPUT} value={form.name} onChange={set("name")} required placeholder="Aparna" />
+        <Field label={t.nameLabel}>
+          <input className={INPUT} value={form.name} onChange={set("name")} required placeholder={t.namePlaceholder} />
         </Field>
-        <Field label="Current company">
-          <input className={INPUT} value={form.currentCompany} onChange={set("currentCompany")} placeholder="Kissflow" />
+        <Field label={t.companyLabel}>
+          <input className={INPUT} value={form.currentCompany} onChange={set("currentCompany")} placeholder={t.companyPlaceholder} />
         </Field>
-        <Field label="Current role">
-          <input className={INPUT} value={form.currentRole} onChange={set("currentRole")} placeholder="Product Manager" />
+        <Field label={t.roleLabel}>
+          <input className={INPUT} value={form.currentRole} onChange={set("currentRole")} placeholder={t.rolePlaceholder} />
         </Field>
-        <Field label="Years of experience">
+        <Field label={t.experienceLabel}>
           <input
             className={INPUT}
             value={form.yearsOfExperience}
@@ -71,23 +74,23 @@ export function OnboardingForm({ defaultName }: { defaultName: string }) {
             type="number"
             min={0}
             inputMode="numeric"
-            placeholder="5"
+            placeholder={t.experiencePlaceholder}
           />
         </Field>
 
         <div className="rounded-2xl bg-lav-soft p-4">
-          <p className="mb-3 text-[11px] font-bold uppercase tracking-wide text-brand">Add a manager (optional)</p>
+          <p className="mb-3 text-[11px] font-bold uppercase tracking-wide text-brand">{t.managerSectionTitle}</p>
           <div className="space-y-3">
-            <input className={INPUT} value={form.managerName} onChange={set("managerName")} placeholder="Manager's name" />
-            <input className={INPUT} value={form.managerEmail} onChange={set("managerEmail")} type="email" placeholder="Manager's email" />
+            <input className={INPUT} value={form.managerName} onChange={set("managerName")} placeholder={t.managerNamePlaceholder} />
+            <input className={INPUT} value={form.managerEmail} onChange={set("managerEmail")} type="email" placeholder={t.managerEmailPlaceholder} />
           </div>
         </div>
 
         <div className="rounded-2xl bg-lav-soft p-4">
-          <p className="mb-3 text-[11px] font-bold uppercase tracking-wide text-brand">Add a mentor (optional)</p>
+          <p className="mb-3 text-[11px] font-bold uppercase tracking-wide text-brand">{t.mentorSectionTitle}</p>
           <div className="space-y-3">
-            <input className={INPUT} value={form.mentorName} onChange={set("mentorName")} placeholder="Mentor's name" />
-            <input className={INPUT} value={form.mentorEmail} onChange={set("mentorEmail")} type="email" placeholder="Mentor's email" />
+            <input className={INPUT} value={form.mentorName} onChange={set("mentorName")} placeholder={t.mentorNamePlaceholder} />
+            <input className={INPUT} value={form.mentorEmail} onChange={set("mentorEmail")} type="email" placeholder={t.mentorEmailPlaceholder} />
           </div>
         </div>
 
@@ -98,7 +101,7 @@ export function OnboardingForm({ defaultName }: { defaultName: string }) {
           disabled={loading}
           className="w-full rounded-2xl bg-brand py-3.5 font-display text-sm font-black text-white transition active:scale-[0.98] disabled:opacity-50"
         >
-          {loading ? "Saving…" : "Start using CSA →"}
+          {loading ? t.submitButtonLoading : t.submitButton}
         </button>
       </form>
     </div>
