@@ -66,8 +66,10 @@ export const COPY = {
     "doneNiceWorkTitle": "Nice work, {name}!",
     "doneLoggedBody": "That's logged. Every answer sharpens your insights.",
     "seeDashboardButton": "See my dashboard →",
+    "greeting": "Hey {name}!",
+    "backLink": "← Back",
     "continueButton": "Continue",
-    "finishButton": "Finish"
+    "finishButton": "Submit →"
   },
   "catchup": {
     "chipPrefix": "Catch-up",

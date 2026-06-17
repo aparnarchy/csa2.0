@@ -68,34 +68,35 @@ export function CheckInFlow({
   }
 
   return (
-    <div className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col bg-lav-bg px-5 pb-8 pt-5">
-      {/* top bar: close + progress */}
-      <div className="flex items-center gap-3">
+    <div className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col bg-lav-bg px-6 pb-8 pt-5">
+      {/* top bar: back + step */}
+      <div className="flex items-center justify-between">
         <button
           type="button"
           onClick={() => router.push("/dashboard/employee")}
-          className="flex h-8 w-8 items-center justify-center rounded-full bg-white text-ink-3 shadow-card active:scale-90"
-          aria-label="Close"
+          className="text-sm font-semibold text-ink-3 active:scale-95"
         >
-          ✕
+          {t.backLink}
         </button>
-        <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-white">
-          <div
-            className="h-full rounded-full bg-brand transition-[width] duration-300"
-            style={{ width: `${((index + (chosen ? 1 : 0)) / total) * 100}%` }}
-          />
-        </div>
-        <span className="text-xs font-bold text-ink-3">
-          {index + 1}/{total}
-        </span>
+        {total > 1 && (
+          <span className="text-xs font-bold text-ink-3">
+            {index + 1} of {total}
+          </span>
+        )}
       </div>
 
-      {/* question */}
-      <div key={index} className="screen-enter mt-10 flex-1">
-        <p className="text-[11px] font-bold uppercase tracking-wide text-brand">{meta.label}</p>
-        <h1 className="mt-2 font-display text-[26px] font-black leading-tight text-ink">{q.text}</h1>
+      {/* greeting + question, vertically centred */}
+      <div key={index} className="screen-enter flex flex-1 flex-col justify-center">
+        <div className="flex flex-col items-center text-center">
+          <Mascot state="welcome" size={128} />
+          <p className="mt-2 font-display text-base font-black text-brand">
+            {fill(t.greeting, { name: first })}
+          </p>
+          <h1 className="mt-2 font-display text-[24px] font-black leading-snug text-ink">{q.text}</h1>
+          <p className="mt-2.5 text-[10px] font-bold uppercase tracking-wide text-ink-4">{meta.label}</p>
+        </div>
 
-        <div className="mt-7 space-y-3">
+        <div className="mt-8 space-y-3">
           {q.options.map((o) => {
             const isSel = o.key === selected;
             return (
@@ -103,13 +104,20 @@ export function CheckInFlow({
                 key={o.key}
                 type="button"
                 onClick={() => setSelected(o.key)}
-                className={`w-full rounded-2xl border p-4 text-left text-sm font-semibold transition active:scale-[0.99] ${
+                className={`flex w-full items-center gap-3.5 rounded-2xl border p-3.5 text-left text-sm font-semibold transition active:scale-[0.99] ${
                   isSel
                     ? "border-brand bg-lav-soft text-brand shadow-card"
                     : "border-transparent bg-white text-ink shadow-card"
                 }`}
               >
-                {o.text}
+                <span
+                  className={`flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full text-sm font-black ${
+                    isSel ? "bg-brand text-white" : "bg-lav-soft text-brand"
+                  }`}
+                >
+                  {o.key}
+                </span>
+                <span className="leading-snug">{o.text}</span>
               </button>
             );
           })}
@@ -122,7 +130,7 @@ export function CheckInFlow({
         )}
       </div>
 
-      {/* continue */}
+      {/* submit */}
       <button
         type="button"
         onClick={next}

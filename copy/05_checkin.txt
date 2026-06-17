@@ -20,8 +20,14 @@ That's logged. Every answer sharpens your insights.
 [See dashboard button]
 See my dashboard →
 
-# Section 4 — buttons under each question
+# Section 4 — the greeting above each question ({name} = first name)
+[Greeting]
+Hey {name}!
+[Back link]
+← Back
+
+# Section 5 — buttons under each question
 [Continue button]
 Continue
 [Finish button]
-Finish
+Submit →

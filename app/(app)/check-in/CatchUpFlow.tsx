@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { RecommendationCard } from "@/components/kit";
+import { Mascot, RecommendationCard } from "@/components/kit";
 import { PILLARS } from "@/lib/pillars";
 import { COPY } from "@/lib/copy";
 import { getSampleRecommendation, skipCheckIn, submitCheckIn, type CheckInQuestion } from "@/lib/data";
@@ -63,14 +63,17 @@ export function CatchUpFlow({
         </span>
       </div>
 
-      <div key={index} className="screen-enter mt-8 flex-1">
-        <span className="inline-block rounded-full bg-lav-soft px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-brand">
-          {t.chipPrefix} · {q.weekLabel ?? t.defaultWeekLabel}
-        </span>
-        <p className="mt-4 text-[11px] font-bold uppercase tracking-wide text-brand">{PILLARS[q.pillarId].label}</p>
-        <h1 className="mt-2 font-display text-[26px] font-black leading-tight text-ink">{q.text}</h1>
+      <div key={index} className="screen-enter flex flex-1 flex-col justify-center">
+        <div className="flex flex-col items-center text-center">
+          <Mascot state="welcome" size={104} />
+          <span className="mt-3 inline-block rounded-full bg-lav-soft px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-brand">
+            {t.chipPrefix} · {q.weekLabel ?? t.defaultWeekLabel}
+          </span>
+          <h1 className="mt-3 font-display text-[24px] font-black leading-snug text-ink">{q.text}</h1>
+          <p className="mt-2.5 text-[10px] font-bold uppercase tracking-wide text-ink-4">{PILLARS[q.pillarId].label}</p>
+        </div>
 
-        <div className="mt-7 space-y-3">
+        <div className="mt-8 space-y-3">
           {q.options.map((o) => {
             const isSel = o.key === selected;
             return (
@@ -78,13 +81,20 @@ export function CatchUpFlow({
                 key={o.key}
                 type="button"
                 onClick={() => setSelected(o.key)}
-                className={`w-full rounded-2xl border p-4 text-left text-sm font-semibold transition active:scale-[0.99] ${
+                className={`flex w-full items-center gap-3.5 rounded-2xl border p-3.5 text-left text-sm font-semibold transition active:scale-[0.99] ${
                   isSel
                     ? "border-brand bg-lav-soft text-brand shadow-card"
                     : "border-transparent bg-white text-ink shadow-card"
                 }`}
               >
-                {o.text}
+                <span
+                  className={`flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full text-sm font-black ${
+                    isSel ? "bg-brand text-white" : "bg-lav-soft text-brand"
+                  }`}
+                >
+                  {o.key}
+                </span>
+                <span className="leading-snug">{o.text}</span>
               </button>
             );
           })}
