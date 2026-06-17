@@ -8,7 +8,7 @@
  * no change to the function signatures or the shapes screens consume.
  */
 
-import type { PillarId, SessionUser } from "./types";
+import type { FollowUpStatus, PillarId, SessionUser } from "./types";
 import { PILLAR_ORDER } from "./pillars";
 import {
   assertOwner,
@@ -438,6 +438,52 @@ export async function skipCheckIn(
 ): Promise<void> {
   assertOwner(session, userId);
   void questionId;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Return check-in / follow-up (did you act on your last recommendation?)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** A past low-score recommendation the user hasn't told us they acted on yet. */
+export interface OpenRecommendation {
+  questionId: string;
+  pillarId: PillarId;
+  questionText: string;
+  recommendation: string;
+  weekLabel: string; // e.g. "Apr 2026"
+}
+
+/**
+ * The single oldest unacted low-score recommendation for this user, or null if
+ * there's nothing to follow up on. Own data only. Sample for now; the real D1
+ * query finds the most recent checkIn with score<7 and followUpStatus IS NULL.
+ */
+export async function getOpenRecommendation(
+  session: SessionUser,
+  userId: string,
+): Promise<OpenRecommendation | null> {
+  assertOwner(session, userId);
+  return {
+    questionId: "q6",
+    pillarId: "growth",
+    questionText: "Do you have a clear path to grow in this company?",
+    recommendation: getSampleRecommendation("growth").text,
+    weekLabel: "Apr 2026",
+  };
+}
+
+/**
+ * Record the answer to a follow-up. "acted" also saves what they did as a
+ * journal entry (private to the author). Sample no-op for now; the real D1 write
+ * sets checkIns.followUpStatus and inserts a journalEntries row (type follow_up).
+ */
+export async function submitFollowUp(
+  session: SessionUser,
+  userId: string,
+  input: { questionId: string; pillarId: PillarId; status: FollowUpStatus; journalText?: string },
+): Promise<void> {
+  assertOwner(session, userId);
+  void input;
 }
 
 /** Re-export so screens can build ScoreResult-shaped deltas without a second import. */

@@ -3,26 +3,44 @@
 import { useState } from "react";
 import { CatchUpFlow } from "./CatchUpFlow";
 import { CheckInFlow } from "./CheckInFlow";
-import type { CheckInQuestion } from "@/lib/data";
+import { ReturnCheckIn } from "./ReturnCheckIn";
+import type { CheckInQuestion, OpenRecommendation } from "@/lib/data";
 import type { SessionUser } from "@/lib/types";
 
+type Phase = "catchup" | "followup" | "fresh";
+
 /**
- * A check-in session in order: catch-up on missed weeks first (if any), then
- * this week's fresh questions.
+ * A check-in session, in order:
+ *   1. catch-up on missed weeks (if any),
+ *   2. follow up on the last unacted recommendation (if any),
+ *   3. this week's fresh questions.
+ * Each step is skipped when there's nothing for it.
  */
 export function CheckInSession({
   session,
   unanswered,
+  openRec,
   due,
 }: {
   session: SessionUser;
   unanswered: CheckInQuestion[];
+  openRec: OpenRecommendation | null;
   due: CheckInQuestion[];
 }) {
-  const [phase, setPhase] = useState<"catchup" | "fresh">(unanswered.length ? "catchup" : "fresh");
+  const firstPhase: Phase = unanswered.length ? "catchup" : openRec ? "followup" : "fresh";
+  const [phase, setPhase] = useState<Phase>(firstPhase);
 
   if (phase === "catchup") {
-    return <CatchUpFlow session={session} questions={unanswered} onDone={() => setPhase("fresh")} />;
+    return (
+      <CatchUpFlow
+        session={session}
+        questions={unanswered}
+        onDone={() => setPhase(openRec ? "followup" : "fresh")}
+      />
+    );
+  }
+  if (phase === "followup" && openRec) {
+    return <ReturnCheckIn session={session} rec={openRec} onDone={() => setPhase("fresh")} />;
   }
   return <CheckInFlow session={session} questions={due} />;
 }
