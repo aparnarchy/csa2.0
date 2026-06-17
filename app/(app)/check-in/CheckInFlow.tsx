@@ -88,11 +88,11 @@ export function CheckInFlow({
       {/* greeting + question, vertically centred */}
       <div key={index} className="screen-enter flex flex-1 flex-col justify-center">
         <div className="flex flex-col items-center text-center">
-          <Mascot state="welcome" size={128} />
+          <Mascot state="welcome" size={180} float={false} />
           <p className="mt-2 font-display text-base font-black text-brand">
             {fill(t.greeting, { name: first })}
           </p>
-          <h1 className="mt-2 font-display text-[24px] font-black leading-snug text-ink">{q.text}</h1>
+          <h1 className="mt-2 font-display text-[24px] font-bold leading-snug text-brand">{q.text}</h1>
           <p className="mt-2.5 text-[10px] font-bold uppercase tracking-wide text-ink-4">{meta.label}</p>
         </div>
 

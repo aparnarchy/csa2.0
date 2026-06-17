@@ -65,11 +65,11 @@ export function CatchUpFlow({
 
       <div key={index} className="screen-enter flex flex-1 flex-col justify-center">
         <div className="flex flex-col items-center text-center">
-          <Mascot state="welcome" size={104} />
+          <Mascot state="welcome" size={146} float={false} />
           <span className="mt-3 inline-block rounded-full bg-lav-soft px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-brand">
             {t.chipPrefix} · {q.weekLabel ?? t.defaultWeekLabel}
           </span>
-          <h1 className="mt-3 font-display text-[24px] font-black leading-snug text-ink">{q.text}</h1>
+          <h1 className="mt-3 font-display text-[24px] font-bold leading-snug text-brand">{q.text}</h1>
           <p className="mt-2.5 text-[10px] font-bold uppercase tracking-wide text-ink-4">{PILLARS[q.pillarId].label}</p>
         </div>
 

@@ -17,10 +17,13 @@ export function Mascot({
   state,
   size = 80,
   sparkle = true,
+  float = true,
 }: {
   state: MascotState;
   size?: number;
   sparkle?: boolean;
+  /** Gentle up/down bob. Set false for a still character. */
+  float?: boolean;
 }) {
   const src = `/mascot/${state}.png`;
 
@@ -36,7 +39,7 @@ export function Mascot({
             ✦
           </span>
         ))}
-      <div className="mascot-float relative h-full w-full">
+      <div className={`relative h-full w-full ${float ? "mascot-float" : ""}`}>
         <Image
           src={src}
           alt=""

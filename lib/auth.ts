@@ -21,6 +21,11 @@ function resolveTrustedOrigins(): string[] {
       "http://192.168.*",
       "http://10.*",
       "http://172.*",
+      // Dev tunnels (cloudflared / localtunnel / ngrok) so phone testing can log in
+      "https://*.trycloudflare.com",
+      "https://*.loca.lt",
+      "https://*.ngrok-free.app",
+      "https://*.ngrok.io",
     );
   }
   return trusted;
