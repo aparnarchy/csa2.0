@@ -15,7 +15,7 @@ import {
 } from "@/components/kit";
 import { ScoreCircles } from "./ScoreCircles";
 import { getEmployeeScores, type EmployeeScores, type Window } from "@/lib/data";
-import { mascotForScore } from "@/lib/mascot";
+import { HEADER_MASCOT_SIZE, mascotForScore } from "@/lib/mascot";
 import { buildEmployeeInsight } from "@/lib/insight";
 import { buildRootAnalysis } from "@/lib/rca";
 import type { PillarId, SessionUser } from "@/lib/types";
@@ -68,7 +68,7 @@ export function AnalysisView({
       <GradientHeader
         eyebrow="My Dashboard"
         title={`Hey ${firstName}`}
-        avatar={<Mascot state={mascotForScore(data.overall, data.enoughData)} size={132} />}
+        avatar={<Mascot state={mascotForScore(data.overall, data.enoughData)} size={HEADER_MASCOT_SIZE} />}
         className="flex min-h-[212px] flex-col justify-center"
       >
         {data.enoughData && data.overall !== null && (

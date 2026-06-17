@@ -37,6 +37,10 @@ export function RootJourney({
 
   const [level, setLevel] = useState(0);
   const [dims, setDims] = useState(vp);
+  // Once the camera lands on the root, show the answer as a scrollable panel
+  // (the map canvas is clipped + non-scrollable, which made the CTA unreachable
+  // on phones). The panel guarantees the content + button are always tappable.
+  const [revealed, setRevealed] = useState(false);
   const lock = useRef(false);
 
   const focus = (p: { x: number; y: number }, s: number, w = dims.w, h = dims.h) =>
@@ -69,6 +73,7 @@ export function RootJourney({
       () => setCam({ t: focus(b, 1), ms: 560, ease: "cubic-bezier(0.2, 0.7, 0.3, 1)" }),
       430,
     );
+    if (to === lastIndex) window.setTimeout(() => setRevealed(true), 1000);
   }
 
   function go() {
@@ -143,51 +148,71 @@ export function RootJourney({
           </div>
         ))}
 
-        {/* final stop: the root + actions, inline on the map */}
+        {/* final stop: a light marker the camera lands on (full answer is the
+            scrollable panel below). */}
         <div
-          className="absolute w-[330px] -translate-x-1/2 -translate-y-1/2"
+          className="absolute w-[300px] -translate-x-1/2 -translate-y-1/2 text-center"
           style={{ left: pos(lastIndex).x, top: pos(lastIndex).y }}
         >
-          <p className="text-center text-4xl">🌱</p>
-          <h2 className="mt-2 text-center font-display text-[26px] font-black leading-tight">
-            We found the root!
-          </h2>
-          <p className="mt-2 text-center text-[14px] leading-relaxed text-white/85">{root.body}</p>
-          {root.evidence && (
-            <p className="mt-1.5 text-center text-xs italic leading-relaxed text-white/45">{root.evidence}</p>
-          )}
-
-          <p className="mt-5 text-xs font-bold uppercase tracking-wide text-[#B388FF]">💡 Do this today</p>
-          <div className="mt-2 space-y-2">
-            {analysis.actions.map((a, i) => (
-              <div key={i} className="flex gap-3 rounded-2xl bg-white/10 p-3">
-                <span className="font-display text-sm font-black text-[#B388FF]">{i + 1}</span>
-                <p className="text-[13px] leading-relaxed text-white/90">{a}</p>
-              </div>
-            ))}
-          </div>
-
-          <div className="mt-3 rounded-2xl bg-white/5 p-3.5">
-            <p className="mb-1 text-[10px] font-bold uppercase tracking-wide text-white/45">Why it&apos;s worth it</p>
-            <p className="text-[13px] leading-relaxed text-white/80">{analysis.payoff}</p>
-          </div>
-
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              onClose();
-            }}
-            className="mt-5 w-full rounded-2xl bg-white py-3.5 font-display text-sm font-black text-brand active:scale-[0.98]"
-          >
-            Back to my dashboard
-          </button>
+          <p className="text-5xl">🌱</p>
+          <h2 className="mt-2 font-display text-[26px] font-black leading-tight">We found the root!</h2>
         </div>
       </div>
 
       {level < lastIndex && (
         <div className="mascot-float pointer-events-none absolute bottom-10 left-0 right-0 text-center text-sm font-semibold text-white/55">
           {level >= lastIndex - 1 ? "tap to reveal the root ↓" : "tap to travel deeper ↓"}
+        </div>
+      )}
+
+      {/* The root answer as a reachable, scrollable panel (fixes the unreachable
+          CTA on phones). Stops taps from bubbling to the map's onClick. */}
+      {revealed && (
+        <div
+          onClick={(e) => e.stopPropagation()}
+          onWheel={(e) => e.stopPropagation()}
+          className="screen-enter absolute inset-0 z-[62] overflow-y-auto"
+          style={{ background: "linear-gradient(180deg, #211746 0%, #130C32 60%, #090619 100%)" }}
+        >
+          <div
+            className="mx-auto w-full max-w-md px-6 pb-10"
+            style={{ paddingTop: "calc(env(safe-area-inset-top) + 32px)" }}
+          >
+            <p className="text-center text-5xl">🌱</p>
+            <h2 className="mt-3 text-center font-display text-[26px] font-black leading-tight">
+              We found the root!
+            </h2>
+            <p className="mt-3 text-center text-sm leading-relaxed text-white/85">{root.body}</p>
+            {root.evidence && (
+              <p className="mt-2 text-center text-xs italic leading-relaxed text-white/45">{root.evidence}</p>
+            )}
+
+            <p className="mt-6 text-xs font-bold uppercase tracking-wide text-[#B388FF]">💡 Do this today</p>
+            <div className="mt-2 space-y-2">
+              {analysis.actions.map((a, i) => (
+                <div key={i} className="flex gap-3 rounded-2xl bg-white/10 p-3.5">
+                  <span className="font-display text-sm font-black text-[#B388FF]">{i + 1}</span>
+                  <p className="text-sm leading-relaxed text-white/90">{a}</p>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-4 rounded-2xl bg-white/5 p-4">
+              <p className="mb-1 text-[10px] font-bold uppercase tracking-wide text-white/45">Why it&apos;s worth it</p>
+              <p className="text-sm leading-relaxed text-white/80">{analysis.payoff}</p>
+            </div>
+
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onClose();
+              }}
+              className="mt-6 w-full rounded-2xl bg-white py-3.5 font-display text-sm font-black text-brand active:scale-[0.98]"
+            >
+              Back to my dashboard
+            </button>
+          </div>
         </div>
       )}
     </div>,

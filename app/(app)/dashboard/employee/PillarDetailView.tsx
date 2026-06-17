@@ -11,7 +11,7 @@ import {
 } from "@/components/kit";
 import { PILLARS } from "@/lib/pillars";
 import { getPillarDetail, type Window } from "@/lib/data";
-import { mascotForScore } from "@/lib/mascot";
+import { HEADER_MASCOT_SIZE, mascotForScore } from "@/lib/mascot";
 import type { PillarId, SessionUser } from "@/lib/types";
 
 type Detail = Awaited<ReturnType<typeof getPillarDetail>>;
@@ -46,7 +46,7 @@ export function PillarDetailView({
         eyebrow="Pillar"
         title={meta.label}
         back={{ label: "Dashboard", onClick: onBack }}
-        avatar={detail ? <Mascot state={mascotForScore(detail.score, true)} size={132} /> : undefined}
+        avatar={detail ? <Mascot state={mascotForScore(detail.score, true)} size={HEADER_MASCOT_SIZE} /> : undefined}
       >
         {detail && (
           <div className="mt-3 flex items-end gap-3.5">

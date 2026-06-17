@@ -8,6 +8,9 @@
  */
 export type MascotState = "welcome" | "happy" | "sad" | "angry";
 
+/** Standard mascot size for screen headers (dashboard, pillar, welcome-back). */
+export const HEADER_MASCOT_SIZE = 160;
+
 /** Pick the mascot pose for a happiness score. */
 export function mascotForScore(score: number | null, enoughData: boolean): MascotState {
   if (!enoughData || score === null) return "welcome"; // friendly "let's get started"

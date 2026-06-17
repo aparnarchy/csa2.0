@@ -47,6 +47,7 @@ Next.js (App Router) + TypeScript, built **mobile-first as a PWA** · **Cloudfla
 - Don't enforce privacy only in the UI — it lives in server code.
 - Don't add libraries that aren't needed. Stack = Next.js, Cloudflare/D1, the auth library, Tailwind, one chart lib, the email SDK, the LLM SDK.
 - Don't build the AI layer early — Phase 5.
+- Don't let the mascot/avatar overlap or hide titles/wording. Lay it out *beside* the text (e.g. a flex row with the text in `min-w-0 flex-1` and the mascot `flex-shrink-0`), never on top of it. Keep mascot sizing consistent across screens, and always check long titles (e.g. "Meaningful Work") aren't covered.
 
 ## Locked decisions (do not re-litigate)
 - Backend = Cloudflare (Pages + Workers + D1), deployed with Wrangler. (Firebase dropped — org-blocked.)
