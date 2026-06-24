@@ -120,26 +120,35 @@ export function AnalysisView({
             isPlay ? (
               <div className="mb-7 pt-4">
                 <ScoreCircles
-                  bright={{ score: insight.brightSpot.score, pillar: insight.brightSpot.label }}
-                  watch={{ score: insight.watchOut.score, pillar: insight.watchOut.label }}
+                  bright={{ score: insight.brightSpot.score, pillar: insight.brightSpot.label, pillarId: insight.brightSpot.pillarId }}
+                  watch={{ score: insight.watchOut.score, pillar: insight.watchOut.label, pillarId: insight.watchOut.pillarId }}
+                  onSelect={setSelectedPillar}
                 />
               </div>
             ) : (
               <div className="grid grid-cols-2 gap-2">
-                <div className="rounded-card bg-lav-soft p-4 shadow-card">
+                <button
+                  type="button"
+                  onClick={() => setSelectedPillar(insight.brightSpot!.pillarId)}
+                  className="rounded-card bg-lav-soft p-4 text-left shadow-card transition active:scale-[0.98]"
+                >
                   <p className="text-[11px] font-semibold uppercase tracking-wide text-brand">☀️ Bright spot</p>
                   <p className="mt-1 font-display text-3xl font-black leading-none text-brand">
                     {insight.brightSpot.score.toFixed(1)}
                   </p>
                   <p className="mt-1 text-xs text-brand/70">{insight.brightSpot.label}</p>
-                </div>
-                <div className="rounded-card bg-lav-soft p-4 shadow-card">
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedPillar(insight.watchOut!.pillarId)}
+                  className="rounded-card bg-lav-soft p-4 text-left shadow-card transition active:scale-[0.98]"
+                >
                   <p className="text-[11px] font-semibold uppercase tracking-wide text-brand">⚠️ Watch out</p>
                   <p className="mt-1 font-display text-3xl font-black leading-none text-brand">
                     {insight.watchOut.score.toFixed(1)}
                   </p>
                   <p className="mt-1 text-xs text-brand/70">{insight.watchOut.label}</p>
-                </div>
+                </button>
               </div>
             )
           )}

@@ -5,14 +5,14 @@
  */
 import { getSampleRecommendation, type EmployeeScores } from "./data";
 import { PILLARS } from "./pillars";
-import type { Persona } from "./types";
+import type { Persona, PillarId } from "./types";
 import { voicedHeadline, voicedRca, type Trend } from "./voice";
 
 export interface EmployeeInsight {
   headline: string; // short, punchy hero phrase
   emoji: string;
-  brightSpot: { label: string; score: number } | null;
-  watchOut: { label: string; score: number } | null;
+  brightSpot: { label: string; score: number; pillarId: PillarId } | null;
+  watchOut: { label: string; score: number; pillarId: PillarId } | null;
   comparison: string | null; // e.g. "Happier than 91% of your org"
   action: string | null; // one thing to try (lowest pillar)
 }
@@ -59,10 +59,12 @@ export function buildEmployeeInsight(data: EmployeeScores, persona?: Persona): E
   return {
     headline,
     emoji,
-    brightSpot: top ? { label: PILLARS[top.pillarId].label, score: top.score as number } : null,
+    brightSpot: top
+      ? { label: PILLARS[top.pillarId].label, score: top.score as number, pillarId: top.pillarId }
+      : null,
     watchOut:
       bottom && bottom.pillarId !== top?.pillarId
-        ? { label: PILLARS[bottom.pillarId].label, score: bottom.score as number }
+        ? { label: PILLARS[bottom.pillarId].label, score: bottom.score as number, pillarId: bottom.pillarId }
         : null,
     comparison: pct ? `Happier than ${pct}% of your org` : null,
     action:
