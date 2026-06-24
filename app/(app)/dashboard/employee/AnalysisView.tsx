@@ -58,74 +58,127 @@ export function AnalysisView({
   const sortedQs = [...data.questions].sort((a, b) => b.score - a.score);
   const shownQs = tab === "strengths" ? sortedQs.slice(0, 3) : sortedQs.slice(-3).reverse();
   const up = (data.delta ?? 0) >= 0;
-  // Persona voice applies only in Play mode; Professional uses neutral copy.
-  const persona = session.themeMode === "play" ? session.persona : undefined;
+  // Mode = design only. Play shows the fun look (mascot, blob circles, persona
+  // voice); Professional is a plain, serious dashboard with neutral copy.
+  const isPlay = session.themeMode === "play";
+  const persona = isPlay ? session.persona : undefined;
   const insight = buildEmployeeInsight(data, persona);
   const rca = buildRootAnalysis(data, persona);
   const firstName = (session.name || "there").trim().split(/\s+/)[0];
 
   return (
     <ScreenShell active="insights">
-      {/* Title card — kept: greeting + "Dashboard" + insight + mascot (sub-screen sizing). */}
-      <GradientHeader
-        eyebrow="My Dashboard"
-        title={`Hey ${firstName}`}
-        avatar={<Mascot state={mascotForScore(data.overall, data.enoughData)} size={HEADER_MASCOT_SIZE} float={false} sparkle={false} />}
-        className="flex min-h-[212px] flex-col justify-center"
-      >
-        {data.enoughData && data.overall !== null && (
-          <p className="mt-3 font-display text-lg font-black leading-tight text-brand">
-            {insight.headline}.
+      {/* Header — Play: lavender card with mascot. Professional: plain title. */}
+      {isPlay ? (
+        <GradientHeader
+          eyebrow="My Dashboard"
+          title={`Hey ${firstName}`}
+          avatar={<Mascot state={mascotForScore(data.overall, data.enoughData)} size={HEADER_MASCOT_SIZE} float={false} sparkle={false} />}
+          className="flex min-h-[212px] flex-col justify-center"
+        >
+          {data.enoughData && data.overall !== null && (
+            <p className="mt-3 font-display text-lg font-black leading-tight text-brand">
+              {insight.headline}.
+            </p>
+          )}
+        </GradientHeader>
+      ) : (
+        <div className="px-1 pb-1 pt-2">
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-ink-3">
+            My Dashboard
           </p>
-        )}
-      </GradientHeader>
+          <h1 className="mt-0.5 font-display text-[26px] font-black leading-tight text-ink">
+            Hey {firstName}
+          </h1>
+          {data.enoughData && data.overall !== null && (
+            <p className="mt-1 text-sm text-ink-2">{insight.headline}.</p>
+          )}
+        </div>
+      )}
 
       {!data.enoughData || data.overall === null ? (
         <NotEnoughData />
       ) : (
         <>
-          {/* Bright Spot / Watch Out — GSAP-animated wavy blobs (tap to expand). */}
+          {/* Bright Spot / Watch Out — Play: animated wavy blobs. Professional:
+              plain stat cards. */}
           {insight.brightSpot && insight.watchOut && (
-            <div className="pt-4 mb-7">
-              <ScoreCircles
-                bright={{ score: insight.brightSpot.score, pillar: insight.brightSpot.label }}
-                watch={{ score: insight.watchOut.score, pillar: insight.watchOut.label }}
-              />
-            </div>
+            isPlay ? (
+              <div className="mb-7 pt-4">
+                <ScoreCircles
+                  bright={{ score: insight.brightSpot.score, pillar: insight.brightSpot.label }}
+                  watch={{ score: insight.watchOut.score, pillar: insight.watchOut.label }}
+                />
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 gap-2">
+                <Card>
+                  <p className="text-[11px] font-semibold uppercase tracking-wide text-ink-3">Bright spot</p>
+                  <p className="mt-1 font-display text-3xl font-black leading-none text-good">
+                    {insight.brightSpot.score.toFixed(1)}
+                  </p>
+                  <p className="mt-1 text-xs text-ink-2">{insight.brightSpot.label}</p>
+                </Card>
+                <Card>
+                  <p className="text-[11px] font-semibold uppercase tracking-wide text-ink-3">Watch out</p>
+                  <p className="mt-1 font-display text-3xl font-black leading-none text-bad">
+                    {insight.watchOut.score.toFixed(1)}
+                  </p>
+                  <p className="mt-1 text-xs text-ink-2">{insight.watchOut.label}</p>
+                </Card>
+              </div>
+            )
           )}
 
-          {/* Insight box — leads with the recommendation; the prediction is a
-              quiet supporting line; "Let's find out why" is the clear action
-              that opens the immersive Find the Root journey. */}
+          {/* Insight box — leads with the recommendation; "find out why" opens
+              the root-cause view. Play adds the mascot + a playful feeling line. */}
           {rca.available && (
-            <div className="rounded-card bg-lav-soft p-5 shadow-card">
-              <div className="flex items-start gap-3.5">
-                <div className="min-w-0 flex-1">
-                  <p className="text-[11px] font-bold uppercase tracking-wide text-ink-3">
-                    💡 Try this week
-                  </p>
-                  <p className="mt-1.5 font-display text-[17px] font-black leading-snug text-ink">
-                    {insight.action ?? "Take a closer look at your weakest area this week."}
-                  </p>
-                  {rca.feelings.length > 0 && (
-                    <p className="mt-2.5 text-[12px] text-ink-3">
-                      You might be feeling{" "}
-                      <span className="font-semibold text-ink-2">
-                        {rca.feelings.slice(0, 2).join(" · ").toLowerCase()}
-                      </span>
+            isPlay ? (
+              <div className="rounded-card bg-lav-soft p-5 shadow-card">
+                <div className="flex items-start gap-3.5">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[11px] font-bold uppercase tracking-wide text-ink-3">
+                      💡 Try this week
                     </p>
-                  )}
+                    <p className="mt-1.5 font-display text-[17px] font-black leading-snug text-ink">
+                      {insight.action ?? "Take a closer look at your weakest area this week."}
+                    </p>
+                    {rca.feelings.length > 0 && (
+                      <p className="mt-2.5 text-[12px] text-ink-3">
+                        You might be feeling{" "}
+                        <span className="font-semibold text-ink-2">
+                          {rca.feelings.slice(0, 2).join(" · ").toLowerCase()}
+                        </span>
+                      </p>
+                    )}
+                  </div>
+                  <Mascot state="sad" size={88} sparkle={false} float={false} />
                 </div>
-                <Mascot state="sad" size={88} sparkle={false} float={false} />
+                <button
+                  type="button"
+                  onClick={() => setShowRoot(true)}
+                  className="mt-4 w-full rounded-2xl bg-brand py-3.5 font-display text-sm font-black text-white transition active:scale-[0.98]"
+                >
+                  Let&apos;s find out why →
+                </button>
               </div>
-              <button
-                type="button"
-                onClick={() => setShowRoot(true)}
-                className="mt-4 w-full rounded-2xl bg-brand py-3.5 font-display text-sm font-black text-white transition active:scale-[0.98]"
-              >
-                Let&apos;s find out why →
-              </button>
-            </div>
+            ) : (
+              <Card>
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-ink-3">
+                  Recommended this week
+                </p>
+                <p className="mt-1.5 text-[15px] font-semibold leading-snug text-ink">
+                  {insight.action ?? "Take a closer look at your weakest area this week."}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setShowRoot(true)}
+                  className="mt-3 text-sm font-bold text-brand"
+                >
+                  See what&apos;s driving this →
+                </button>
+              </Card>
+            )
           )}
 
           {/* ── Everything below is unchanged ───────────────────────────────── */}
