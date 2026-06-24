@@ -68,7 +68,7 @@ export function AnalysisView({
       <GradientHeader
         eyebrow="My Dashboard"
         title={`Hey ${firstName}`}
-        avatar={<Mascot state={mascotForScore(data.overall, data.enoughData)} size={HEADER_MASCOT_SIZE} />}
+        avatar={<Mascot state={mascotForScore(data.overall, data.enoughData)} size={HEADER_MASCOT_SIZE} float={false} sparkle={false} />}
         className="flex min-h-[212px] flex-col justify-center"
       >
         {data.enoughData && data.overall !== null && (
@@ -92,37 +92,38 @@ export function AnalysisView({
             </div>
           )}
 
-          {/* Oracle guessing box → opens the immersive Find the Root journey. */}
+          {/* Insight box — leads with the recommendation; the prediction is a
+              quiet supporting line; "Let's find out why" is the clear action
+              that opens the immersive Find the Root journey. */}
           {rca.available && (
-            <button
-              type="button"
-              onClick={() => setShowRoot(true)}
-              className="w-full rounded-card bg-lav-soft p-5 text-left shadow-card transition active:scale-[0.99]"
-            >
-              <div className="flex items-center gap-3">
+            <div className="rounded-card bg-lav-soft p-5 shadow-card">
+              <div className="flex items-start gap-3.5">
                 <div className="min-w-0 flex-1">
-                  <p className="flex items-center gap-2 text-[12px] font-semibold text-ink-2">
-                    <span className="text-2xl leading-none" aria-hidden>🔮</span> I&apos;m guessing you&apos;re currently feeling…
+                  <p className="text-[11px] font-bold uppercase tracking-wide text-ink-3">
+                    💡 Try this week
                   </p>
-                  <div className="mt-2 space-y-1">
-                    {rca.feelings.map((f) => (
-                      <p key={f} className="font-display text-[15px] font-black uppercase tracking-wide text-brand">
-                        {f}
-                      </p>
-                    ))}
-                  </div>
+                  <p className="mt-1.5 font-display text-[17px] font-black leading-snug text-ink">
+                    {insight.action ?? "Take a closer look at your weakest area this week."}
+                  </p>
+                  {rca.feelings.length > 0 && (
+                    <p className="mt-2.5 text-[12px] text-ink-3">
+                      You might be feeling{" "}
+                      <span className="font-semibold text-ink-2">
+                        {rca.feelings.slice(0, 2).join(" · ").toLowerCase()}
+                      </span>
+                    </p>
+                  )}
                 </div>
-                <Mascot state="sad" size={104} sparkle={false} />
+                <Mascot state="sad" size={88} sparkle={false} float={false} />
               </div>
-              <span className="mt-2 block text-right text-xs font-bold text-brand">Let&apos;s find out why →</span>
-            </button>
-          )}
-
-          {/* Try this week — plain purple italic text, no card. */}
-          {insight.action && (
-            <p className="px-1 text-sm italic leading-relaxed text-brand">
-              💡 Try this week: {insight.action}
-            </p>
+              <button
+                type="button"
+                onClick={() => setShowRoot(true)}
+                className="mt-4 w-full rounded-2xl bg-brand py-3.5 font-display text-sm font-black text-white transition active:scale-[0.98]"
+              >
+                Let&apos;s find out why →
+              </button>
+            </div>
           )}
 
           {/* ── Everything below is unchanged ───────────────────────────────── */}
