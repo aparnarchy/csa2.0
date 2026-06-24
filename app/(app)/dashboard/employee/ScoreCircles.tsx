@@ -36,6 +36,8 @@ export function ScoreCircles({
     gsap.killTweensOf([a, b, ca, cb]);
 
     if (!expanded) {
+      // Settle side by side at the baseline and stop — no perpetual idle loop
+      // (the infinite yoyo caused constant repaints / jank, worst on phones).
       gsap.to([a, b], {
         flexGrow: 1,
         scale: BASE,
@@ -43,15 +45,6 @@ export function ScoreCircles({
         opacity: 1,
         duration: DUR,
         ease: EASE,
-        onComplete: () => {
-          gsap.to([a, b], {
-            scale: BASE + 0.016,
-            duration: 2.8,
-            ease: "sine.inOut",
-            yoyo: true,
-            repeat: -1,
-          });
-        },
       });
       gsap.to([ca, cb], { scale: 1, duration: DUR, ease: EASE });
     } else {
