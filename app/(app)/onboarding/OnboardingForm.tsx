@@ -78,20 +78,16 @@ export function OnboardingForm({ defaultName }: { defaultName: string }) {
           />
         </Field>
 
-        <div className="rounded-2xl bg-lav-soft p-4">
-          <p className="mb-3 text-[11px] font-bold uppercase tracking-wide text-brand">{t.managerSectionTitle}</p>
-          <div className="space-y-3">
-            <input className={INPUT} value={form.managerName} onChange={set("managerName")} placeholder={t.managerNamePlaceholder} />
-            <input className={INPUT} value={form.managerEmail} onChange={set("managerEmail")} type="email" placeholder={t.managerEmailPlaceholder} />
-          </div>
+        <div className="space-y-3">
+          <p className="text-[11px] font-bold uppercase tracking-wide text-brand">{t.managerSectionTitle}</p>
+          <input className={INPUT} value={form.managerName} onChange={set("managerName")} placeholder={t.managerNamePlaceholder} />
+          <input className={INPUT} value={form.managerEmail} onChange={set("managerEmail")} type="email" placeholder={t.managerEmailPlaceholder} />
         </div>
 
-        <div className="rounded-2xl bg-lav-soft p-4">
-          <p className="mb-3 text-[11px] font-bold uppercase tracking-wide text-brand">{t.mentorSectionTitle}</p>
-          <div className="space-y-3">
-            <input className={INPUT} value={form.mentorName} onChange={set("mentorName")} placeholder={t.mentorNamePlaceholder} />
-            <input className={INPUT} value={form.mentorEmail} onChange={set("mentorEmail")} type="email" placeholder={t.mentorEmailPlaceholder} />
-          </div>
+        <div className="space-y-3">
+          <p className="text-[11px] font-bold uppercase tracking-wide text-brand">{t.mentorSectionTitle}</p>
+          <input className={INPUT} value={form.mentorName} onChange={set("mentorName")} placeholder={t.mentorNamePlaceholder} />
+          <input className={INPUT} value={form.mentorEmail} onChange={set("mentorEmail")} type="email" placeholder={t.mentorEmailPlaceholder} />
         </div>
 
         {error && <p className="text-sm text-bad">{error}</p>}
