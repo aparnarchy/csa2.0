@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Card, ScreenShell } from "@/components/kit";
+import { Card, GradientHeader, Mascot, ScreenShell } from "@/components/kit";
+import { HEADER_MASCOT_SIZE } from "@/lib/mascot";
 import {
   getSampleRecommendation,
   submitActionResponse,
@@ -34,14 +35,42 @@ export function InboxView({
   history: ActionHistoryItem[];
 }) {
   const [showHistory, setShowHistory] = useState(false);
+  const isPlay = session.themeMode === "play";
+  const firstName = (session.name || "there").trim().split(/\s+/)[0];
 
   if (showHistory) {
     return <HistoryView history={history} onBack={() => setShowHistory(false)} />;
   }
 
   return (
-    <ScreenShell title="Inbox" active="inbox">
-      <p className="-mt-1 px-1 text-sm text-ink-3">Your latest updates and actions</p>
+    <ScreenShell active="inbox">
+      {/* Header — matches the dashboard. Play: lavender card + mascot;
+          Professional: a smaller richer-gradient card, no mascot. */}
+      {isPlay ? (
+        <GradientHeader
+          eyebrow="📥 Inbox"
+          title={`Hi ${firstName}`}
+          avatar={<Mascot state="welcome" size={HEADER_MASCOT_SIZE} float={false} sparkle={false} />}
+          className="flex min-h-[180px] flex-col justify-center"
+        >
+          <p className="mt-2 text-sm font-bold leading-snug text-brand">
+            Your latest updates and actions.
+          </p>
+        </GradientHeader>
+      ) : (
+        <div
+          className="rounded-card px-5 py-6"
+          style={{ background: "linear-gradient(135deg, #EDE7FF 0%, #C9B4FF 100%)" }}
+        >
+          <p className="text-xs font-semibold text-brand/70">📥 Inbox</p>
+          <h1 className="mt-1 font-display text-[34px] font-black leading-tight text-brand">
+            Hi {firstName}
+          </h1>
+          <p className="mt-2 font-display text-base font-black leading-snug text-brand-light">
+            Your latest updates and actions.
+          </p>
+        </div>
+      )}
 
       {latest && <LatestCheckInCard latest={latest} />}
 
