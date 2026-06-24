@@ -70,29 +70,45 @@ export function AnalysisView({
 
   return (
     <ScreenShell active="insights">
-      {/* Header — same lavender theme in both modes. Play adds the mascot and
-          speaks in the persona's voice; Professional drops the mascot. */}
-      <GradientHeader
-        eyebrow={chrome.eyebrow}
-        title={chrome.greeting(firstName)}
-        avatar={
-          isPlay ? (
+      {/* Header — Play: lavender card + mascot + persona voice. Professional:
+          a smaller card with a richer purple gradient and bigger, mascot-free
+          welcome text (all in lilac to match the theme). */}
+      {isPlay ? (
+        <GradientHeader
+          eyebrow={chrome.eyebrow}
+          title={chrome.greeting(firstName)}
+          avatar={
             <Mascot
               state={mascotForScore(data.overall, data.enoughData)}
               size={HEADER_MASCOT_SIZE}
               float={false}
               sparkle={false}
             />
-          ) : undefined
-        }
-        className="flex min-h-[212px] flex-col justify-center"
-      >
-        {data.enoughData && data.overall !== null && (
-          <p className="mt-3 font-display text-lg font-black leading-tight text-brand">
-            {insight.headline}.
-          </p>
-        )}
-      </GradientHeader>
+          }
+          className="flex min-h-[212px] flex-col justify-center"
+        >
+          {data.enoughData && data.overall !== null && (
+            <p className="mt-3 font-display text-lg font-black leading-tight text-brand">
+              {insight.headline}.
+            </p>
+          )}
+        </GradientHeader>
+      ) : (
+        <div
+          className="rounded-card px-5 py-6"
+          style={{ background: "linear-gradient(135deg, #EDE7FF 0%, #C9B4FF 100%)" }}
+        >
+          <p className="text-xs font-semibold text-brand/70">{chrome.eyebrow}</p>
+          <h1 className="mt-1 font-display text-[34px] font-black leading-tight text-brand">
+            {chrome.greeting(firstName)}
+          </h1>
+          {data.enoughData && data.overall !== null && (
+            <p className="mt-2 font-display text-base font-black leading-snug text-brand-light">
+              {insight.headline}.
+            </p>
+          )}
+        </div>
+      )}
 
       {!data.enoughData || data.overall === null ? (
         <NotEnoughData />
@@ -111,18 +127,18 @@ export function AnalysisView({
             ) : (
               <div className="grid grid-cols-2 gap-2">
                 <div className="rounded-card bg-lav-soft p-4 shadow-card">
-                  <p className="text-[11px] font-semibold uppercase tracking-wide text-ink-3">Bright spot</p>
+                  <p className="text-[11px] font-semibold uppercase tracking-wide text-brand">☀️ Bright spot</p>
                   <p className="mt-1 font-display text-3xl font-black leading-none text-brand">
                     {insight.brightSpot.score.toFixed(1)}
                   </p>
-                  <p className="mt-1 text-xs text-ink-2">{insight.brightSpot.label}</p>
+                  <p className="mt-1 text-xs text-brand/70">{insight.brightSpot.label}</p>
                 </div>
                 <div className="rounded-card bg-lav-soft p-4 shadow-card">
-                  <p className="text-[11px] font-semibold uppercase tracking-wide text-ink-3">Watch out</p>
+                  <p className="text-[11px] font-semibold uppercase tracking-wide text-brand">⚠️ Watch out</p>
                   <p className="mt-1 font-display text-3xl font-black leading-none text-brand">
                     {insight.watchOut.score.toFixed(1)}
                   </p>
-                  <p className="mt-1 text-xs text-ink-2">{insight.watchOut.label}</p>
+                  <p className="mt-1 text-xs text-brand/70">{insight.watchOut.label}</p>
                 </div>
               </div>
             )
