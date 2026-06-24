@@ -316,7 +316,7 @@ export async function getTeamAggregate(
 export function getSampleRecommendation(pillarId: PillarId): { pillarId: PillarId; text: string } {
   const text: Record<PillarId, string> = {
     meaningful_work: "Try linking one task this week to a goal you personally care about, and note how it felt.",
-    growth: "Ask your manager for one stretch task this sprint — something just beyond your current comfort zone.",
+    growth: "Ask your manager for one stretch task this sprint, something just beyond your current comfort zone.",
     culture: "Recognise a teammate's good work openly this week; small recognition compounds team trust.",
     compensation: "Document your recent wins so you have concrete examples ready for your next comp conversation.",
   };

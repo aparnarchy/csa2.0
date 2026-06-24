@@ -18,6 +18,7 @@ import { getEmployeeScores, type EmployeeScores, type Window } from "@/lib/data"
 import { HEADER_MASCOT_SIZE, mascotForScore } from "@/lib/mascot";
 import { buildEmployeeInsight } from "@/lib/insight";
 import { buildRootAnalysis } from "@/lib/rca";
+import { chromeFor } from "@/lib/voice";
 import type { PillarId, SessionUser } from "@/lib/types";
 import { PillarDetailView } from "./PillarDetailView";
 import { RootJourney } from "./RootJourney";
@@ -64,37 +65,34 @@ export function AnalysisView({
   const persona = isPlay ? session.persona : undefined;
   const insight = buildEmployeeInsight(data, persona);
   const rca = buildRootAnalysis(data, persona);
+  const chrome = chromeFor(persona);
   const firstName = (session.name || "there").trim().split(/\s+/)[0];
 
   return (
     <ScreenShell active="insights">
-      {/* Header — Play: lavender card with mascot. Professional: plain title. */}
-      {isPlay ? (
-        <GradientHeader
-          eyebrow="My Dashboard"
-          title={`Hey ${firstName}`}
-          avatar={<Mascot state={mascotForScore(data.overall, data.enoughData)} size={HEADER_MASCOT_SIZE} float={false} sparkle={false} />}
-          className="flex min-h-[212px] flex-col justify-center"
-        >
-          {data.enoughData && data.overall !== null && (
-            <p className="mt-3 font-display text-lg font-black leading-tight text-brand">
-              {insight.headline}.
-            </p>
-          )}
-        </GradientHeader>
-      ) : (
-        <div className="px-1 pb-1 pt-2">
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-ink-3">
-            My Dashboard
+      {/* Header — same lavender theme in both modes. Play adds the mascot and
+          speaks in the persona's voice; Professional drops the mascot. */}
+      <GradientHeader
+        eyebrow={chrome.eyebrow}
+        title={chrome.greeting(firstName)}
+        avatar={
+          isPlay ? (
+            <Mascot
+              state={mascotForScore(data.overall, data.enoughData)}
+              size={HEADER_MASCOT_SIZE}
+              float={false}
+              sparkle={false}
+            />
+          ) : undefined
+        }
+        className="flex min-h-[212px] flex-col justify-center"
+      >
+        {data.enoughData && data.overall !== null && (
+          <p className="mt-3 font-display text-lg font-black leading-tight text-brand">
+            {insight.headline}.
           </p>
-          <h1 className="mt-0.5 font-display text-[26px] font-black leading-tight text-ink">
-            Hey {firstName}
-          </h1>
-          {data.enoughData && data.overall !== null && (
-            <p className="mt-1 text-sm text-ink-2">{insight.headline}.</p>
-          )}
-        </div>
-      )}
+        )}
+      </GradientHeader>
 
       {!data.enoughData || data.overall === null ? (
         <NotEnoughData />
@@ -112,62 +110,62 @@ export function AnalysisView({
               </div>
             ) : (
               <div className="grid grid-cols-2 gap-2">
-                <Card>
+                <div className="rounded-card bg-lav-soft p-4 shadow-card">
                   <p className="text-[11px] font-semibold uppercase tracking-wide text-ink-3">Bright spot</p>
-                  <p className="mt-1 font-display text-3xl font-black leading-none text-good">
+                  <p className="mt-1 font-display text-3xl font-black leading-none text-brand">
                     {insight.brightSpot.score.toFixed(1)}
                   </p>
                   <p className="mt-1 text-xs text-ink-2">{insight.brightSpot.label}</p>
-                </Card>
-                <Card>
+                </div>
+                <div className="rounded-card bg-lav-soft p-4 shadow-card">
                   <p className="text-[11px] font-semibold uppercase tracking-wide text-ink-3">Watch out</p>
-                  <p className="mt-1 font-display text-3xl font-black leading-none text-bad">
+                  <p className="mt-1 font-display text-3xl font-black leading-none text-brand">
                     {insight.watchOut.score.toFixed(1)}
                   </p>
                   <p className="mt-1 text-xs text-ink-2">{insight.watchOut.label}</p>
-                </Card>
+                </div>
               </div>
             )
           )}
 
-          {/* Insight box — leads with the recommendation; "find out why" opens
-              the root-cause view. Play adds the mascot + a playful feeling line. */}
+          {/* Insight box — leads with the recommendation; the CTA opens the
+              root-cause view. Play adds the mascot + a persona feeling line. */}
           {rca.available && (
             isPlay ? (
               <div className="rounded-card bg-lav-soft p-5 shadow-card">
                 <div className="flex items-start gap-3.5">
                   <div className="min-w-0 flex-1">
-                    <p className="text-[11px] font-bold uppercase tracking-wide text-ink-3">
-                      💡 Try this week
+                    <p className="text-[11px] font-bold uppercase tracking-wide text-brand">
+                      {chrome.tryLabel}
                     </p>
-                    <p className="mt-1.5 font-display text-[17px] font-black leading-snug text-ink">
+                    <p className="mt-1.5 font-display text-[17px] font-black leading-snug text-brand">
                       {insight.action ?? "Take a closer look at your weakest area this week."}
                     </p>
                     {rca.feelings.length > 0 && (
-                      <p className="mt-2.5 text-[12px] text-ink-3">
-                        You might be feeling{" "}
-                        <span className="font-semibold text-ink-2">
+                      <p className="mt-2.5 text-[12px] text-brand/70">
+                        {chrome.feelingsLead}{" "}
+                        <span className="font-semibold text-brand">
                           {rca.feelings.slice(0, 2).join(" · ").toLowerCase()}
                         </span>
                       </p>
                     )}
                   </div>
-                  <Mascot state="sad" size={88} sparkle={false} float={false} />
+                  <Mascot state="sad" size={101} sparkle={false} float={false} />
                 </div>
                 <button
                   type="button"
                   onClick={() => setShowRoot(true)}
                   className="mt-4 w-full rounded-2xl bg-brand py-3.5 font-display text-sm font-black text-white transition active:scale-[0.98]"
                 >
-                  Let&apos;s find out why →
+                  {chrome.cta}
                 </button>
               </div>
             ) : (
-              <Card>
-                <p className="text-[11px] font-semibold uppercase tracking-wide text-ink-3">
-                  Recommended this week
+              <div className="rounded-card bg-lav-soft p-5 shadow-card">
+                <p className="text-[11px] font-bold uppercase tracking-wide text-brand">
+                  {chrome.tryLabel}
                 </p>
-                <p className="mt-1.5 text-[15px] font-semibold leading-snug text-ink">
+                <p className="mt-1.5 font-display text-[17px] font-black leading-snug text-brand">
                   {insight.action ?? "Take a closer look at your weakest area this week."}
                 </p>
                 <button
@@ -175,9 +173,9 @@ export function AnalysisView({
                   onClick={() => setShowRoot(true)}
                   className="mt-3 text-sm font-bold text-brand"
                 >
-                  See what&apos;s driving this →
+                  {chrome.cta}
                 </button>
-              </Card>
+              </div>
             )
           )}
 
