@@ -1,10 +1,10 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 
-type NavKey = "home" | "insights" | "wisdom" | "profile";
+type NavKey = "inbox" | "insights" | "wisdom" | "profile";
 
 const NAV: { key: NavKey; label: string; href: string; icon: string }[] = [
-  { key: "home",     label: "Home",     href: "/dashboard",          icon: "🏠" },
+  { key: "inbox",    label: "Inbox",    href: "/inbox",              icon: "📥" },
   { key: "insights", label: "Insights", href: "/dashboard/employee", icon: "📊" },
   { key: "wisdom",   label: "Wisdom",   href: "/wisdom",             icon: "📚" },
   { key: "profile",  label: "Profile",  href: "/profile",            icon: "👤" },

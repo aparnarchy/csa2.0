@@ -9,7 +9,7 @@
  */
 
 import type { FollowUpStatus, PillarId, SessionUser } from "./types";
-import { PILLAR_ORDER } from "./pillars";
+import { PILLAR_ORDER, PILLARS } from "./pillars";
 import {
   assertOwner,
   assertRole,
@@ -484,6 +484,116 @@ export async function submitFollowUp(
 ): Promise<void> {
   assertOwner(session, userId);
   void input;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Inbox (Phase 2.6): latest check-in summary · unanswered list (reuses the
+// check-in functions above) · "Actions taken on your feedback" + history.
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** A summary of the user's most recent answered check-in, for the Inbox. */
+export interface LatestCheckIn {
+  questionText: string;
+  pillarId: PillarId;
+  score: number;
+  isLow: boolean; // score < 7
+  recommendation: string | null; // present when low
+  dateLabel: string; // e.g. "April 2026"
+}
+
+/** The most recent check-in this user answered. Own data only. */
+export async function getLatestCheckIn(
+  session: SessionUser,
+  userId: string,
+): Promise<LatestCheckIn | null> {
+  assertOwner(session, userId);
+  const score = 3;
+  return {
+    questionText: "Do you get opportunities to tackle complex problems?",
+    pillarId: "meaningful_work",
+    score,
+    isLow: score < 7,
+    recommendation: score < 7 ? getSampleRecommendation("meaningful_work").text : null,
+    dateLabel: "April 2026",
+  };
+}
+
+/** How the employee felt about a manager action they can see. */
+export type ActionResponseValue = "yes" | "maybe" | "not_yet";
+
+/**
+ * A change a manager made in response to team feedback, surfaced to the employee.
+ * PRIVACY: server-side, an action is returned to an employee ONLY if they scored
+ * <7 on that question, ONLY after the 4-week delay (visibleToEmployeesAt), and
+ * ONLY when the team has ≥3 responses. The sample list below is already filtered
+ * to what this user may see; the real D1 query enforces the same rules.
+ */
+export interface FeedbackAction {
+  id: string;
+  pillarId: PillarId;
+  pillarLabel: string;
+  actionNote: string; // what the manager changed
+  dateLabel: string; // e.g. "Visible since Jun 2026"
+  response: ActionResponseValue | null; // this employee's response so far
+}
+
+export async function getFeedbackActions(
+  session: SessionUser,
+  userId: string,
+): Promise<FeedbackAction[]> {
+  assertOwner(session, userId);
+  return [
+    {
+      id: "act-culture-1",
+      pillarId: "culture",
+      pillarLabel: PILLARS.culture.label,
+      actionNote:
+        "Added a fortnightly recognition moment to team standup, so good work gets noticed openly.",
+      dateLabel: "Visible since Jun 2026",
+      response: null,
+    },
+  ];
+}
+
+/**
+ * Record how the employee felt about an action (+ an optional anonymous note for
+ * "maybe"/"not_yet"). One response per employee per action; submitting moves the
+ * item into history. Sample no-op for now; real D1 writes employeeResponses.
+ */
+export async function submitActionResponse(
+  session: SessionUser,
+  userId: string,
+  input: { actionId: string; response: ActionResponseValue; note?: string },
+): Promise<void> {
+  assertOwner(session, userId);
+  void input;
+}
+
+/** A past action the employee has already responded to (read-only history, 2.6b). */
+export interface ActionHistoryItem {
+  id: string;
+  pillarLabel: string;
+  actionNote: string;
+  response: ActionResponseValue;
+  note: string | null; // the anonymous note they sent, if any
+  respondedAtLabel: string;
+}
+
+export async function getActionHistory(
+  session: SessionUser,
+  userId: string,
+): Promise<ActionHistoryItem[]> {
+  assertOwner(session, userId);
+  return [
+    {
+      id: "act-growth-0",
+      pillarLabel: PILLARS.growth.label,
+      actionNote: "Set up monthly career-path 1:1s to make progression clearer.",
+      response: "yes",
+      note: null,
+      respondedAtLabel: "May 2026",
+    },
+  ];
 }
 
 /** Re-export so screens can build ScoreResult-shaped deltas without a second import. */
