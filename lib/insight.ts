@@ -5,6 +5,8 @@
  */
 import { getSampleRecommendation, type EmployeeScores } from "./data";
 import { PILLARS } from "./pillars";
+import type { Persona } from "./types";
+import { voicedHeadline, voicedRca, type Trend } from "./voice";
 
 export interface EmployeeInsight {
   headline: string; // short, punchy hero phrase
@@ -15,7 +17,7 @@ export interface EmployeeInsight {
   action: string | null; // one thing to try (lowest pillar)
 }
 
-export function buildEmployeeInsight(data: EmployeeScores): EmployeeInsight {
+export function buildEmployeeInsight(data: EmployeeScores, persona?: Persona): EmployeeInsight {
   if (!data.enoughData || data.overall === null) {
     return {
       headline: "Let's get to know you",
@@ -33,18 +35,24 @@ export function buildEmployeeInsight(data: EmployeeScores): EmployeeInsight {
   const bottom = sorted[sorted.length - 1];
 
   const delta = data.delta;
-  let headline: string;
+  let trend: Trend;
   let emoji: string;
   if (delta !== null && delta >= 0.2) {
-    headline = "Things are looking up";
+    trend = "up";
     emoji = "💜";
   } else if (delta !== null && delta <= -0.2) {
-    headline = "A little dip this month";
+    trend = "down";
     emoji = "💪";
   } else {
-    headline = "You're holding steady";
+    trend = "steady";
     emoji = "🙂";
   }
+  const NEUTRAL_HEADLINE: Record<Trend, string> = {
+    up: "Things are looking up",
+    down: "A little dip this month",
+    steady: "You're holding steady",
+  };
+  const headline = persona ? voicedHeadline(persona, trend) : NEUTRAL_HEADLINE[trend];
 
   const pct = data.percentiles?.org ?? data.percentile;
 
@@ -57,6 +65,11 @@ export function buildEmployeeInsight(data: EmployeeScores): EmployeeInsight {
         ? { label: PILLARS[bottom.pillarId].label, score: bottom.score as number }
         : null,
     comparison: pct ? `Happier than ${pct}% of your org` : null,
-    action: bottom && (bottom.score as number) < 7 ? getSampleRecommendation(bottom.pillarId).text : null,
+    action:
+      bottom && (bottom.score as number) < 7
+        ? persona
+          ? voicedRca(persona, bottom.pillarId).actions[0]
+          : getSampleRecommendation(bottom.pillarId).text
+        : null,
   };
 }

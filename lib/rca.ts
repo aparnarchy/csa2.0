@@ -4,10 +4,11 @@
  * cause and concrete actions. Same shape the Phase-5 AI will return, so the
  * journey UI never has to change when the AI is wired in.
  */
-import type { PillarId } from "./types";
+import type { Persona, PillarId } from "./types";
 import type { EmployeeScores } from "./data";
 import { PILLARS } from "./pillars";
 import { RCA_KNOWLEDGE } from "./rca-knowledge";
+import { voicedRca } from "./voice";
 
 export interface RcaNode {
   depthLabel: string;
@@ -37,7 +38,7 @@ const UNAVAILABLE: RootAnalysis = {
   payoff: "",
 };
 
-export function buildRootAnalysis(data: EmployeeScores): RootAnalysis {
+export function buildRootAnalysis(data: EmployeeScores, persona?: Persona): RootAnalysis {
   if (!data.enoughData || data.overall === null) return UNAVAILABLE;
 
   const scored = data.pillars.filter((p) => p.score !== null);
@@ -46,7 +47,7 @@ export function buildRootAnalysis(data: EmployeeScores): RootAnalysis {
   // weakest pillar drives the diagnosis
   const weakest = scored.reduce((a, b) => ((b.score as number) < (a.score as number) ? b : a));
   const pillarId = weakest.pillarId;
-  const kb = RCA_KNOWLEDGE[pillarId];
+  const kb = persona ? voicedRca(persona, pillarId) : RCA_KNOWLEDGE[pillarId];
   const label = PILLARS[pillarId].label;
 
   // its weakest question = the most specific evidence for the root

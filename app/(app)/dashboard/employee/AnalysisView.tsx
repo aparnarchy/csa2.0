@@ -58,8 +58,10 @@ export function AnalysisView({
   const sortedQs = [...data.questions].sort((a, b) => b.score - a.score);
   const shownQs = tab === "strengths" ? sortedQs.slice(0, 3) : sortedQs.slice(-3).reverse();
   const up = (data.delta ?? 0) >= 0;
-  const insight = buildEmployeeInsight(data);
-  const rca = buildRootAnalysis(data);
+  // Persona voice applies only in Play mode; Professional uses neutral copy.
+  const persona = session.themeMode === "play" ? session.persona : undefined;
+  const insight = buildEmployeeInsight(data, persona);
+  const rca = buildRootAnalysis(data, persona);
   const firstName = (session.name || "there").trim().split(/\s+/)[0];
 
   return (
