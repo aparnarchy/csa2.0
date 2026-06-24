@@ -70,6 +70,8 @@ export function createAuth(db: D1Database) {
         yearsOfExperience:  { type: "number",  required: false },
         mentorName:         { type: "string",  required: false },
         mentorEmail:        { type: "string",  required: false },
+        themeMode:          { type: "string",  defaultValue: "professional" },
+        persona:            { type: "string",  defaultValue: "spiderman" },
       },
     },
     databaseHooks: {

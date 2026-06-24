@@ -1,7 +1,7 @@
 import { createAuth } from "@/lib/auth";
 import { getRequestContext } from "@cloudflare/next-on-pages";
 import { headers } from "next/headers";
-import type { Role } from "@/lib/types";
+import type { Persona, Role, ThemeMode } from "@/lib/types";
 
 export async function getSession() {
   const { env } = getRequestContext();
@@ -26,6 +26,8 @@ export async function getSession() {
       email: session.user.email,
       onboardingComplete: Boolean(u.onboardingComplete ?? false),
       teamId: (u.teamId as string | null) ?? null,
+      themeMode: (u.themeMode === "play" ? "play" : "professional") as ThemeMode,
+      persona: (u.persona === "batman" ? "batman" : "spiderman") as Persona,
       roles,
     },
   };

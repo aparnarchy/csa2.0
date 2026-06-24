@@ -37,6 +37,8 @@ const FAKE_SESSION: SessionUser = {
   roles: ["employee", "manager"],
   onboardingComplete: true,
   teamId: "team-engineering",
+  themeMode: "play",
+  persona: "spiderman",
 };
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {

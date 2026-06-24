@@ -7,6 +7,11 @@ export type ContentType = 'lesson' | 'article' | 'video' | 'quiz';
 export type ActionStatus = 'open' | 'in_progress' | 'resolved';
 export type InviteStatus = 'pending' | 'accepted';
 export type FollowUpStatus = 'acted' | 'not_acted';
+
+// Look & feel. Mode = design only (Professional ↔ Play). Persona lives under
+// Play and changes the voice/copy (Spiderman / Batman).
+export type ThemeMode = 'professional' | 'play';
+export type Persona = 'spiderman' | 'batman';
 export type EmployeeResponseValue = 'yes' | 'maybe' | 'not_yet';
 export type JournalType = 'follow_up' | 'coaching';
 
@@ -192,4 +197,6 @@ export interface SessionUser {
   roles: Role[];
   onboardingComplete: boolean;
   teamId: string | null;
+  themeMode: ThemeMode;
+  persona: Persona;
 }
