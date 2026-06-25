@@ -1015,3 +1015,155 @@ export async function getWisdom(session: SessionUser, userId: string): Promise<W
 function shortPillar(p: PillarId): string {
   return { meaningful_work: "mw", growth: "gr", culture: "cu", compensation: "co" }[p];
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Manager Action Inbox (Phase 3.3): the 4-week feedback loop. Each flagged
+// pillar/question becomes one action item (ONE action per question per cycle).
+// The manager decides Yes (I'll act) or Not Yet; submitting an action logs it
+// with submittedAt + visibleToEmployeesAt = +4 weeks, so it stays hidden from
+// employees until then and is shown only to those who scored <7.
+//
+// Manager handover: when a manager changes, already-submitted actions stay and
+// become visible on schedule; the new manager does NOT inherit open items, but
+// CAN see prior open items + actions taken as a read-only report (`carriedOver`)
+// so context isn't lost across transitions — for both manager and employees.
+//
+// PRIVACY: aggregates only, and the whole inbox is hidden below the
+// anonymisation floor (<3 reportees). Enforced in server code here.
+// ─────────────────────────────────────────────────────────────────────────────
+
+export type ManagerActionDecision = "yes" | "not_yet";
+export type ManagerActionStatus = "open" | "resolved" | "flagged";
+
+export interface ManagerActionItem {
+  id: string;
+  pillarId: PillarId;
+  pillarLabel: string;
+  triggerQuestion: string;
+  teamAvg: number; // aggregate score on the trigger question
+  responses: { key: "A" | "B" | "C"; text: string; pct: number }[]; // A/B/C bar
+  recommendation: string;
+  status: ManagerActionStatus;
+  dateLabel: string; // when it was flagged, e.g. "Flagged Jun 2026"
+  // Present once the manager has acted on it:
+  actionNote?: string;
+  submittedAtLabel?: string;
+  visibleToEmployeesLabel?: string;
+  employeeResponse?: { yes: number; maybe: number; notYet: number }; // arrives via polling
+  // Read-only handover context from a previous manager:
+  carriedOver?: boolean;
+  handledByLabel?: string; // e.g. "Logged by the previous manager"
+}
+
+export interface ManagerInbox {
+  reporteeCount: number;
+  enoughReportees: boolean; // >= ANONYMISATION_FLOOR
+  resolvedPct: number; // resolved / (open + resolved)
+  open: ManagerActionItem[];
+  resolved: ManagerActionItem[];
+}
+
+/**
+ * The manager's Action Inbox for their team. Returns aggregates only and is
+ * empty (enoughReportees = false) below the anonymisation floor, in which case
+ * the screen hides the inbox entirely.
+ */
+export async function getManagerInbox(
+  session: SessionUser,
+  teamId: string,
+): Promise<ManagerInbox> {
+  assertRole(session, "manager", "reviewing_manager", "ceo_hr");
+
+  const reporteeCount = 6; // sample team size
+  if (reporteeCount < ANONYMISATION_FLOOR) {
+    return { reporteeCount, enoughReportees: false, resolvedPct: 0, open: [], resolved: [] };
+  }
+
+  const trend = buildTrend("team-" + teamId, 6.7, 8);
+  const pillars = pillarScoresFrom(trend);
+  const scoreFor = (pid: PillarId) => pillars.find((p) => p.pillarId === pid)?.score ?? 6;
+
+  const triggers: Record<PillarId, string> = {
+    meaningful_work: "Do you get to work on problems that matter to you?",
+    growth: "Does your manager invest in your development?",
+    culture: "Do you feel recognised for your good work?",
+    compensation: "Do you feel fairly rewarded for your contribution?",
+  };
+
+  // One OPEN item per sub-7 pillar, weakest first (one action per question/cycle).
+  const open: ManagerActionItem[] = PILLAR_ORDER.filter((pid) => scoreFor(pid) < 7)
+    .sort((a, b) => scoreFor(a) - scoreFor(b))
+    .map((pid) => {
+      const teamAvg = round1(scoreFor(pid));
+      return {
+        id: `open-${pid}`,
+        pillarId: pid,
+        pillarLabel: PILLARS[pid].label,
+        triggerQuestion: triggers[pid],
+        teamAvg,
+        responses: mkResponses(teamAvg),
+        recommendation: getSampleRecommendation(pid).text,
+        status: "open" as ManagerActionStatus,
+        dateLabel: "Flagged Jun 2026",
+      };
+    });
+
+  // RESOLVED — actions already submitted. Includes one carried over from the
+  // previous manager (read-only report) so transition context isn't lost.
+  const resolved: ManagerActionItem[] = [
+    {
+      id: "res-growth",
+      pillarId: "growth",
+      pillarLabel: PILLARS.growth.label,
+      triggerQuestion: triggers.growth,
+      teamAvg: 6.3,
+      responses: mkResponses(6.3),
+      recommendation: getSampleRecommendation("growth").text,
+      status: "resolved",
+      dateLabel: "Flagged Apr 2026",
+      actionNote: "Set up monthly career-path 1:1s so progression is clearer for everyone.",
+      submittedAtLabel: "Submitted May 2026",
+      visibleToEmployeesLabel: "Visible to team since Jun 2026",
+      employeeResponse: { yes: 4, maybe: 1, notYet: 0 },
+    },
+    {
+      id: "res-culture",
+      pillarId: "culture",
+      pillarLabel: PILLARS.culture.label,
+      triggerQuestion: triggers.culture,
+      teamAvg: 6.8,
+      responses: mkResponses(6.8),
+      recommendation: getSampleRecommendation("culture").text,
+      status: "resolved",
+      dateLabel: "Flagged Feb 2026",
+      actionNote: "Added a fortnightly recognition moment to standup so good work gets noticed openly.",
+      submittedAtLabel: "Submitted Mar 2026",
+      visibleToEmployeesLabel: "Visible to team since Apr 2026",
+      employeeResponse: { yes: 3, maybe: 2, notYet: 1 },
+      carriedOver: true,
+      handledByLabel: "Logged by the previous manager",
+    },
+  ];
+
+  const total = open.length + resolved.length;
+  const resolvedPct = total === 0 ? 0 : Math.round((resolved.length / total) * 100);
+
+  return { reporteeCount, enoughReportees: true, resolvedPct, open, resolved };
+}
+
+/**
+ * Log a manager's decision on an action item. "yes" records the action with a
+ * journal note and sets visibleToEmployeesAt = submittedAt + 4 weeks; "not_yet"
+ * flags it for revisiting. One action per question per cycle (no double-log).
+ * Sample no-op for now; real D1 writes managerActions + a journalEntries row.
+ */
+export async function submitManagerAction(
+  session: SessionUser,
+  input: { itemId: string; decision: ManagerActionDecision; note?: string },
+): Promise<void> {
+  assertRole(session, "manager", "reviewing_manager", "ceo_hr");
+  void input;
+}
+
+/** Weeks of delay before a submitted manager action becomes visible to employees. */
+export const MANAGER_ACTION_DELAY_WEEKS = 4;

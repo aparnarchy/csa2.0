@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   AIInsight,
   BigScore,
@@ -25,6 +26,7 @@ export function ManagerDashboardView({
   session: SessionUser;
   initial: TeamAggregate;
 }) {
+  const router = useRouter();
   const [window, setWindow] = useState<Window>("3M");
   const [data, setData] = useState<TeamAggregate>(initial);
 
@@ -132,6 +134,13 @@ export function ManagerDashboardView({
                   />
                 ))}
               </div>
+              <button
+                type="button"
+                onClick={() => router.push("/dashboard/manager/inbox")}
+                className="mt-4 w-full rounded-2xl bg-brand py-3 font-display text-sm font-black text-white transition active:scale-[0.98]"
+              >
+                Open Action Inbox →
+              </button>
             </Card>
           )}
 
