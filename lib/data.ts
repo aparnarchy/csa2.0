@@ -8,7 +8,7 @@
  * no change to the function signatures or the shapes screens consume.
  */
 
-import type { FollowUpStatus, PillarId, SessionUser } from "./types";
+import type { FollowUpStatus, PillarId, SessionUser, WisdomLevel } from "./types";
 import { PILLAR_ORDER, PILLARS } from "./pillars";
 import {
   assertOwner,
@@ -751,3 +751,267 @@ export async function getCompanyDetail(
 
 /** Re-export so screens can build ScoreResult-shaped deltas without a second import. */
 export { trendDelta, type ScoreResult };
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Wisdom (Phase 2.9): the learning path. Three levels (Beginner / Advanced /
+// Expert); each level holds one module per pillar, ordered LOWEST-PILLAR FIRST
+// so the weakest area is surfaced first. Each module has content items
+// (article / video = partial progress; quiz = completes the module + awards its
+// badge). When every module badge in a level is earned, the next level unlocks.
+//
+// Screen-local types (distinct from the DB-shaped WisdomModule in types.ts).
+// Sample data for now; the shapes won't change when this is wired to D1.
+// ─────────────────────────────────────────────────────────────────────────────
+
+export type WisdomItemType = "article" | "video" | "quiz";
+
+export interface WisdomItemView {
+  id: string;
+  title: string;
+  type: WisdomItemType;
+  duration: string;
+  desc: string;
+  done: boolean;
+}
+
+export interface WisdomModuleView {
+  id: string;
+  pillarId: PillarId;
+  pillarLabel: string;
+  title: string;
+  badge: string; // badge name awarded when the quiz is completed
+  badgeEarned: boolean;
+  items: WisdomItemView[];
+}
+
+export interface WisdomLevelView {
+  level: WisdomLevel;
+  name: string;
+  subtitle: string;
+  icon: string;
+  unlocked: boolean;
+  modules: WisdomModuleView[]; // ordered lowest-pillar first
+}
+
+export interface WisdomBadge {
+  label: string;
+  icon: string;
+  earned: boolean;
+}
+
+export interface WisdomData {
+  currentLevel: WisdomLevel;
+  levels: WisdomLevelView[];
+  badges: WisdomBadge[];
+  /** Pillar order driving module ordering (ascending score = weakest first). */
+  pillarOrder: PillarId[];
+  totalItems: number;
+  doneItems: number;
+}
+
+const LEVEL_META: Record<WisdomLevel, { name: string; subtitle: string; icon: string }> = {
+  beginner: { name: "Beginner", subtitle: "Know yourself", icon: "🌱" },
+  advanced: { name: "Advanced", subtitle: "Build habits", icon: "⚡" },
+  expert:   { name: "Expert",   subtitle: "Lead your growth", icon: "🏆" },
+};
+
+// Per-pillar copy for each level's module (title + the three content items).
+const MODULE_COPY: Record<WisdomLevel, Record<PillarId, { title: string; badge: string; items: Omit<WisdomItemView, "done">[] }>> = {
+  beginner: {
+    meaningful_work: {
+      title: "Find your why",
+      badge: "Purpose Seeker",
+      items: [
+        { id: "b-mw-1", title: "What meaningful work really means", type: "video",   duration: "5 min", desc: "Reframe how you think about purpose at work." },
+        { id: "b-mw-2", title: "Map your strengths to outcomes",     type: "article", duration: "3 min", desc: "Connect what you're good at to what matters." },
+        { id: "b-mw-3", title: "Meaningful work quiz",               type: "quiz",    duration: "2 min", desc: "Lock in the basics and earn your badge." },
+      ],
+    },
+    growth: {
+      title: "Growth mindset basics",
+      badge: "Growth Explorer",
+      items: [
+        { id: "b-gr-1", title: "The science of a growth mindset", type: "article", duration: "5 min", desc: "Why effort beats fixed talent over time." },
+        { id: "b-gr-2", title: "Spotting your learning edges",    type: "video",   duration: "4 min", desc: "Find the skills that will move you forward." },
+        { id: "b-gr-3", title: "Growth quiz",                     type: "quiz",    duration: "2 min", desc: "Check your understanding and earn the badge." },
+      ],
+    },
+    culture: {
+      title: "Belonging at work",
+      badge: "Culture Champion",
+      items: [
+        { id: "b-cu-1", title: "Why belonging drives performance", type: "article", duration: "6 min", desc: "Psychological safety, explained simply." },
+        { id: "b-cu-2", title: "Small ways to build trust",        type: "video",   duration: "4 min", desc: "Everyday habits that strengthen a team." },
+        { id: "b-cu-3", title: "Culture quiz",                     type: "quiz",    duration: "2 min", desc: "Test the ideas and earn the badge." },
+      ],
+    },
+    compensation: {
+      title: "Know your worth",
+      badge: "Value Aware",
+      items: [
+        { id: "b-co-1", title: "How to research your market value", type: "article", duration: "4 min", desc: "Where to look and what to compare." },
+        { id: "b-co-2", title: "Talking about pay with confidence", type: "video",   duration: "6 min", desc: "Frame the conversation around value." },
+        { id: "b-co-3", title: "Compensation quiz",                 type: "quiz",    duration: "2 min", desc: "Confirm the essentials and earn the badge." },
+      ],
+    },
+  },
+  advanced: {
+    meaningful_work: {
+      title: "Design work you love",
+      badge: "Craft Builder",
+      items: [
+        { id: "a-mw-1", title: "Job crafting in practice",  type: "article", duration: "7 min", desc: "Reshape your role around your strengths." },
+        { id: "a-mw-2", title: "Negotiating for better work", type: "video", duration: "6 min", desc: "Ask for the projects that energise you." },
+        { id: "a-mw-3", title: "Job crafting quiz",         type: "quiz",    duration: "3 min", desc: "Apply the framework and earn the badge." },
+      ],
+    },
+    growth: {
+      title: "Habits that stick",
+      badge: "Habit Architect",
+      items: [
+        { id: "a-gr-1", title: "Build a growth habit that lasts", type: "article", duration: "5 min", desc: "Science-backed routines for real change." },
+        { id: "a-gr-2", title: "Feedback loops that compound",    type: "video",   duration: "8 min", desc: "Turn feedback into steady momentum." },
+        { id: "a-gr-3", title: "Habits quiz",                     type: "quiz",    duration: "3 min", desc: "Lock in the method and earn the badge." },
+      ],
+    },
+    culture: {
+      title: "Strengthen your team",
+      badge: "Team Builder",
+      items: [
+        { id: "a-cu-1", title: "Repairing trust after friction", type: "article", duration: "6 min", desc: "How healthy teams recover and grow." },
+        { id: "a-cu-2", title: "Running better conversations",   type: "video",   duration: "7 min", desc: "Make every 1:1 and stand-up count." },
+        { id: "a-cu-3", title: "Team quiz",                      type: "quiz",    duration: "3 min", desc: "Apply the ideas and earn the badge." },
+      ],
+    },
+    compensation: {
+      title: "Negotiate well",
+      badge: "Deal Maker",
+      items: [
+        { id: "a-co-1", title: "Preparing for a pay conversation", type: "article", duration: "6 min", desc: "Build the case before you sit down." },
+        { id: "a-co-2", title: "Handling the negotiation",         type: "video",   duration: "9 min", desc: "Stay calm, anchored, and collaborative." },
+        { id: "a-co-3", title: "Negotiation quiz",                 type: "quiz",    duration: "3 min", desc: "Rehearse the moves and earn the badge." },
+      ],
+    },
+  },
+  expert: {
+    meaningful_work: {
+      title: "Lead with purpose",
+      badge: "Purpose Leader",
+      items: [
+        { id: "e-mw-1", title: "Helping others find meaning", type: "article", duration: "8 min", desc: "Connect a team's work to a larger why." },
+        { id: "e-mw-2", title: "Lead without a title",        type: "video",   duration: "12 min", desc: "Drive culture and momentum from any seat." },
+        { id: "e-mw-3", title: "Purpose quiz",               type: "quiz",    duration: "3 min", desc: "Cement the practice and earn the badge." },
+      ],
+    },
+    growth: {
+      title: "Coach growth",
+      badge: "Growth Coach",
+      items: [
+        { id: "e-gr-1", title: "Design a 5-year career arc", type: "article", duration: "8 min", desc: "Craft a vision that guides your decisions." },
+        { id: "e-gr-2", title: "Coaching others to grow",    type: "video",   duration: "10 min", desc: "Ask the questions that unlock progress." },
+        { id: "e-gr-3", title: "Coaching quiz",              type: "quiz",    duration: "3 min", desc: "Practise the approach and earn the badge." },
+      ],
+    },
+    culture: {
+      title: "Shape culture",
+      badge: "Culture Architect",
+      items: [
+        { id: "e-cu-1", title: "Designing team rituals",    type: "article", duration: "7 min", desc: "Make values visible in daily habits." },
+        { id: "e-cu-2", title: "Leading through ambiguity", type: "video",   duration: "11 min", desc: "Keep a team steady when things are unclear." },
+        { id: "e-cu-3", title: "Culture quiz",              type: "quiz",    duration: "3 min", desc: "Apply the playbook and earn the badge." },
+      ],
+    },
+    compensation: {
+      title: "Own your trajectory",
+      badge: "Trajectory Owner",
+      items: [
+        { id: "e-co-1", title: "Building long-term wealth from work", type: "article", duration: "9 min", desc: "Think beyond the next pay rise." },
+        { id: "e-co-2", title: "Advocating for your team's pay",      type: "video",   duration: "8 min", desc: "Make the case for fair reward." },
+        { id: "e-co-3", title: "Trajectory quiz",                    type: "quiz",    duration: "3 min", desc: "Finish strong and earn the badge." },
+      ],
+    },
+  },
+};
+
+const BADGE_ICONS: Record<string, string> = {
+  "Purpose Seeker": "🎯", "Growth Explorer": "🌿", "Culture Champion": "🤝", "Value Aware": "💰",
+  "Craft Builder": "🛠️", "Habit Architect": "🧱", "Team Builder": "👥", "Deal Maker": "🤝",
+  "Purpose Leader": "🧭", "Growth Coach": "📈", "Culture Architect": "🏛️", "Trajectory Owner": "🚀",
+};
+
+/**
+ * The learning path for one user. Modules within each level are ordered by the
+ * user's weakest pillar first. Sample progress: a couple of beginner items done.
+ * Own data only.
+ */
+export async function getWisdom(session: SessionUser, userId: string): Promise<WisdomData> {
+  assertOwner(session, userId);
+
+  // Ascending pillar score (weakest first) drives module order. Sample scores.
+  const pillarScores: Record<PillarId, number> = {
+    compensation: 5.8,
+    growth: 6.4,
+    meaningful_work: 7.2,
+    culture: 7.6,
+  };
+  const pillarOrder = [...PILLAR_ORDER].sort((a, b) => pillarScores[a] - pillarScores[b]);
+
+  // Sample completion: in Beginner the weakest pillar's module is fully done
+  // (badge earned), the next has its article read (partial); rest untouched.
+  const doneIds = new Set<string>([
+    `b-${shortPillar(pillarOrder[0])}-1`,
+    `b-${shortPillar(pillarOrder[0])}-2`,
+    `b-${shortPillar(pillarOrder[0])}-3`,
+    `b-${shortPillar(pillarOrder[1])}-1`,
+  ]);
+
+  const levelKeys: WisdomLevel[] = ["beginner", "advanced", "expert"];
+  const levels: WisdomLevelView[] = [];
+  let prevLevelComplete = true; // beginner is always unlocked
+
+  for (const level of levelKeys) {
+    const unlocked = prevLevelComplete;
+    const modules: WisdomModuleView[] = pillarOrder.map((pillarId) => {
+      const copy = MODULE_COPY[level][pillarId];
+      const items = copy.items.map((it) => ({ ...it, done: doneIds.has(it.id) }));
+      const quiz = items.find((i) => i.type === "quiz");
+      return {
+        id: `${level}-${shortPillar(pillarId)}`,
+        pillarId,
+        pillarLabel: PILLARS[pillarId].label,
+        title: copy.title,
+        badge: copy.badge,
+        badgeEarned: !!quiz?.done,
+        items,
+      };
+    });
+    levels.push({ level, ...LEVEL_META[level], unlocked, modules });
+    prevLevelComplete = modules.every((m) => m.badgeEarned);
+  }
+
+  const currentLevel = [...levels].reverse().find((l) => l.unlocked)?.level ?? "beginner";
+
+  // Badges: one per module across all levels, earned flag from progress.
+  const badges: WisdomBadge[] = levels.flatMap((l) =>
+    l.modules.map((m) => ({
+      label: m.badge,
+      icon: BADGE_ICONS[m.badge] ?? "🏅",
+      earned: m.badgeEarned,
+    })),
+  );
+
+  const allItems = levels.flatMap((l) => l.modules.flatMap((m) => m.items));
+  return {
+    currentLevel,
+    levels,
+    badges,
+    pillarOrder,
+    totalItems: allItems.length,
+    doneItems: allItems.filter((i) => i.done).length,
+  };
+}
+
+/** Short pillar slug used in sample wisdom item ids (b-mw-1 etc.). */
+function shortPillar(p: PillarId): string {
+  return { meaningful_work: "mw", growth: "gr", culture: "cu", compensation: "co" }[p];
+}
