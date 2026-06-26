@@ -1,23 +1,20 @@
 export const runtime = "edge";
-import { getSession } from "@/lib/auth-session";
-import { redirect } from "next/navigation";
-import SignOutButton from "@/components/SignOutButton";
 
-export default async function ReviewingManagerDashboard() {
+import { redirect } from "next/navigation";
+import { getSession } from "@/lib/auth-session";
+import { getReviewingManagerList } from "@/lib/data";
+import { ReviewingManagerView } from "./ReviewingManagerView";
+
+/** Reviewing Manager — list of the managers who report to this reviewer (Phase 4.1). */
+export default async function ReviewingManagerPage() {
   const session = await getSession();
   if (!session) redirect("/login");
+  if (!session.user.onboardingComplete) redirect("/onboarding");
+  if (!session.user.roles.includes("reviewing_manager") && !session.user.roles.includes("ceo_hr")) {
+    redirect("/dashboard");
+  }
 
-  return (
-    <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center px-6">
-      <div className="bg-white rounded-2xl p-8 shadow-sm w-full max-w-sm text-center">
-        <div className="text-4xl mb-4">🔭</div>
-        <h1 className="text-xl font-bold text-gray-900">Reviewing Manager</h1>
-        <p className="text-sm text-gray-500 mt-1">{session.user.name}</p>
-        <p className="text-xs text-gray-400 mt-4">
-          Phase 1 stub — screens coming in Phase 4
-        </p>
-        <SignOutButton />
-      </div>
-    </div>
-  );
+  const list = await getReviewingManagerList(session.user, "3M");
+
+  return <ReviewingManagerView session={session.user} initial={list} />;
 }

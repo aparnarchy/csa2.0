@@ -1297,3 +1297,151 @@ export async function submitManagerAction(
 
 /** Weeks of delay before a submitted manager action becomes visible to employees. */
 export const MANAGER_ACTION_DELAY_WEEKS = 4;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Reviewing Manager (Phase 4.1 / 4.2): a senior leader reviews the managers who
+// report to them. Strictly aggregates — team scores, never an individual. There
+// is deliberately NO participation rate next to a manager's name. A manager's
+// team below the anonymisation floor shows no score at all.
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** One reportee-manager's roll-up for the list (4.1). */
+export interface ManagerSummary {
+  managerId: string;
+  name: string;
+  teamScore: number | null; // null when the team is below the floor
+  delta: number | null;
+  percentile: number | null;
+  resolutionPct: number | null; // % of feedback actions resolved
+  band: "green" | "amber" | "red" | null;
+  enoughData: boolean;
+}
+
+export interface ReviewingManagerList {
+  orgAvg: number | null;
+  managerCount: number; // how many managers report to this reviewer
+  shownCount: number; // how many are above the floor (have a score)
+  managers: ManagerSummary[]; // ranked: scored first, highest score first
+}
+
+/** A single manager's team detail for the drill-in (4.2). */
+export interface ManagerDetail {
+  managerId: string;
+  name: string;
+  enoughData: boolean;
+  reason?: string;
+  teamScore: number | null;
+  delta: number | null;
+  percentile: number | null;
+  resolutionPct: number | null;
+  pillars: PillarScore[];
+  trend: TrendPoint[];
+}
+
+/** Sample managers reporting to the reviewer. One sits below the floor on purpose. */
+const SAMPLE_MANAGERS: { id: string; name: string; base: number; reporteeCount: number }[] = [
+  { id: "m-aria",  name: "Aria Sharma", base: 7.9, reporteeCount: 7 },
+  { id: "m-leo",   name: "Leo Martins", base: 7.1, reporteeCount: 6 },
+  { id: "m-priya", name: "Priya Nair",  base: 6.5, reporteeCount: 5 },
+  { id: "m-tom",   name: "Tom Becker",  base: 5.8, reporteeCount: 9 },
+  { id: "m-mei",   name: "Mei Tan",     base: 6.4, reporteeCount: 2 }, // below floor → hidden score
+];
+
+function pctFromScore(score: number): number {
+  return Math.max(20, Math.min(98, Math.round(score * 10 + 4)));
+}
+
+function resolutionFor(id: string): number {
+  return 45 + Math.round(seeded("res-" + id) * 50); // 45–95%
+}
+
+export async function getReviewingManagerList(
+  session: SessionUser,
+  window: Window = "3M",
+): Promise<ReviewingManagerList> {
+  assertRole(session, "reviewing_manager", "ceo_hr");
+
+  const points = Math.min(weeksIn(window), RECENT_WEEKS.length);
+  const managers: ManagerSummary[] = SAMPLE_MANAGERS.map((m) => {
+    // Below the anonymisation floor → no score reaches the reviewer at all.
+    if (m.reporteeCount < ANONYMISATION_FLOOR) {
+      return {
+        managerId: m.id,
+        name: m.name,
+        teamScore: null,
+        delta: null,
+        percentile: null,
+        resolutionPct: null,
+        band: null,
+        enoughData: false,
+      };
+    }
+    const trend = buildTrend("team-" + m.id, m.base, points);
+    const teamScore = trend[trend.length - 1].overall;
+    const prior = trend.length > 1 ? trend[trend.length - 2].overall : null;
+    return {
+      managerId: m.id,
+      name: m.name,
+      teamScore,
+      delta: prior === null ? null : round1(teamScore - prior),
+      percentile: pctFromScore(teamScore),
+      resolutionPct: resolutionFor(m.id),
+      band: scoreBand(teamScore),
+      enoughData: true,
+    };
+  });
+
+  const shown = managers.filter((m) => m.enoughData && m.teamScore !== null);
+  const orgAvg = shown.length
+    ? round1(shown.reduce((s, m) => s + (m.teamScore ?? 0), 0) / shown.length)
+    : null;
+
+  // Rank: managers with a score first, highest score first.
+  managers.sort(
+    (a, b) => Number(b.enoughData) - Number(a.enoughData) || (b.teamScore ?? 0) - (a.teamScore ?? 0),
+  );
+
+  return { orgAvg, managerCount: managers.length, shownCount: shown.length, managers };
+}
+
+export async function getReviewingManagerDetail(
+  session: SessionUser,
+  managerId: string,
+  window: Window = "3M",
+): Promise<ManagerDetail> {
+  assertRole(session, "reviewing_manager", "ceo_hr");
+
+  const m = SAMPLE_MANAGERS.find((x) => x.id === managerId) ?? SAMPLE_MANAGERS[0];
+
+  if (m.reporteeCount < ANONYMISATION_FLOOR) {
+    return {
+      managerId: m.id,
+      name: m.name,
+      enoughData: false,
+      reason: `${m.name}'s team is below ${ANONYMISATION_FLOOR} reportees, so nothing is shown — this protects anonymity.`,
+      teamScore: null,
+      delta: null,
+      percentile: null,
+      resolutionPct: null,
+      pillars: [],
+      trend: [],
+    };
+  }
+
+  const points = Math.min(weeksIn(window), RECENT_WEEKS.length);
+  const trend = buildTrend("team-" + m.id, m.base, points);
+  const teamScore = trend[trend.length - 1].overall;
+  const prior = trend.length > 1 ? trend[trend.length - 2].overall : null;
+
+  return {
+    managerId: m.id,
+    name: m.name,
+    enoughData: true,
+    teamScore,
+    delta: prior === null ? null : round1(teamScore - prior),
+    percentile: pctFromScore(teamScore),
+    resolutionPct: resolutionFor(m.id),
+    pillars: pillarScoresFrom(trend),
+    trend,
+  };
+}
