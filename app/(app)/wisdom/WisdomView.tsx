@@ -3,15 +3,35 @@
 import { useMemo, useState } from "react";
 import { Card, GradientHeader, Mascot, ScreenShell } from "@/components/kit";
 import { HEADER_MASCOT_SIZE } from "@/lib/mascot";
+import type { MascotState } from "@/lib/mascot";
 import type { WisdomData, WisdomItemType, WisdomLevelView, WisdomModuleView } from "@/lib/data";
 import type { SessionUser } from "@/lib/types";
 
 const TYPE_ICON: Record<WisdomItemType, string> = { video: "▶", article: "📄", quiz: "✎" };
 const TYPE_LABEL: Record<WisdomItemType, string> = { video: "Video", article: "Article", quiz: "Quiz" };
 
-export function WisdomView({ session, wisdom }: { session: SessionUser; wisdom: WisdomData }) {
+// Header copy + nav differ by audience (employee growth vs manager leadership);
+// everything below the header is shared. Defaults keep the employee screen as-is.
+export function WisdomView({
+  session,
+  wisdom,
+  eyebrow = "📚 Wisdom",
+  title,
+  mascotState = "happy",
+  footnote = "Modules are ordered by your weakest pillar first.",
+  active = "wisdom",
+}: {
+  session: SessionUser;
+  wisdom: WisdomData;
+  eyebrow?: string;
+  title?: string;
+  mascotState?: MascotState;
+  footnote?: string;
+  active?: "wisdom" | "insights" | "inbox" | "profile";
+}) {
   const isPlay = session.themeMode === "play";
   const firstName = (session.name || "there").trim().split(/\s+/)[0];
+  const heading = title ?? `Keep growing, ${firstName}`;
 
   // All item ids that start done; interaction adds to this set (sample state).
   const initialDone = useMemo(
@@ -62,13 +82,13 @@ export function WisdomView({ session, wisdom }: { session: SessionUser; wisdom: 
   const earnedBadges = levels.flatMap((l) => l.modules.filter((m) => m.badgeEarned).map((m) => m.badge));
 
   return (
-    <ScreenShell active="wisdom">
+    <ScreenShell active={active}>
       {/* Header — Play: lavender card + mascot; Professional: gradient card, no mascot. */}
       {isPlay ? (
         <GradientHeader
-          eyebrow="📚 Wisdom"
-          title={`Keep growing, ${firstName}`}
-          avatar={<Mascot state="happy" size={HEADER_MASCOT_SIZE} float={false} sparkle={false} />}
+          eyebrow={eyebrow}
+          title={heading}
+          avatar={<Mascot state={mascotState} size={HEADER_MASCOT_SIZE} float={false} sparkle={false} />}
           className="flex min-h-[180px] flex-col justify-center"
         >
           <ProgressMeter pct={pct} doneCount={doneCount} totalCount={totalCount} />
@@ -78,9 +98,9 @@ export function WisdomView({ session, wisdom }: { session: SessionUser; wisdom: 
           className="rounded-card px-5 py-6"
           style={{ background: "linear-gradient(135deg, #EDE7FF 0%, #C9B4FF 100%)" }}
         >
-          <p className="text-xs font-semibold text-brand/70">📚 Wisdom</p>
+          <p className="text-xs font-semibold text-brand/70">{eyebrow}</p>
           <h1 className="mt-1 font-display text-[30px] font-black leading-tight text-brand">
-            Keep growing, {firstName}
+            {heading}
           </h1>
           <div className="mt-3">
             <ProgressMeter pct={pct} doneCount={doneCount} totalCount={totalCount} />
@@ -124,9 +144,7 @@ export function WisdomView({ session, wisdom }: { session: SessionUser; wisdom: 
         })}
       </div>
 
-      <p className="pb-2 text-center text-[11px] text-ink-4">
-        Modules are ordered by your weakest pillar first.
-      </p>
+      <p className="pb-2 text-center text-[11px] text-ink-4">{footnote}</p>
     </ScreenShell>
   );
 }

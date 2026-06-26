@@ -933,27 +933,157 @@ const MODULE_COPY: Record<WisdomLevel, Record<PillarId, { title: string; badge: 
   },
 };
 
+// Manager (leadership) audience copy — same structure and item ids as the
+// employee set, but framed around leading a team on each pillar. Phase 3.4.
+// Placeholder content; real videos/articles arrive via the admin CMS later.
+const MODULE_COPY_MANAGER: Record<WisdomLevel, Record<PillarId, { title: string; badge: string; items: Omit<WisdomItemView, "done">[] }>> = {
+  beginner: {
+    meaningful_work: {
+      title: "Connect work to why",
+      badge: "Purpose Guide",
+      items: [
+        { id: "b-mw-1", title: "Help your team see the bigger picture", type: "video",   duration: "5 min", desc: "Tie everyday tasks to a purpose people feel." },
+        { id: "b-mw-2", title: "Link each role to real outcomes",       type: "article", duration: "3 min", desc: "Show people how their work moves the needle." },
+        { id: "b-mw-3", title: "Purpose-leadership quiz",               type: "quiz",    duration: "2 min", desc: "Lock in the basics and earn your badge." },
+      ],
+    },
+    growth: {
+      title: "Grow your people",
+      badge: "Growth Enabler",
+      items: [
+        { id: "b-gr-1", title: "Why development drives retention",   type: "article", duration: "5 min", desc: "Growth is the strongest reason people stay." },
+        { id: "b-gr-2", title: "Spot growth potential on your team", type: "video",   duration: "4 min", desc: "Notice the signals that someone is ready for more." },
+        { id: "b-gr-3", title: "Growth-leadership quiz",             type: "quiz",    duration: "2 min", desc: "Check your understanding and earn the badge." },
+      ],
+    },
+    culture: {
+      title: "Build psychological safety",
+      badge: "Safety Builder",
+      items: [
+        { id: "b-cu-1", title: "What makes a team feel safe", type: "article", duration: "6 min", desc: "The foundation every high-trust team shares." },
+        { id: "b-cu-2", title: "Everyday habits that build trust", type: "video", duration: "4 min", desc: "Small leader behaviours with outsized impact." },
+        { id: "b-cu-3", title: "Culture-leadership quiz",     type: "quiz",    duration: "2 min", desc: "Test the ideas and earn the badge." },
+      ],
+    },
+    compensation: {
+      title: "Fairness & transparency",
+      badge: "Fair Pay Ally",
+      items: [
+        { id: "b-co-1", title: "Talking about pay fairly", type: "article", duration: "4 min", desc: "Handle a sensitive topic with openness." },
+        { id: "b-co-2", title: "Answering pay questions with confidence", type: "video", duration: "6 min", desc: "What to say — and what not to promise." },
+        { id: "b-co-3", title: "Pay-leadership quiz",      type: "quiz",    duration: "2 min", desc: "Confirm the essentials and earn the badge." },
+      ],
+    },
+  },
+  advanced: {
+    meaningful_work: {
+      title: "Design meaningful roles",
+      badge: "Role Designer",
+      items: [
+        { id: "a-mw-1", title: "Job crafting with your team",   type: "article", duration: "7 min", desc: "Reshape roles around people's strengths." },
+        { id: "a-mw-2", title: "Assign work that energises",     type: "video",   duration: "6 min", desc: "Match the right work to the right person." },
+        { id: "a-mw-3", title: "Role-design quiz",               type: "quiz",    duration: "3 min", desc: "Apply the framework and earn the badge." },
+      ],
+    },
+    growth: {
+      title: "Coach in your 1:1s",
+      badge: "Coaching Lead",
+      items: [
+        { id: "a-gr-1", title: "Make 1:1s about growth", type: "article", duration: "5 min", desc: "Turn status updates into development." },
+        { id: "a-gr-2", title: "Feedback that compounds", type: "video",  duration: "8 min", desc: "Give feedback people can act on." },
+        { id: "a-gr-3", title: "Coaching quiz",          type: "quiz",    duration: "3 min", desc: "Lock in the method and earn the badge." },
+      ],
+    },
+    culture: {
+      title: "Strengthen the team",
+      badge: "Team Strengthener",
+      items: [
+        { id: "a-cu-1", title: "Repairing trust after friction", type: "article", duration: "6 min", desc: "How strong teams recover and grow." },
+        { id: "a-cu-2", title: "Running better team conversations", type: "video", duration: "7 min", desc: "Make every stand-up and retro count." },
+        { id: "a-cu-3", title: "Team quiz",                      type: "quiz",    duration: "3 min", desc: "Apply the ideas and earn the badge." },
+      ],
+    },
+    compensation: {
+      title: "Advocate for your team",
+      badge: "Pay Advocate",
+      items: [
+        { id: "a-co-1", title: "Build the case for a raise",      type: "article", duration: "6 min", desc: "Make a clear, evidence-based argument." },
+        { id: "a-co-2", title: "Navigating comp up the chain",    type: "video",   duration: "9 min", desc: "Champion fair pay with senior leaders." },
+        { id: "a-co-3", title: "Advocacy quiz",                   type: "quiz",    duration: "3 min", desc: "Rehearse the moves and earn the badge." },
+      ],
+    },
+  },
+  expert: {
+    meaningful_work: {
+      title: "Lead with purpose",
+      badge: "Purpose Leader",
+      items: [
+        { id: "e-mw-1", title: "Build a purpose-driven team", type: "article", duration: "8 min", desc: "Connect a team's work to a larger why." },
+        { id: "e-mw-2", title: "Lead change with meaning",    type: "video",   duration: "12 min", desc: "Keep purpose alive through hard transitions." },
+        { id: "e-mw-3", title: "Purpose quiz",               type: "quiz",    duration: "3 min", desc: "Cement the practice and earn the badge." },
+      ],
+    },
+    growth: {
+      title: "Build a growth culture",
+      badge: "Growth Architect",
+      items: [
+        { id: "e-gr-1", title: "Career arcs across a team", type: "article", duration: "8 min", desc: "Plan development beyond the next role." },
+        { id: "e-gr-2", title: "Coach managers to coach",   type: "video",   duration: "10 min", desc: "Scale good coaching through your leaders." },
+        { id: "e-gr-3", title: "Growth-culture quiz",       type: "quiz",    duration: "3 min", desc: "Practise the approach and earn the badge." },
+      ],
+    },
+    culture: {
+      title: "Architect the culture",
+      badge: "Culture Architect",
+      items: [
+        { id: "e-cu-1", title: "Designing team rituals",    type: "article", duration: "7 min", desc: "Make values visible in daily habits." },
+        { id: "e-cu-2", title: "Leading through ambiguity", type: "video",   duration: "11 min", desc: "Keep a team steady when things are unclear." },
+        { id: "e-cu-3", title: "Culture quiz",              type: "quiz",    duration: "3 min", desc: "Apply the playbook and earn the badge." },
+      ],
+    },
+    compensation: {
+      title: "Own team fairness",
+      badge: "Equity Champion",
+      items: [
+        { id: "e-co-1", title: "Embedding pay equity",          type: "article", duration: "9 min", desc: "Make fairness a system, not a one-off." },
+        { id: "e-co-2", title: "Advocating fair reward at scale", type: "video", duration: "8 min", desc: "Drive equitable pay across the org." },
+        { id: "e-co-3", title: "Equity quiz",                   type: "quiz",    duration: "3 min", desc: "Finish strong and earn the badge." },
+      ],
+    },
+  },
+};
+
 const BADGE_ICONS: Record<string, string> = {
   "Purpose Seeker": "🎯", "Growth Explorer": "🌿", "Culture Champion": "🤝", "Value Aware": "💰",
   "Craft Builder": "🛠️", "Habit Architect": "🧱", "Team Builder": "👥", "Deal Maker": "🤝",
   "Purpose Leader": "🧭", "Growth Coach": "📈", "Culture Architect": "🏛️", "Trajectory Owner": "🚀",
+  // Manager (leadership) badges
+  "Purpose Guide": "🧭", "Growth Enabler": "🌿", "Safety Builder": "🛡️", "Fair Pay Ally": "⚖️",
+  "Role Designer": "🧩", "Coaching Lead": "🎧", "Team Strengthener": "🤝", "Pay Advocate": "📣",
+  "Growth Architect": "📈", "Equity Champion": "⚖️",
 };
+
+export type WisdomAudience = "employee" | "manager";
 
 /**
  * The learning path for one user. Modules within each level are ordered by the
  * user's weakest pillar first. Sample progress: a couple of beginner items done.
  * Own data only.
  */
-export async function getWisdom(session: SessionUser, userId: string): Promise<WisdomData> {
+export async function getWisdom(
+  session: SessionUser,
+  userId: string,
+  audience: WisdomAudience = "employee",
+): Promise<WisdomData> {
   assertOwner(session, userId);
 
-  // Ascending pillar score (weakest first) drives module order. Sample scores.
-  const pillarScores: Record<PillarId, number> = {
-    compensation: 5.8,
-    growth: 6.4,
-    meaningful_work: 7.2,
-    culture: 7.6,
-  };
+  // Employee path orders by the user's own weakest pillar; the manager
+  // (leadership) path orders by the team's weakest pillar. Sample scores.
+  const pillarScores: Record<PillarId, number> =
+    audience === "manager"
+      ? { growth: 5.9, culture: 6.5, compensation: 6.8, meaningful_work: 7.4 }
+      : { compensation: 5.8, growth: 6.4, meaningful_work: 7.2, culture: 7.6 };
+  const copyTable = audience === "manager" ? MODULE_COPY_MANAGER : MODULE_COPY;
   const pillarOrder = [...PILLAR_ORDER].sort((a, b) => pillarScores[a] - pillarScores[b]);
 
   // Sample completion: in Beginner the weakest pillar's module is fully done
@@ -972,7 +1102,7 @@ export async function getWisdom(session: SessionUser, userId: string): Promise<W
   for (const level of levelKeys) {
     const unlocked = prevLevelComplete;
     const modules: WisdomModuleView[] = pillarOrder.map((pillarId) => {
-      const copy = MODULE_COPY[level][pillarId];
+      const copy = copyTable[level][pillarId];
       const items = copy.items.map((it) => ({ ...it, done: doneIds.has(it.id) }));
       const quiz = items.find((i) => i.type === "quiz");
       return {

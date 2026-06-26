@@ -144,6 +144,26 @@ export function ManagerDashboardView({
             </Card>
           )}
 
+          {/* Leadership wisdom — manager-audience learning path (Phase 3.4) */}
+          <button
+            type="button"
+            onClick={() => router.push("/dashboard/manager/wisdom")}
+            className="w-full rounded-card border border-lav-mid bg-white p-4 text-left shadow-card transition active:scale-[0.99]"
+          >
+            <div className="flex items-center gap-3">
+              <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-2xl bg-lav-soft text-xl">
+                🧭
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="font-display text-base font-black leading-tight text-ink">Leadership wisdom</p>
+                <p className="mt-0.5 text-[11px] text-ink-3">
+                  Short lessons on leading your team, weakest pillar first.
+                </p>
+              </div>
+              <span className="flex-shrink-0 text-brand-light">→</span>
+            </div>
+          </button>
+
           <p className="pb-2 text-center text-[11px] text-ink-4">
             Aggregates only. Nothing here can identify an individual.
           </p>
