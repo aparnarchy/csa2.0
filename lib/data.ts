@@ -1445,3 +1445,163 @@ export async function getReviewingManagerDetail(
     trend,
   };
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CEO / HR dashboard (Phase 4.3): the manager-dashboard shape applied org-wide,
+// with a dropdown to drill into any department or team. Strictly aggregates —
+// org / dept / team scores, never an individual, and NO participation rate next
+// to any name. A scope below the anonymisation floor shows no score at all.
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** A summary of feedback actions taken across a scope and their effect. */
+export interface ActionImpact {
+  submitted: number;
+  resolved: number;
+  resolutionPct: number;
+  pillarsImproved: number; // pillars trending up since actions landed
+}
+
+/** One option in the scope dropdown (org → department → team). */
+export interface CeoScopeOption {
+  value: string;
+  label: string;
+  kind: "org" | "dept" | "team";
+}
+
+/** Everything the CEO / HR dashboard needs for one scope. */
+export interface CeoDashboard {
+  scope: string;
+  scopeLabel: string;
+  scopeKind: "org" | "dept" | "team";
+  options: CeoScopeOption[];
+  enoughData: boolean;
+  reason?: string;
+  score: number | null;
+  delta: number | null;
+  percentile: number | null;
+  peopleCount: number;
+  pillars: PillarScore[];
+  trend: TrendPoint[];
+  impact: ActionImpact | null;
+}
+
+/** Sample departments. Each holds teams (reusing SAMPLE_MANAGERS as the teams)
+ *  so org / dept / team numbers stay internally consistent. Mei Tan's team sits
+ *  below the floor on purpose — drilling into it shows no score. */
+const SAMPLE_DEPARTMENTS: { id: string; name: string; base: number; teamIds: string[] }[] = [
+  { id: "d-eng",   name: "Engineering", base: 7.5, teamIds: ["m-aria", "m-mei"] },
+  { id: "d-sales", name: "Sales",       base: 6.6, teamIds: ["m-leo", "m-priya"] },
+  { id: "d-ops",   name: "Operations",  base: 6.9, teamIds: ["m-tom"] },
+];
+
+function teamPeople(teamId: string): number {
+  return SAMPLE_MANAGERS.find((m) => m.id === teamId)?.reporteeCount ?? 0;
+}
+
+/** Flat, ordered option list: org first, then each dept followed by its teams. */
+function ceoScopeOptions(): CeoScopeOption[] {
+  const opts: CeoScopeOption[] = [
+    { value: "org", label: "Whole organisation", kind: "org" },
+  ];
+  for (const d of SAMPLE_DEPARTMENTS) {
+    opts.push({ value: d.id, label: d.name, kind: "dept" });
+    for (const tid of d.teamIds) {
+      const t = SAMPLE_MANAGERS.find((m) => m.id === tid);
+      if (t) opts.push({ value: t.id, label: `— ${t.name}`, kind: "team" });
+    }
+  }
+  return opts;
+}
+
+/** Resolve a scope id to its label, base score, headcount and seed key. */
+function resolveCeoScope(scope: string): {
+  label: string;
+  kind: "org" | "dept" | "team";
+  base: number;
+  people: number;
+  seedKey: string;
+} {
+  if (scope === "org") {
+    const people = SAMPLE_MANAGERS.reduce((s, m) => s + m.reporteeCount, 0);
+    return { label: "Whole organisation", kind: "org", base: 6.9, people, seedKey: "org" };
+  }
+  const dept = SAMPLE_DEPARTMENTS.find((d) => d.id === scope);
+  if (dept) {
+    const people = dept.teamIds.reduce((s, t) => s + teamPeople(t), 0);
+    return { label: dept.name, kind: "dept", base: dept.base, people, seedKey: "dept-" + dept.id };
+  }
+  const team = SAMPLE_MANAGERS.find((m) => m.id === scope);
+  if (team) {
+    return {
+      label: team.name,
+      kind: "team",
+      base: team.base,
+      people: team.reporteeCount,
+      seedKey: "team-" + team.id,
+    };
+  }
+  // Unknown scope → fall back to org-wide.
+  const people = SAMPLE_MANAGERS.reduce((s, m) => s + m.reporteeCount, 0);
+  return { label: "Whole organisation", kind: "org", base: 6.9, people, seedKey: "org" };
+}
+
+function impactFor(seedKey: string): ActionImpact {
+  const submitted = 8 + Math.round(seeded("imp-sub-" + seedKey) * 22); // 8–30
+  const resolved = Math.round(submitted * (0.5 + seeded("imp-res-" + seedKey) * 0.45));
+  return {
+    submitted,
+    resolved,
+    resolutionPct: Math.round((resolved / submitted) * 100),
+    pillarsImproved: 1 + Math.round(seeded("imp-pil-" + seedKey) * 3), // 1–4
+  };
+}
+
+export async function getCeoDashboard(
+  session: SessionUser,
+  scope: string = "org",
+  window: Window = "3M",
+): Promise<CeoDashboard> {
+  assertRole(session, "ceo_hr");
+
+  const s = resolveCeoScope(scope);
+  const options = ceoScopeOptions();
+
+  // Anonymisation floor applies at every scope — below it, no score is returned.
+  if (s.people < ANONYMISATION_FLOOR) {
+    return {
+      scope,
+      scopeLabel: s.label,
+      scopeKind: s.kind,
+      options,
+      enoughData: false,
+      reason: `${s.label} is below ${ANONYMISATION_FLOOR} responses, so nothing is shown — this protects anonymity.`,
+      score: null,
+      delta: null,
+      percentile: null,
+      peopleCount: s.people,
+      pillars: [],
+      trend: [],
+      impact: null,
+    };
+  }
+
+  const points = Math.min(weeksIn(window), RECENT_WEEKS.length);
+  const trend = buildTrend(s.seedKey, s.base, points);
+  const score = trend[trend.length - 1].overall;
+  const prior = trend.length > 1 ? trend[trend.length - 2].overall : null;
+
+  return {
+    scope,
+    scopeLabel: s.label,
+    scopeKind: s.kind,
+    options,
+    enoughData: true,
+    score,
+    delta: prior === null ? null : round1(score - prior),
+    percentile: pctFromScore(score),
+    peopleCount: s.people,
+    pillars: pillarScoresFrom(trend),
+    trend,
+    impact: impactFor(s.seedKey),
+  };
+}
