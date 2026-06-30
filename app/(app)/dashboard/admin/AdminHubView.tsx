@@ -22,7 +22,8 @@ const SECTIONS: Section[] = [
   {
     icon: "🏢",
     title: "Org structure",
-    desc: "Departments, teams and assignments. CSV upload.",
+    desc: "Departments, teams and assignments.",
+    href: "/dashboard/admin/org",
   },
   {
     icon: "📚",

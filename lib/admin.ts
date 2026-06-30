@@ -9,7 +9,7 @@
 
 import { getDB } from "@/lib/db";
 import { assertRole } from "@/lib/access-control";
-import type { PillarId, Question, SessionUser } from "@/lib/types";
+import type { Department, PillarId, Question, SessionUser, Team } from "@/lib/types";
 
 /** The editable fields of a question (everything except its id). */
 export interface QuestionInput {
@@ -146,4 +146,112 @@ export async function deleteQuestion(session: SessionUser, id: string): Promise<
   assertRole(session, "admin");
   const db = getDB();
   await db.prepare("DELETE FROM questions WHERE id = ?").bind(id).run();
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Org structure: departments, teams, and assignments (Phase 4.4)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** A manager option for the team-assignment dropdown. */
+export interface ManagerOption {
+  id: string;
+  name: string;
+  email: string;
+}
+
+/** The whole org tree the admin screen needs, in one round-trip. Admin only. */
+export interface OrgStructure {
+  departments: Department[];
+  teams: Team[];
+  managers: ManagerOption[];
+}
+
+interface TeamRow {
+  id: string;
+  name: string;
+  managerId: string | null;
+  departmentId: string | null;
+}
+
+export async function getOrgStructure(session: SessionUser): Promise<OrgStructure> {
+  assertRole(session, "admin");
+  const db = getDB();
+  const [depts, teams, mgrs] = await Promise.all([
+    db.prepare("SELECT id, name FROM departments ORDER BY name").all<Department>(),
+    db.prepare("SELECT id, name, managerId, departmentId FROM teams ORDER BY name").all<TeamRow>(),
+    db
+      .prepare(
+        `SELECT u.id, u.name, u.email FROM user u
+           JOIN user_roles ur ON ur.userId = u.id
+          WHERE ur.role = 'manager' ORDER BY u.name`,
+      )
+      .all<ManagerOption>(),
+  ]);
+  return {
+    departments: depts.results,
+    teams: teams.results,
+    managers: mgrs.results,
+  };
+}
+
+export async function createDepartment(session: SessionUser, name: string): Promise<void> {
+  assertRole(session, "admin");
+  if (!name.trim()) throw new Error("Department name is required.");
+  const id = `dept-${crypto.randomUUID().slice(0, 8)}`;
+  await getDB().prepare("INSERT INTO departments (id, name) VALUES (?, ?)").bind(id, name.trim()).run();
+}
+
+export async function updateDepartment(
+  session: SessionUser,
+  id: string,
+  name: string,
+): Promise<void> {
+  assertRole(session, "admin");
+  if (!name.trim()) throw new Error("Department name is required.");
+  await getDB().prepare("UPDATE departments SET name = ? WHERE id = ?").bind(name.trim(), id).run();
+}
+
+/** Delete a department; any teams in it become unassigned (departmentId → null). */
+export async function deleteDepartment(session: SessionUser, id: string): Promise<void> {
+  assertRole(session, "admin");
+  const db = getDB();
+  await db.batch([
+    db.prepare("UPDATE teams SET departmentId = NULL WHERE departmentId = ?").bind(id),
+    db.prepare("DELETE FROM departments WHERE id = ?").bind(id),
+  ]);
+}
+
+/** The editable fields of a team. */
+export interface TeamInput {
+  name: string;
+  departmentId: string | null;
+  managerId: string | null;
+}
+
+export async function createTeam(session: SessionUser, input: TeamInput): Promise<void> {
+  assertRole(session, "admin");
+  if (!input.name.trim()) throw new Error("Team name is required.");
+  const id = `team-${crypto.randomUUID().slice(0, 8)}`;
+  await getDB()
+    .prepare("INSERT INTO teams (id, name, managerId, departmentId) VALUES (?, ?, ?, ?)")
+    .bind(id, input.name.trim(), input.managerId || null, input.departmentId || null)
+    .run();
+}
+
+export async function updateTeam(
+  session: SessionUser,
+  id: string,
+  input: TeamInput,
+): Promise<void> {
+  assertRole(session, "admin");
+  if (!input.name.trim()) throw new Error("Team name is required.");
+  await getDB()
+    .prepare("UPDATE teams SET name = ?, managerId = ?, departmentId = ? WHERE id = ?")
+    .bind(input.name.trim(), input.managerId || null, input.departmentId || null, id)
+    .run();
+}
+
+export async function deleteTeam(session: SessionUser, id: string): Promise<void> {
+  assertRole(session, "admin");
+  await getDB().prepare("DELETE FROM teams WHERE id = ?").bind(id).run();
 }
