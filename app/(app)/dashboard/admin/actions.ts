@@ -21,9 +21,19 @@ import {
   updateDepartment,
   updateQuestion,
   updateTeam,
+  createContent,
+  createModule,
+  deleteContent,
+  deleteModule,
+  getWisdomCms,
+  updateContent,
+  updateModule,
   type OrgStructure,
   type QuestionInput,
   type TeamInput,
+  type WisdomContentInput,
+  type WisdomModuleInput,
+  type WisdomModuleWithContent,
 } from "@/lib/admin";
 import type { Question } from "@/lib/types";
 
@@ -92,4 +102,53 @@ export async function deleteTeamAction(id: string): Promise<OrgStructure> {
   const user = await requireAdmin();
   await deleteTeam(user, id);
   return getOrgStructure(user);
+}
+
+// ── Wisdom content CMS ────────────────────────────────────────────────────────
+
+export async function createModuleAction(
+  input: WisdomModuleInput,
+): Promise<WisdomModuleWithContent[]> {
+  const user = await requireAdmin();
+  await createModule(user, input);
+  return getWisdomCms(user);
+}
+
+export async function updateModuleAction(
+  id: string,
+  input: WisdomModuleInput,
+): Promise<WisdomModuleWithContent[]> {
+  const user = await requireAdmin();
+  await updateModule(user, id, input);
+  return getWisdomCms(user);
+}
+
+export async function deleteModuleAction(id: string): Promise<WisdomModuleWithContent[]> {
+  const user = await requireAdmin();
+  await deleteModule(user, id);
+  return getWisdomCms(user);
+}
+
+export async function createContentAction(
+  moduleId: string,
+  input: WisdomContentInput,
+): Promise<WisdomModuleWithContent[]> {
+  const user = await requireAdmin();
+  await createContent(user, moduleId, input);
+  return getWisdomCms(user);
+}
+
+export async function updateContentAction(
+  id: string,
+  input: WisdomContentInput,
+): Promise<WisdomModuleWithContent[]> {
+  const user = await requireAdmin();
+  await updateContent(user, id, input);
+  return getWisdomCms(user);
+}
+
+export async function deleteContentAction(id: string): Promise<WisdomModuleWithContent[]> {
+  const user = await requireAdmin();
+  await deleteContent(user, id);
+  return getWisdomCms(user);
 }

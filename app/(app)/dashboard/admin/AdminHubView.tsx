@@ -29,6 +29,7 @@ const SECTIONS: Section[] = [
     icon: "📚",
     title: "Wisdom content",
     desc: "Learning modules, content items, order, publishing and badge names.",
+    href: "/dashboard/admin/wisdom",
   },
   {
     icon: "✉️",
