@@ -47,3 +47,6 @@ reference-prototype/
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Local D1 backups (never commit data dumps)
+backups/

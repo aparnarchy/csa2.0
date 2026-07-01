@@ -26,8 +26,6 @@ export interface User {
   currentCompany: string | null;
   currentRole: string | null;
   yearsOfExperience: number | null;
-  mentorName: string | null;
-  mentorEmail: string | null;
   onboardingComplete: boolean;
   onboardingPath: OnboardingPath | null;
   createdAt: string;

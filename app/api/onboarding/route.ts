@@ -3,8 +3,9 @@
  * user and marks onboarding complete. Writes ONLY the caller's own record
  * (WHERE id = session user id), so privacy is enforced here in server code.
  *
- * Manager name/email are collected in the form but not stored as text — a
- * manager connection is linked by an admin/manager later (managerId FK).
+ * A manager connection is linked by an admin/manager later (managerId FK), not
+ * self-declared here — manager-invite is on hold, and the mentor feature was
+ * cancelled, so neither is collected any more.
  */
 export const runtime = "edge";
 
@@ -30,7 +31,7 @@ export async function POST(request: Request) {
   await env.DB.prepare(
     `UPDATE user
        SET name = ?, currentCompany = ?, currentRole = ?, yearsOfExperience = ?,
-           mentorName = ?, mentorEmail = ?, onboardingComplete = 1, updatedAt = ?
+           onboardingComplete = 1, updatedAt = ?
      WHERE id = ?`,
   )
     .bind(
@@ -38,8 +39,6 @@ export async function POST(request: Request) {
       str(body.currentCompany),
       str(body.currentRole),
       Number.isFinite(years as number) ? years : null,
-      str(body.mentorName),
-      str(body.mentorEmail),
       new Date().toISOString(),
       session.user.id,
     )
