@@ -12,6 +12,7 @@ import { assertRole } from "@/lib/access-control";
 import type {
   ContentType,
   Department,
+  Invite,
   PillarId,
   Question,
   SessionUser,
@@ -474,4 +475,231 @@ export async function updateContent(
 export async function deleteContent(session: SessionUser, id: string): Promise<void> {
   assertRole(session, "admin");
   await getDB().prepare("DELETE FROM wisdomContent WHERE id = ?").bind(id).run();
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Invites (Phase 4.4). Admin invites managers / individuals, optionally onto a
+// team, and can bulk-import from CSV. Records + UI are built now; the actual
+// email SEND is intentionally stubbed until the email service (Resend) key is
+// configured — that step is the owner's (see the TODO(email) markers).
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** An invite enriched with its team name for the admin list. */
+export interface InviteWithMeta extends Invite {
+  teamName: string | null;
+}
+
+interface InviteRow extends Invite {
+  teamName: string | null;
+}
+
+/** The editable fields of an invite. `role` uses the DB values (employee/manager). */
+export interface InviteInput {
+  email: string;
+  role: "manager" | "employee";
+  teamId: string | null;
+}
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+/** Normalise a role cell: accept "individual" as a friendly alias for employee. */
+function normaliseRole(raw: string): "manager" | "employee" | null {
+  const r = raw.trim().toLowerCase();
+  if (r === "manager") return "manager";
+  if (r === "employee" || r === "individual") return "employee";
+  return null;
+}
+
+/** All invites, newest first, each with its team name. Admin only. */
+export async function getInvites(session: SessionUser): Promise<InviteWithMeta[]> {
+  assertRole(session, "admin");
+  const { results } = await getDB()
+    .prepare(
+      `SELECT i.id, i.email, i.role, i.invitedBy, i.teamId, i.status, i.createdAt,
+              t.name AS teamName
+         FROM invites i
+         LEFT JOIN teams t ON t.id = i.teamId
+        ORDER BY i.createdAt DESC`,
+    )
+    .all<InviteRow>();
+  return results;
+}
+
+/**
+ * Create an invite. If a *pending* invite already exists for the same email we
+ * reuse it (refresh its role/team + timestamp) rather than duplicating. Returns
+ * whether a new row was created. Admin only.
+ */
+export async function createInvite(
+  session: SessionUser,
+  input: InviteInput,
+): Promise<{ created: boolean }> {
+  assertRole(session, "admin");
+  const email = input.email.trim().toLowerCase();
+  if (!EMAIL_RE.test(email)) throw new Error("A valid email address is required.");
+  if (input.role !== "manager" && input.role !== "employee") {
+    throw new Error("Role must be manager or individual.");
+  }
+  const db = getDB();
+  const existing = await db
+    .prepare("SELECT id FROM invites WHERE lower(email) = ? AND status = 'pending'")
+    .bind(email)
+    .first<{ id: string }>();
+  if (existing) {
+    await db
+      .prepare("UPDATE invites SET role = ?, teamId = ?, createdAt = datetime('now') WHERE id = ?")
+      .bind(input.role, input.teamId || null, existing.id)
+      .run();
+    return { created: false };
+  }
+  const id = `inv-${crypto.randomUUID().slice(0, 8)}`;
+  await db
+    .prepare(
+      "INSERT INTO invites (id, email, role, invitedBy, teamId, status) VALUES (?, ?, ?, ?, ?, 'pending')",
+    )
+    .bind(id, email, input.role, session.id, input.teamId || null)
+    .run();
+  // TODO(email): send the invite email here once the Resend key is configured.
+  return { created: true };
+}
+
+/** "Resend" a pending invite — refreshes its timestamp (and, later, re-sends the email). */
+export async function resendInvite(session: SessionUser, id: string): Promise<void> {
+  assertRole(session, "admin");
+  await getDB()
+    .prepare("UPDATE invites SET createdAt = datetime('now') WHERE id = ? AND status = 'pending'")
+    .bind(id)
+    .run();
+  // TODO(email): re-send the invite email here once the Resend key is configured.
+}
+
+/** Cancel (delete) an invite. Admin only. */
+export async function cancelInvite(session: SessionUser, id: string): Promise<void> {
+  assertRole(session, "admin");
+  await getDB().prepare("DELETE FROM invites WHERE id = ?").bind(id).run();
+}
+
+/** Summary returned after a CSV bulk import. */
+export interface CsvImportResult {
+  created: number;
+  updated: number; // matched an existing pending invite and refreshed it
+  skipped: number; // rows rejected because of an error
+  errors: string[]; // one human-readable message per problem row
+}
+
+/** Split one CSV line into cells, honouring simple double-quoted fields. */
+function splitCsvLine(line: string): string[] {
+  const out: string[] = [];
+  let cur = "";
+  let inQuotes = false;
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (inQuotes) {
+      if (ch === '"') {
+        if (line[i + 1] === '"') {
+          cur += '"';
+          i++;
+        } else {
+          inQuotes = false;
+        }
+      } else {
+        cur += ch;
+      }
+    } else if (ch === '"') {
+      inQuotes = true;
+    } else if (ch === ",") {
+      out.push(cur);
+      cur = "";
+    } else {
+      cur += ch;
+    }
+  }
+  out.push(cur);
+  return out;
+}
+
+/**
+ * Bulk-import invites from raw CSV text. Expected columns: `email`, `role`,
+ * `team` (team is optional; role accepts "manager"/"individual"/"employee").
+ * A header row is auto-detected. Malformed rows are skipped with a message and
+ * the valid rows still import; an unknown team name is flagged but the invite is
+ * still created (unassigned) rather than crashing the whole import. Admin only.
+ */
+export async function importInvitesCsv(
+  session: SessionUser,
+  text: string,
+): Promise<CsvImportResult> {
+  assertRole(session, "admin");
+  const db = getDB();
+  const result: CsvImportResult = { created: 0, updated: 0, skipped: 0, errors: [] };
+
+  const lines = text.split(/\r?\n/).filter((l) => l.trim().length > 0);
+  if (lines.length === 0) {
+    result.errors.push("The file is empty.");
+    return result;
+  }
+
+  // Team-name → id lookup (case-insensitive) for the optional team column.
+  const { results: teamRows } = await db.prepare("SELECT id, name FROM teams").all<{
+    id: string;
+    name: string;
+  }>();
+  const teamByName = new Map(teamRows.map((t) => [t.name.trim().toLowerCase(), t.id]));
+
+  // Detect a header row (contains an "email" cell); otherwise assume email,role,team.
+  let cols = { email: 0, role: 1, team: 2 };
+  let start = 0;
+  const firstCells = splitCsvLine(lines[0]).map((c) => c.trim().toLowerCase());
+  if (firstCells.includes("email")) {
+    start = 1;
+    cols = {
+      email: firstCells.indexOf("email"),
+      role: firstCells.indexOf("role"),
+      team: firstCells.indexOf("team"),
+    };
+  }
+
+  for (let i = start; i < lines.length; i++) {
+    const rowNo = i + 1; // 1-based for human-friendly messages
+    const cells = splitCsvLine(lines[i]);
+    const email = (cells[cols.email] ?? "").trim().toLowerCase();
+    const roleRaw = cols.role >= 0 ? (cells[cols.role] ?? "") : "";
+    const teamName = cols.team >= 0 ? (cells[cols.team] ?? "").trim() : "";
+
+    if (!EMAIL_RE.test(email)) {
+      result.skipped++;
+      result.errors.push(`Row ${rowNo}: “${cells[cols.email] ?? ""}” is not a valid email — skipped.`);
+      continue;
+    }
+    const role = normaliseRole(roleRaw);
+    if (!role) {
+      result.skipped++;
+      result.errors.push(`Row ${rowNo} (${email}): role must be “manager” or “individual” — skipped.`);
+      continue;
+    }
+
+    let teamId: string | null = null;
+    if (teamName) {
+      const found = teamByName.get(teamName.toLowerCase());
+      if (found) {
+        teamId = found;
+      } else {
+        result.errors.push(
+          `Row ${rowNo} (${email}): team “${teamName}” not found — invited without a team.`,
+        );
+      }
+    }
+
+    try {
+      const { created } = await createInvite(session, { email, role, teamId });
+      if (created) result.created++;
+      else result.updated++;
+    } catch (e) {
+      result.skipped++;
+      const msg = e instanceof Error ? e.message : "could not be saved";
+      result.errors.push(`Row ${rowNo} (${email}): ${msg} — skipped.`);
+    }
+  }
+
+  return result;
 }

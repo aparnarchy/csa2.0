@@ -34,7 +34,8 @@ const SECTIONS: Section[] = [
   {
     icon: "✉️",
     title: "Invites",
-    desc: "Invite managers and individuals; resend or cancel pending invites.",
+    desc: "Invite managers and individuals; bulk-import from CSV; resend or cancel.",
+    href: "/dashboard/admin/invites",
   },
 ];
 
@@ -111,8 +112,8 @@ export function AdminHubView({ session }: { session: SessionUser }) {
 
       <Card>
         <p className="text-[11px] leading-relaxed text-ink-3">
-          Changes here write to the live database. Org structure, Wisdom content and Invites are
-          being built next — Invites will go live once the email service is connected.
+          Changes here write to the live database. Invite records are saved now; the actual
+          invitation email starts sending once the email service is connected.
         </p>
       </Card>
     </ScreenShell>

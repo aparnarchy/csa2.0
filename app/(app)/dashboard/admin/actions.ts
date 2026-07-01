@@ -28,6 +28,14 @@ import {
   getWisdomCms,
   updateContent,
   updateModule,
+  cancelInvite,
+  createInvite,
+  getInvites,
+  importInvitesCsv,
+  resendInvite,
+  type CsvImportResult,
+  type InviteInput,
+  type InviteWithMeta,
   type OrgStructure,
   type QuestionInput,
   type TeamInput,
@@ -151,4 +159,34 @@ export async function deleteContentAction(id: string): Promise<WisdomModuleWithC
   const user = await requireAdmin();
   await deleteContent(user, id);
   return getWisdomCms(user);
+}
+
+// ── Invites ─────────────────────────────────────────────────────────────────
+
+export async function createInviteAction(input: InviteInput): Promise<InviteWithMeta[]> {
+  const user = await requireAdmin();
+  await createInvite(user, input);
+  return getInvites(user);
+}
+
+export async function resendInviteAction(id: string): Promise<InviteWithMeta[]> {
+  const user = await requireAdmin();
+  await resendInvite(user, id);
+  return getInvites(user);
+}
+
+export async function cancelInviteAction(id: string): Promise<InviteWithMeta[]> {
+  const user = await requireAdmin();
+  await cancelInvite(user, id);
+  return getInvites(user);
+}
+
+/** Bulk import; returns both the summary and the refreshed list. */
+export async function importInvitesCsvAction(
+  text: string,
+): Promise<{ result: CsvImportResult; invites: InviteWithMeta[] }> {
+  const user = await requireAdmin();
+  const result = await importInvitesCsv(user, text);
+  const invites = await getInvites(user);
+  return { result, invites };
 }
