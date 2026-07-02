@@ -3,8 +3,8 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Card, ScreenShell } from "@/components/kit";
-import { getCompanyDetail, type CareerHistory, type CompanyDetail } from "@/lib/data";
-import type { SessionUser } from "@/lib/types";
+import { type CareerHistory, type CompanyDetail } from "@/lib/data";
+import { getCompanyDetailAction } from "./actions";
 
 function scoreColor(score: number) {
   if (score >= 7.5) return "text-good";
@@ -12,15 +12,15 @@ function scoreColor(score: number) {
   return "text-bad";
 }
 
-export function CareerView({ session, history }: { session: SessionUser; history: CareerHistory }) {
+export function CareerView({ history }: { history: CareerHistory }) {
   const router = useRouter();
   const [openId, setOpenId] = useState<string | null>(null);
   const [detail, setDetail] = useState<CompanyDetail | null>(null);
 
   useEffect(() => {
-    if (openId) getCompanyDetail(session, session.id, openId).then(setDetail);
+    if (openId) getCompanyDetailAction(openId).then(setDetail);
     else setDetail(null);
-  }, [openId, session]);
+  }, [openId]);
 
   if (openId && detail) {
     return <CompanyDetailView detail={detail} onBack={() => setOpenId(null)} />;

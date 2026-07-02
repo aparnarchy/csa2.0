@@ -583,6 +583,8 @@ const CAREER: CareerCompanySummary[] = [
   { id: "razorpay", company: "Razorpay", role: "UI Designer", period: "Aug 2021 – May 2022", tenure: "9 mos", overallScore: 6.2, current: false },
 ];
 
+// NOTE: getCareerHistory / getCompanyDetail are superseded by the real D1
+// implementations in lib/career.ts (server-only). These sample copies are unused.
 export async function getCareerHistory(session: SessionUser, userId: string): Promise<CareerHistory> {
   assertOwner(session, userId);
   return { overall: 7.4, tenure: "4 yrs 6 mos", companies: CAREER };

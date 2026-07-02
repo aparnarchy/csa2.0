@@ -145,6 +145,54 @@ export async function POST(request: Request) {
   }
   results.push("Department, team and employment created");
 
+  // ── Past companies (career history) for Alice, so the career screen is real ──
+  await db.prepare("DELETE FROM careerCompanies WHERE id LIKE 'cc-%'").run();
+  const aliceId = createdUsers.find((u) => u.email === "employee@test.com")?.id ?? null;
+  if (aliceId) {
+    const pastCompanies = [
+      {
+        id: "cc-alice-google", name: "Google", role: "UX Researcher",
+        startDate: "2022-06-01", endDate: "2023-12-31", overallScore: 8.5,
+        pillarScores: { meaningful_work: 9.1, growth: 8.9, culture: 8.3, compensation: 8.0 },
+        questionnaire: {
+          participationPct: 94,
+          strengths: [
+            { text: "Do you feel a strong sense of belonging on your team?", score: 9.2 },
+            { text: "Does your manager support your development?", score: 9.0 },
+          ],
+          concerns: [
+            { text: "Do you maintain a healthy work-life balance?", score: 6.0 },
+            { text: "Do you feel your workload is manageable?", score: 6.2 },
+          ],
+        },
+      },
+      {
+        id: "cc-alice-razorpay", name: "Razorpay", role: "UI Designer",
+        startDate: "2021-08-01", endDate: "2022-05-31", overallScore: 6.2,
+        pillarScores: { meaningful_work: 6.5, growth: 6.3, culture: 5.8, compensation: 5.4 },
+        questionnaire: {
+          participationPct: 78,
+          strengths: [{ text: "Are you learning new skills in your role?", score: 7.8 }],
+          concerns: [
+            { text: "Do you feel heard in group discussions?", score: 5.0 },
+            { text: "Do you feel fairly compensated?", score: 5.5 },
+          ],
+        },
+      },
+    ];
+    for (const c of pastCompanies) {
+      await db
+        .prepare(
+          `INSERT INTO careerCompanies (id, userId, name, role, startDate, endDate, overallScore, pillarScores, questionnaire)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        )
+        .bind(c.id, aliceId, c.name, c.role, c.startDate, c.endDate, c.overallScore,
+          JSON.stringify(c.pillarScores), JSON.stringify(c.questionnaire))
+        .run();
+    }
+    results.push("Career history seeded");
+  }
+
   // ── Weekly windows (W13–W24; W13 Monday = 2026-03-23 → W24 = 2026-06-08) ──────
   const iso = (d: Date) => d.toISOString().slice(0, 10);
   const W13_MONDAY = new Date("2026-03-23T00:00:00Z");
