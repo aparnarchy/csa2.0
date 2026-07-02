@@ -2,7 +2,7 @@ export const runtime = "edge";
 
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth-session";
-import { getEmployeeScores } from "@/lib/data";
+import { getEmployeeScores } from "@/lib/scores";
 import { AnalysisView } from "./AnalysisView";
 
 export default async function EmployeeDashboard() {

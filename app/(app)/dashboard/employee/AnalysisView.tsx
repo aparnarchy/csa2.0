@@ -14,7 +14,8 @@ import {
   TrendChart,
 } from "@/components/kit";
 import { ScoreCircles } from "./ScoreCircles";
-import { getEmployeeScores, type EmployeeScores, type Window } from "@/lib/data";
+import { type EmployeeScores, type Window } from "@/lib/data";
+import { getEmployeeScoresAction } from "./actions";
 import { HEADER_MASCOT_SIZE, mascotForScore } from "@/lib/mascot";
 import { buildEmployeeInsight } from "@/lib/insight";
 import { buildRootAnalysis } from "@/lib/rca";
@@ -38,17 +39,16 @@ export function AnalysisView({
   const [selectedPillar, setSelectedPillar] = useState<PillarId | null>(null);
   const [showRoot, setShowRoot] = useState(false);
 
-  // Time filter refreshes score + pillars + chart together.
-  // (Sample data is recomputed client-side; becomes a server action on real D1.)
+  // Time filter refreshes score + pillars + chart together via a server action
+  // (real aggregation over the user's own check-ins).
   useEffect(() => {
-    getEmployeeScores(session, session.id, window).then(setData);
-  }, [session, window]);
+    getEmployeeScoresAction(window).then(setData);
+  }, [window]);
 
   if (selectedPillar) {
     return (
       <ScreenShell active="insights">
         <PillarDetailView
-          session={session}
           pillarId={selectedPillar}
           onBack={() => setSelectedPillar(null)}
         />

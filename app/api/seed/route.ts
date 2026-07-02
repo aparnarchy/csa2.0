@@ -57,6 +57,7 @@ export async function POST(request: Request) {
     await db.prepare(`DELETE FROM user_roles WHERE userId = ?`).bind(id).run();
   }
   await db.prepare("DELETE FROM checkIns WHERE id LIKE 'ci-%'").run();
+  await db.prepare("DELETE FROM employment WHERE id LIKE 'emp-%'").run();
   await db.prepare("DELETE FROM weeklyWindows WHERE weekId LIKE '2026-W%'").run();
   await db.prepare("DELETE FROM questions WHERE id LIKE 'q%'").run();
   await db.prepare("DELETE FROM teams WHERE id = 'team-engineering'").run();
@@ -121,23 +122,45 @@ export async function POST(request: Request) {
     .run();
 
   const employeeEmails = ["employee@test.com", "employee2@test.com", "employee3@test.com"];
+  // employment: one active row per employee (the lifelong-person / employment split).
+  const employmentByUser = new Map<string, string>();
   for (const { id, email } of createdUsers) {
     if (employeeEmails.includes(email)) {
       await db
         .prepare('UPDATE "user" SET teamId = ?, departmentId = ?, managerId = ? WHERE id = ?')
         .bind(teamId, deptId, managerId, id)
         .run();
+      const empId = `emp-${id.slice(0, 8)}`;
+      employmentByUser.set(id, empId);
+      await db
+        .prepare(
+          `INSERT OR IGNORE INTO employment
+             (id, userId, companyName, departmentId, teamId, managerId, designation,
+              workEmail, workEmailVerified, status, startedAt)
+           VALUES (?, ?, 'Kissflow', ?, ?, ?, 'Software Engineer', ?, 1, 'active', '2026-01-05')`,
+        )
+        .bind(empId, id, deptId, teamId, managerId, email)
+        .run();
     }
   }
-  results.push("Department and team created");
+  results.push("Department, team and employment created");
 
-  // ── Weekly windows ───────────────────────────────────────────────────────────
-  const windows = [
-    { weekId: "2026-W21", startDate: "2026-05-18", endDate: "2026-05-24", isActive: 0 },
-    { weekId: "2026-W22", startDate: "2026-05-25", endDate: "2026-05-31", isActive: 0 },
-    { weekId: "2026-W23", startDate: "2026-06-01", endDate: "2026-06-07", isActive: 0 },
-    { weekId: "2026-W24", startDate: "2026-06-08", endDate: "2026-06-14", isActive: 1 },
-  ];
+  // ── Weekly windows (W13–W24; W13 Monday = 2026-03-23 → W24 = 2026-06-08) ──────
+  const iso = (d: Date) => d.toISOString().slice(0, 10);
+  const W13_MONDAY = new Date("2026-03-23T00:00:00Z");
+  const WEEK_NUMS = Array.from({ length: 12 }, (_, i) => 13 + i); // 13..24
+  const windows = WEEK_NUMS.map((wk, i) => {
+    const start = new Date(W13_MONDAY);
+    start.setUTCDate(start.getUTCDate() + i * 7);
+    const end = new Date(start);
+    end.setUTCDate(end.getUTCDate() + 6);
+    return {
+      weekId: `2026-W${wk}`,
+      startDate: iso(start),
+      endDate: iso(end),
+      isActive: wk === 24 ? 1 : 0, // only the latest week is open for check-in
+    };
+  });
   for (const w of windows) {
     await db
       .prepare("INSERT OR IGNORE INTO weeklyWindows (weekId, startDate, endDate, isActive) VALUES (?, ?, ?, ?)")
@@ -169,32 +192,48 @@ export async function POST(request: Request) {
   }
   results.push("10 questions created");
 
-  // ── Check-ins for 3 employees across 3 past weeks ───────────────────────────
+  // ── Check-ins: every employee answers all 10 questions for W13–W23 ───────────
+  //    (W24 is left open so the check-in flow has something "due"). Scores lean on
+  //    a per-pillar base + a small upward drift + noise, so pillar cards and the
+  //    trend look believable and differ by pillar. Stored scoped to employment.
   const employeeIds = createdUsers
     .filter((u) => employeeEmails.includes(u.email))
     .map((u) => u.id);
-
+  const pillarBase: Record<string, number> = {
+    meaningful_work: 7.6,
+    growth: 6.4,
+    culture: 7.1,
+    compensation: 5.6,
+  };
+  const answeredWeeks = WEEK_NUMS.filter((wk) => wk !== 24).map((wk) => `2026-W${wk}`);
+  const clampScore = (n: number) => Math.max(1, Math.min(10, Math.round(n)));
   let ciIdx = 1;
-  for (const weekId of ["2026-W21", "2026-W22", "2026-W23"]) {
+  for (let wi = 0; wi < answeredWeeks.length; wi++) {
+    const weekId = answeredWeeks[wi];
+    const drift = (wi / answeredWeeks.length) * 1.0; // gentle improvement over time
     for (const userId of employeeIds) {
-      for (const q of questions.slice(0, 4)) {
-        const score = Math.floor(Math.random() * 8) + 2;
+      for (const q of questions) {
+        const base = pillarBase[q.pillarId] ?? 6.5;
+        const noise = (Math.random() - 0.5) * 2.2;
+        const score = clampScore(base + drift + noise);
         await db
-          .prepare(`INSERT OR IGNORE INTO checkIns (id, userId, questionId, pillarId, weekId, score, isRetrospective)
-            VALUES (?, ?, ?, ?, ?, ?, 0)`)
-          .bind(`ci-${ciIdx++}`, userId, q.id, q.pillarId, weekId, score)
+          .prepare(`INSERT OR IGNORE INTO checkIns (id, userId, questionId, pillarId, weekId, score, isRetrospective, employmentId)
+            VALUES (?, ?, ?, ?, ?, ?, 0, ?)`)
+          .bind(`ci-${ciIdx++}`, userId, q.id, q.pillarId, weekId, score, employmentByUser.get(userId) ?? null)
           .run();
       }
     }
   }
-  results.push("Check-ins seeded");
+  results.push(`Check-ins seeded (${ciIdx - 1} rows)`);
 
   // ── Streaks ──────────────────────────────────────────────────────────────────
+  const streakLen = answeredWeeks.length;
+  const lastWeek = answeredWeeks[answeredWeeks.length - 1];
   for (const { id, email } of createdUsers) {
     if (employeeEmails.includes(email)) {
       await db
         .prepare("INSERT OR IGNORE INTO streaks (userId, currentStreak, longestStreak, lastCheckInWeek) VALUES (?, ?, ?, ?)")
-        .bind(id, 3, 3, "2026-W23")
+        .bind(id, streakLen, streakLen, lastWeek)
         .run();
     }
   }

@@ -10,19 +10,18 @@ import {
   TrendChart,
 } from "@/components/kit";
 import { PILLARS } from "@/lib/pillars";
-import { getPillarDetail, type Window } from "@/lib/data";
+import { type Window } from "@/lib/data";
+import { getPillarDetailAction } from "./actions";
 import { HEADER_MASCOT_SIZE, mascotForScore } from "@/lib/mascot";
-import type { PillarId, SessionUser } from "@/lib/types";
+import type { PillarId } from "@/lib/types";
 
-type Detail = Awaited<ReturnType<typeof getPillarDetail>>;
+type Detail = Awaited<ReturnType<typeof getPillarDetailAction>>;
 
 export function PillarDetailView({
-  session,
   pillarId,
   onBack,
   onGoToInbox,
 }: {
-  session: SessionUser;
   pillarId: PillarId;
   onBack: () => void;
   onGoToInbox?: () => void;
@@ -33,8 +32,8 @@ export function PillarDetailView({
   const [detail, setDetail] = useState<Detail | null>(null);
 
   useEffect(() => {
-    getPillarDetail(session, session.id, pillarId, window).then(setDetail);
-  }, [session, pillarId, window]);
+    getPillarDetailAction(pillarId, window).then(setDetail);
+  }, [pillarId, window]);
 
   const questions = [...(detail?.questions ?? [])].sort((a, b) => b.score - a.score);
   const shown = tab === "strengths" ? questions.slice(0, 3) : questions.slice(-3).reverse();

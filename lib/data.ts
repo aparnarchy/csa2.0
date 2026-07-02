@@ -214,6 +214,10 @@ function questionInsights(seedKey: string): QuestionInsight[] {
 /**
  * An individual's own scores for a window. A user may only read their own
  * data — enforced by assertOwner. Managers cannot reach individual scores here.
+ *
+ * NOTE: the REAL D1 implementation now lives in lib/scores.ts (server-only) and
+ * is what the app uses. This sample version is kept only for the throwaway
+ * /kit-preview page, which renders components client-side without a real session.
  */
 export async function getEmployeeScores(
   session: SessionUser,
