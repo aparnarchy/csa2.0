@@ -14,7 +14,8 @@ import {
   SegmentedToggle,
   TrendChart,
 } from "@/components/kit";
-import { getCeoDashboard, type CeoDashboard, type Window } from "@/lib/data";
+import { type CeoDashboard, type Window } from "@/lib/data";
+import { getCeoDashboardAction } from "./actions";
 import { HEADER_MASCOT_SIZE, mascotForScore } from "@/lib/mascot";
 import { PILLARS } from "@/lib/pillars";
 import type { PillarId, SessionUser } from "@/lib/types";
@@ -39,11 +40,11 @@ export function CeoHrView({
   const [data, setData] = useState<CeoDashboard>(initial);
   const [highLow, setHighLow] = useState<HighLow>("low");
 
-  // Scope or time-window change recomputes the whole aggregate (sample client-side;
-  // a server action on real D1). Privacy + the anonymisation floor live server-side.
+  // Scope or time-window change recomputes the whole aggregate via a server action
+  // (real D1). Privacy + the anonymisation floor live server-side.
   useEffect(() => {
-    getCeoDashboard(session, scope, window).then(setData);
-  }, [session, scope, window]);
+    getCeoDashboardAction(scope, window).then(setData);
+  }, [scope, window]);
 
   const isPlay = session.themeMode === "play";
   const firstName = (session.name || "there").trim().split(/\s+/)[0];

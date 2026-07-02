@@ -2,7 +2,7 @@ export const runtime = "edge";
 
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth-session";
-import { getCeoDashboard } from "@/lib/data";
+import { getCeoDashboard } from "@/lib/ceo";
 import { CeoHrView } from "./CeoHrView";
 
 /** CEO / HR dashboard — org-wide aggregates with dept/team drill-down (Phase 4.3). */

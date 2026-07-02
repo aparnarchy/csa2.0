@@ -1469,6 +1469,8 @@ function impactFor(seedKey: string): ActionImpact {
   };
 }
 
+// NOTE: superseded by the real D1 implementation in lib/ceo.ts (server-only),
+// which the app now uses. This sample copy is unused and can be removed later.
 export async function getCeoDashboard(
   session: SessionUser,
   scope: string = "org",
