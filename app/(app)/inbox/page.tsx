@@ -2,12 +2,8 @@ export const runtime = "edge";
 
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth-session";
-import {
-  getActionHistory,
-  getFeedbackActions,
-  getLatestCheckIn,
-  getUnansweredCheckIns,
-} from "@/lib/data";
+import { getActionHistory, getFeedbackActions } from "@/lib/data";
+import { getLatestCheckIn, getUnansweredCheckIns } from "@/lib/checkins";
 import { InboxView } from "./InboxView";
 
 /** Inbox (Phase 2.6): latest check-in, unanswered questions, feedback actions. */

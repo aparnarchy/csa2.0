@@ -3,8 +3,9 @@
 import { useState } from "react";
 import { Mascot, RecommendationCard } from "@/components/kit";
 import { COPY } from "@/lib/copy";
-import { getSampleRecommendation, skipCheckIn, submitCheckIn, type CheckInQuestion } from "@/lib/data";
+import { getSampleRecommendation, skipCheckIn, type CheckInQuestion } from "@/lib/data";
 import type { SessionUser } from "@/lib/types";
+import { submitCheckInAction } from "./actions";
 
 const t = COPY.catchup;
 
@@ -39,7 +40,7 @@ export function CatchUpFlow({
   async function save() {
     const c = q.options.find((o) => o.key === selected);
     if (!c) return;
-    await submitCheckIn(session, session.id, q.id, c.score, true); // retrospective
+    await submitCheckInAction(q.id, c.score, true); // retrospective
     advance();
   }
 

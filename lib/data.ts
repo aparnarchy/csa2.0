@@ -343,89 +343,10 @@ export interface CheckInQuestion {
   weekLabel?: string; // for catch-up questions, e.g. "Last week"
 }
 
-const DUE_CHECKINS: CheckInQuestion[] = [
-  {
-    id: "q5",
-    pillarId: "growth",
-    text: "Does your manager invest in your development?",
-    options: [
-      { key: "A", text: "Yes — we talk about my growth often", score: 9 },
-      { key: "B", text: "Sometimes, when I bring it up", score: 6 },
-      { key: "C", text: "Rarely or never", score: 3 },
-    ],
-  },
-  {
-    id: "q9",
-    pillarId: "culture",
-    text: "Do you feel recognised for good work?",
-    options: [
-      { key: "A", text: "Yes, my work gets noticed", score: 9 },
-      { key: "B", text: "Now and then", score: 6 },
-      { key: "C", text: "Not really", score: 3 },
-    ],
-  },
-];
-
-/** The questions due for this user this week. Own data only. */
-export async function getDueCheckIns(
-  session: SessionUser,
-  userId: string,
-): Promise<CheckInQuestion[]> {
-  assertOwner(session, userId);
-  return DUE_CHECKINS;
-}
-
-/** Questions left unanswered from previous weeks (oldest first). Own data only. */
-const UNANSWERED_CHECKINS: CheckInQuestion[] = [
-  {
-    id: "u1",
-    pillarId: "meaningful_work",
-    weekLabel: "2 weeks ago",
-    text: "Does your work feel connected to a bigger purpose?",
-    options: [
-      { key: "A", text: "Yes — I see the bigger picture", score: 9 },
-      { key: "B", text: "Sometimes", score: 6 },
-      { key: "C", text: "Not really", score: 3 },
-    ],
-  },
-  {
-    id: "u2",
-    pillarId: "culture",
-    weekLabel: "Last week",
-    text: "Do you feel psychologically safe raising concerns?",
-    options: [
-      { key: "A", text: "Yes, always", score: 9 },
-      { key: "B", text: "Depends on the topic", score: 6 },
-      { key: "C", text: "Rarely", score: 3 },
-    ],
-  },
-];
-
-export async function getUnansweredCheckIns(
-  session: SessionUser,
-  userId: string,
-): Promise<CheckInQuestion[]> {
-  assertOwner(session, userId);
-  return UNANSWERED_CHECKINS;
-}
-
-/**
- * Record one answer. Sample no-op for now; the real D1 insert into `checkIns`
- * (weekId, timestamp, isRetrospective, low-score recommendation) lands later.
- * Catch-up answers pass isRetrospective = true (excluded from the streak).
- */
-export async function submitCheckIn(
-  session: SessionUser,
-  userId: string,
-  questionId: string,
-  score: number,
-  isRetrospective = false,
-): Promise<void> {
-  assertOwner(session, userId);
-  void questionId;
-  void score;
-  void isRetrospective;
-}
+// NOTE: getDueCheckIns, getUnansweredCheckIns, submitCheckIn and getLatestCheckIn
+// now have REAL D1 implementations in lib/checkins.ts (server-only). The types
+// (CheckInQuestion, LatestCheckIn, …) stay here so client components can import
+// them. skipCheckIn / getOpenRecommendation / submitFollowUp remain sample for now.
 
 /**
  * Skip a question for now. Sample no-op; server-side, 3 consecutive skips of the
@@ -501,22 +422,7 @@ export interface LatestCheckIn {
   dateLabel: string; // e.g. "April 2026"
 }
 
-/** The most recent check-in this user answered. Own data only. */
-export async function getLatestCheckIn(
-  session: SessionUser,
-  userId: string,
-): Promise<LatestCheckIn | null> {
-  assertOwner(session, userId);
-  const score = 3;
-  return {
-    questionText: "Do you get opportunities to tackle complex problems?",
-    pillarId: "meaningful_work",
-    score,
-    isLow: score < 7,
-    recommendation: score < 7 ? getSampleRecommendation("meaningful_work").text : null,
-    dateLabel: "April 2026",
-  };
-}
+// getLatestCheckIn now has a real D1 implementation in lib/checkins.ts.
 
 /** How the employee felt about a manager action they can see. */
 export type ActionResponseValue = "yes" | "maybe" | "not_yet";

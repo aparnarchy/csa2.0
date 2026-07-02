@@ -4,8 +4,9 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Mascot, RecommendationCard } from "@/components/kit";
 import { COPY, fill } from "@/lib/copy";
-import { getSampleRecommendation, submitCheckIn, type CheckInQuestion } from "@/lib/data";
+import { getSampleRecommendation, type CheckInQuestion } from "@/lib/data";
 import type { SessionUser } from "@/lib/types";
+import { submitCheckInAction } from "./actions";
 
 const t = COPY.checkin;
 
@@ -59,7 +60,7 @@ export function CheckInFlow({
   async function next() {
     const c = q.options.find((o) => o.key === selected);
     if (!c) return;
-    await submitCheckIn(session, session.id, q.id, c.score);
+    await submitCheckInAction(q.id, c.score);
     setSelected(null);
     if (index + 1 < total) setIndex(index + 1);
     else setDone(true);

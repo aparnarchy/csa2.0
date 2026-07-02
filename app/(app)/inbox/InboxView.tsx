@@ -6,7 +6,6 @@ import { HEADER_MASCOT_SIZE } from "@/lib/mascot";
 import {
   getSampleRecommendation,
   submitActionResponse,
-  submitCheckIn,
   type ActionHistoryItem,
   type ActionResponseValue,
   type CheckInQuestion,
@@ -14,6 +13,7 @@ import {
   type LatestCheckIn,
 } from "@/lib/data";
 import type { SessionUser } from "@/lib/types";
+import { submitCheckInAction } from "../check-in/actions";
 
 const RESPONSE_META: Record<ActionResponseValue, { label: string; prompt: string | null }> = {
   yes: { label: "Yes ✅", prompt: null },
@@ -74,7 +74,7 @@ export function InboxView({
 
       {latest && <LatestCheckInCard latest={latest} />}
 
-      <UnansweredCard questions={unanswered} session={session} />
+      <UnansweredCard questions={unanswered} />
 
       <FeedbackActionsCard actions={actions} session={session} />
 
@@ -142,7 +142,7 @@ function LatestCheckInCard({ latest }: { latest: LatestCheckIn }) {
 }
 
 // ── Unanswered questions (carousel) ──────────────────────────────────────────
-function UnansweredCard({ questions, session }: { questions: CheckInQuestion[]; session: SessionUser }) {
+function UnansweredCard({ questions }: { questions: CheckInQuestion[] }) {
   const [idx, setIdx] = useState(0);
   const [answers, setAnswers] = useState<Record<string, { key: string; score: number }>>({});
 
@@ -161,7 +161,7 @@ function UnansweredCard({ questions, session }: { questions: CheckInQuestion[]; 
 
   function pick(key: string, score: number) {
     setAnswers((a) => ({ ...a, [q.id]: { key, score } }));
-    void submitCheckIn(session, session.id, q.id, score, true); // retrospective
+    void submitCheckInAction(q.id, score, true); // retrospective
   }
 
   return (
