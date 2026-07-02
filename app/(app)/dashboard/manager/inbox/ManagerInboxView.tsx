@@ -6,12 +6,11 @@ import { Card, GradientHeader, Mascot, NotEnoughData, ScreenShell } from "@/comp
 import { HEADER_MASCOT_SIZE } from "@/lib/mascot";
 import { PILLARS } from "@/lib/pillars";
 import {
-  getManagerInbox,
-  submitManagerAction,
   MANAGER_ACTION_DELAY_WEEKS,
   type ManagerActionItem,
   type ManagerInbox,
 } from "@/lib/data";
+import { getManagerInboxAction, submitManagerActionAction } from "./actions";
 import type { SessionUser } from "@/lib/types";
 
 type Tab = "open" | "resolved";
@@ -40,7 +39,7 @@ export function ManagerInboxView({ session, initial }: { session: SessionUser; i
     let timer: ReturnType<typeof setInterval> | null = null;
     const tick = async () => {
       if (document.hidden) return;
-      const fresh = await getManagerInbox(session, "my-team");
+      const fresh = await getManagerInboxAction();
       setResolved((prev) =>
         prev.map((it) => {
           if (touched.current.has(it.id)) return it;
@@ -65,7 +64,7 @@ export function ManagerInboxView({ session, initial }: { session: SessionUser; i
 
   function handleSubmit(item: ManagerActionItem, note: string) {
     touched.current.add(item.id);
-    submitManagerAction(session, { itemId: item.id, decision: "yes", note });
+    void submitManagerActionAction(item.id, "yes", note);
     setOpen((prev) => prev.filter((i) => i.id !== item.id));
     setResolved((prev) => [
       {
@@ -82,7 +81,7 @@ export function ManagerInboxView({ session, initial }: { session: SessionUser; i
 
   function handleNotYet(item: ManagerActionItem) {
     touched.current.add(item.id);
-    submitManagerAction(session, { itemId: item.id, decision: "not_yet" });
+    void submitManagerActionAction(item.id, "not_yet");
     setOpen((prev) => prev.map((i) => (i.id === item.id ? { ...i, status: "flagged" } : i)));
   }
 

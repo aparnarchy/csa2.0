@@ -5,7 +5,6 @@ import { Card, GradientHeader, Mascot, ScreenShell } from "@/components/kit";
 import { HEADER_MASCOT_SIZE } from "@/lib/mascot";
 import {
   getSampleRecommendation,
-  submitActionResponse,
   type ActionHistoryItem,
   type ActionResponseValue,
   type CheckInQuestion,
@@ -14,6 +13,7 @@ import {
 } from "@/lib/data";
 import type { SessionUser } from "@/lib/types";
 import { submitCheckInAction } from "../check-in/actions";
+import { submitActionResponseAction } from "./actions";
 
 const RESPONSE_META: Record<ActionResponseValue, { label: string; prompt: string | null }> = {
   yes: { label: "Yes ✅", prompt: null },
@@ -76,7 +76,7 @@ export function InboxView({
 
       <UnansweredCard questions={unanswered} />
 
-      <FeedbackActionsCard actions={actions} session={session} />
+      <FeedbackActionsCard actions={actions} />
 
       {history.length > 0 && (
         <button
@@ -266,7 +266,7 @@ function UnansweredCard({ questions }: { questions: CheckInQuestion[] }) {
 }
 
 // ── Actions taken on your feedback ───────────────────────────────────────────
-function FeedbackActionsCard({ actions, session }: { actions: FeedbackAction[]; session: SessionUser }) {
+function FeedbackActionsCard({ actions }: { actions: FeedbackAction[] }) {
   return (
     <Card>
       <p className="text-[11px] font-bold uppercase tracking-wide text-good">⚡ Actions taken on your feedback</p>
@@ -278,7 +278,7 @@ function FeedbackActionsCard({ actions, session }: { actions: FeedbackAction[]; 
       ) : (
         <div className="mt-3 space-y-3">
           {actions.map((a) => (
-            <ActionRow key={a.id} action={a} session={session} />
+            <ActionRow key={a.id} action={a} />
           ))}
         </div>
       )}
@@ -286,7 +286,7 @@ function FeedbackActionsCard({ actions, session }: { actions: FeedbackAction[]; 
   );
 }
 
-function ActionRow({ action, session }: { action: FeedbackAction; session: SessionUser }) {
+function ActionRow({ action }: { action: FeedbackAction }) {
   const [response, setResponse] = useState<ActionResponseValue | null>(action.response);
   const [note, setNote] = useState("");
   const [sent, setSent] = useState(false);
@@ -296,13 +296,13 @@ function ActionRow({ action, session }: { action: FeedbackAction; session: Sessi
     setResponse(value);
     setSent(false);
     if (value === "yes") {
-      void submitActionResponse(session, session.id, { actionId: action.id, response: value });
+      void submitActionResponseAction(action.id, value);
     }
   }
 
   function send() {
     if (response && response !== "yes") {
-      void submitActionResponse(session, session.id, { actionId: action.id, response, note: note.trim() || undefined });
+      void submitActionResponseAction(action.id, response, note.trim() || undefined);
       setSent(true);
     }
   }

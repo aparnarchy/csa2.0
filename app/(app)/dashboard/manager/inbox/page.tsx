@@ -2,7 +2,7 @@ export const runtime = "edge";
 
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth-session";
-import { getManagerInbox } from "@/lib/data";
+import { getManagerInbox } from "@/lib/feedback";
 import { ManagerInboxView } from "./ManagerInboxView";
 
 /** Manager Action Inbox (Phase 3.3): the 4-week feedback-action loop. */

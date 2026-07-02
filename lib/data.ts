@@ -450,6 +450,9 @@ export interface FeedbackAction {
   response: ActionResponseValue | null; // this employee's response so far
 }
 
+// NOTE: getFeedbackActions / submitActionResponse / getActionHistory are
+// superseded by the real D1 implementations in lib/feedback.ts (server-only).
+// These sample copies are unused and can be removed later.
 export async function getFeedbackActions(
   session: SessionUser,
   userId: string,
@@ -1113,6 +1116,9 @@ export interface ManagerInbox {
  * empty (enoughReportees = false) below the anonymisation floor, in which case
  * the screen hides the inbox entirely.
  */
+// NOTE: getManagerInbox / submitManagerAction are superseded by the real D1
+// implementations in lib/feedback.ts (server-only). These sample copies are
+// unused and can be removed later.
 export async function getManagerInbox(
   session: SessionUser,
   teamId: string,
