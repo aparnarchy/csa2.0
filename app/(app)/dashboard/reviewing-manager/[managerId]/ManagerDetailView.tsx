@@ -12,7 +12,8 @@ import {
   SegmentedToggle,
   TrendChart,
 } from "@/components/kit";
-import { getReviewingManagerDetail, type ManagerDetail, type Window } from "@/lib/data";
+import { type ManagerDetail, type Window } from "@/lib/data";
+import { getReviewingManagerDetailAction } from "../actions";
 import { PILLARS } from "@/lib/pillars";
 import type { PillarId } from "@/lib/types";
 import type { SessionUser } from "@/lib/types";
@@ -32,8 +33,8 @@ export function ManagerDetailView({
   const [highLow, setHighLow] = useState<HighLow>("low");
 
   useEffect(() => {
-    getReviewingManagerDetail(session, initial.managerId, window).then(setData);
-  }, [session, initial.managerId, window]);
+    getReviewingManagerDetailAction(initial.managerId, window).then(setData);
+  }, [initial.managerId, window]);
 
   const isPlay = session.themeMode === "play";
   const up = (data.delta ?? 0) >= 0;

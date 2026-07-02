@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Card, GradientHeader, Mascot, NotEnoughData, ScreenShell } from "@/components/kit";
-import { getReviewingManagerList, type ManagerSummary, type ReviewingManagerList } from "@/lib/data";
+import { type ManagerSummary, type ReviewingManagerList } from "@/lib/data";
+import { getReviewingManagerListAction } from "./actions";
 import { HEADER_MASCOT_SIZE, mascotForScore } from "@/lib/mascot";
 import type { SessionUser } from "@/lib/types";
 
@@ -23,10 +24,10 @@ export function ReviewingManagerView({
   const router = useRouter();
   const [data, setData] = useState<ReviewingManagerList>(initial);
 
-  // Refresh on mount so the list stays current (sample client-side for now).
+  // Refresh on mount so the list stays current (real D1 via server action).
   useEffect(() => {
-    getReviewingManagerList(session, "3M").then(setData);
-  }, [session]);
+    getReviewingManagerListAction("3M").then(setData);
+  }, []);
 
   const isPlay = session.themeMode === "play";
   const firstName = (session.name || "there").trim().split(/\s+/)[0];

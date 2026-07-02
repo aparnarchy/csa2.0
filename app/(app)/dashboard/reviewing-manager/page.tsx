@@ -2,7 +2,7 @@ export const runtime = "edge";
 
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth-session";
-import { getReviewingManagerList } from "@/lib/data";
+import { getReviewingManagerList } from "@/lib/reviewing";
 import { ReviewingManagerView } from "./ReviewingManagerView";
 
 /** Reviewing Manager — list of the managers who report to this reviewer (Phase 4.1). */

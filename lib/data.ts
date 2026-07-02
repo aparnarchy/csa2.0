@@ -1268,6 +1268,9 @@ function resolutionFor(id: string): number {
   return 45 + Math.round(seeded("res-" + id) * 50); // 45–95%
 }
 
+// NOTE: getReviewingManagerList / getReviewingManagerDetail are superseded by the
+// real D1 implementations in lib/reviewing.ts (server-only), which the app uses.
+// These sample copies are unused and can be removed later.
 export async function getReviewingManagerList(
   session: SessionUser,
   window: Window = "3M",
