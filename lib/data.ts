@@ -386,6 +386,9 @@ export interface OpenRecommendation {
  * there's nothing to follow up on. Own data only. Sample for now; the real D1
  * query finds the most recent checkIn with score<7 and followUpStatus IS NULL.
  */
+// NOTE: getOpenRecommendation / submitFollowUp are superseded by the real D1
+// implementations in lib/checkins.ts (server-only). These sample copies are
+// unused and can be removed later.
 export async function getOpenRecommendation(
   session: SessionUser,
   userId: string,

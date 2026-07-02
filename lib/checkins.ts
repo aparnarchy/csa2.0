@@ -13,8 +13,8 @@
 import { getDB } from "./db";
 import { assertOwner } from "./access-control";
 import { getSampleRecommendation } from "./data";
-import type { CheckInQuestion, LatestCheckIn } from "./data";
-import type { PillarId, SessionUser } from "./types";
+import type { CheckInQuestion, LatestCheckIn, OpenRecommendation } from "./data";
+import type { FollowUpStatus, PillarId, SessionUser } from "./types";
 
 interface QuestionRow {
   id: string;
@@ -209,4 +209,72 @@ export async function getLatestCheckIn(
     recommendation: isLow ? getSampleRecommendation(row.pillarId).text : null,
     dateLabel: await weekLabel(db, row.weekId),
   };
+}
+
+/**
+ * The single oldest-still-open low-score recommendation to follow up on: the most
+ * recent check-in with score < 7 that the user hasn't told us they acted on yet
+ * (followUpStatus IS NULL). Own data only.
+ */
+export async function getOpenRecommendation(
+  session: SessionUser,
+  userId: string,
+): Promise<OpenRecommendation | null> {
+  assertOwner(session, userId);
+  const db = getDB();
+  const row = await db
+    .prepare(
+      `SELECT c.questionId AS questionId, c.pillarId AS pillarId, c.weekId AS weekId, q.text AS questionText
+         FROM checkIns c JOIN questions q ON q.id = c.questionId
+        WHERE c.userId = ? AND c.score < 7 AND c.followUpStatus IS NULL
+        ORDER BY c.timestamp DESC, c.weekId DESC
+        LIMIT 1`,
+    )
+    .bind(userId)
+    .first<{ questionId: string; pillarId: PillarId; weekId: string; questionText: string }>();
+  if (!row) return null;
+  return {
+    questionId: row.questionId,
+    pillarId: row.pillarId,
+    questionText: row.questionText,
+    recommendation: getSampleRecommendation(row.pillarId).text,
+    weekLabel: await weekLabel(db, row.weekId),
+  };
+}
+
+/**
+ * Record whether the user acted on a past recommendation. Sets followUpStatus on
+ * the matching low-score check-in; "acted" with a note also saves a private
+ * journal entry (author-only). Own data only.
+ */
+export async function submitFollowUp(
+  session: SessionUser,
+  userId: string,
+  input: { questionId: string; pillarId: PillarId; status: FollowUpStatus; journalText?: string },
+): Promise<void> {
+  assertOwner(session, userId);
+  const db = getDB();
+  const target = await db
+    .prepare(
+      `SELECT id, weekId FROM checkIns
+        WHERE userId = ? AND questionId = ? AND score < 7 AND followUpStatus IS NULL
+        ORDER BY timestamp DESC, weekId DESC LIMIT 1`,
+    )
+    .bind(userId, input.questionId)
+    .first<{ id: string; weekId: string }>();
+  if (!target) return;
+
+  await db
+    .prepare("UPDATE checkIns SET followUpStatus = ? WHERE id = ?")
+    .bind(input.status, target.id)
+    .run();
+
+  if (input.status === "acted" && input.journalText?.trim()) {
+    await db
+      .prepare(
+        "INSERT INTO journalEntries (id, userId, weekId, questionId, text, type) VALUES (?, ?, ?, ?, ?, 'follow_up')",
+      )
+      .bind(`je-${crypto.randomUUID().slice(0, 8)}`, userId, target.weekId, input.questionId, input.journalText.trim())
+      .run();
+  }
 }

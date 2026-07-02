@@ -2,8 +2,7 @@ export const runtime = "edge";
 
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth-session";
-import { getOpenRecommendation } from "@/lib/data";
-import { getDueCheckIns, getUnansweredCheckIns } from "@/lib/checkins";
+import { getDueCheckIns, getOpenRecommendation, getUnansweredCheckIns } from "@/lib/checkins";
 import { CheckInSession } from "./CheckInSession";
 
 export default async function CheckInPage() {

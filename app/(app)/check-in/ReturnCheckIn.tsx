@@ -4,8 +4,8 @@ import { useState } from "react";
 import { Mascot } from "@/components/kit";
 import { HEADER_MASCOT_SIZE } from "@/lib/mascot";
 import { COPY } from "@/lib/copy";
-import { submitFollowUp, type OpenRecommendation } from "@/lib/data";
-import type { SessionUser } from "@/lib/types";
+import { type OpenRecommendation } from "@/lib/data";
+import { submitFollowUpAction } from "./actions";
 
 const t = COPY.followup;
 
@@ -17,11 +17,9 @@ const t = COPY.followup;
  * no high-score path. When finished it calls onDone() to continue the session.
  */
 export function ReturnCheckIn({
-  session,
   rec,
   onDone,
 }: {
-  session: SessionUser;
   rec: OpenRecommendation;
   onDone: () => void;
 }) {
@@ -32,7 +30,7 @@ export function ReturnCheckIn({
 
   async function saveActed() {
     setSaving(true);
-    await submitFollowUp(session, session.id, {
+    await submitFollowUpAction({
       questionId: rec.questionId,
       pillarId: rec.pillarId,
       status: "acted",
@@ -44,7 +42,7 @@ export function ReturnCheckIn({
 
   async function saveNotActed() {
     setSaving(true);
-    await submitFollowUp(session, session.id, {
+    await submitFollowUpAction({
       questionId: rec.questionId,
       pillarId: rec.pillarId,
       status: "not_acted",

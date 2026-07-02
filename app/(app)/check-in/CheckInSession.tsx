@@ -40,7 +40,7 @@ export function CheckInSession({
     );
   }
   if (phase === "followup" && openRec) {
-    return <ReturnCheckIn session={session} rec={openRec} onDone={() => setPhase("fresh")} />;
+    return <ReturnCheckIn rec={openRec} onDone={() => setPhase("fresh")} />;
   }
   return <CheckInFlow session={session} questions={due} />;
 }
