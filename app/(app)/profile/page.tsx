@@ -2,7 +2,7 @@ export const runtime = "edge";
 
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth-session";
-import { getProfileStats } from "@/lib/data";
+import { getProfileStats } from "@/lib/profile";
 import { ProfileView } from "./ProfileView";
 
 /** Profile screen (Phase 2.7): user info, activity, badges, settings, sign out. */

@@ -527,7 +527,9 @@ export interface ProfileStats {
   careerTenure: string; // total across companies, e.g. "5 yrs 1 mo"
 }
 
-/** Header + activity summary for the profile. Own data only. */
+/** Header + activity summary for the profile. Own data only.
+ *  NOTE: superseded by the real D1 implementation in lib/profile.ts (server-only),
+ *  which the app now uses. This sample copy is unused and can be removed later. */
 export async function getProfileStats(
   session: SessionUser,
   userId: string,
