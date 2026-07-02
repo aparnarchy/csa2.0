@@ -14,7 +14,8 @@ import {
   ScreenShell,
   TrendChart,
 } from "@/components/kit";
-import { getSampleRecommendation, getTeamAggregate, type TeamAggregate, type Window } from "@/lib/data";
+import { getSampleRecommendation, type TeamAggregate, type Window } from "@/lib/data";
+import { getTeamAggregateAction } from "./actions";
 import { HEADER_MASCOT_SIZE, mascotForScore } from "@/lib/mascot";
 import { PILLARS } from "@/lib/pillars";
 import type { SessionUser } from "@/lib/types";
@@ -30,11 +31,11 @@ export function ManagerDashboardView({
   const [window, setWindow] = useState<Window>("3M");
   const [data, setData] = useState<TeamAggregate>(initial);
 
-  // Time filter recomputes the whole aggregate (sample client-side; a server
-  // action on real D1). The team id is fixed for the signed-in manager.
+  // Time filter recomputes the whole aggregate via a server action (real D1,
+  // privacy-enforced). The team is resolved server-side to the signed-in manager.
   useEffect(() => {
-    getTeamAggregate(session, "my-team", window).then(setData);
-  }, [session, window]);
+    getTeamAggregateAction(window).then(setData);
+  }, [window]);
 
   const isPlay = session.themeMode === "play";
   const firstName = (session.name || "there").trim().split(/\s+/)[0];

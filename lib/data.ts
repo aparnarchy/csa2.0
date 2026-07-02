@@ -271,6 +271,9 @@ export async function getPillarDetail(
 }
 
 /**
+ * NOTE: the REAL D1 implementation now lives in lib/team.ts (server-only) and is
+ * what the app uses. This sample version is kept only for the /kit-preview page.
+ *
  * Aggregated team view for a manager. Enforces the anonymisation floor:
  * nothing is returned unless there are >= ANONYMISATION_FLOOR reportees and
  * responses. Returns only aggregates — never an individual-identifying field.
