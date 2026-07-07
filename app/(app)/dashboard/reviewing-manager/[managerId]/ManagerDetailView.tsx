@@ -89,7 +89,8 @@ export function ManagerDetailView({
               <div>
                 <BigScore score={data.teamScore} caption="Team score" />
                 <p className="mt-1 text-xs text-ink-3">
-                  {data.percentile}th percentile · {data.resolutionPct}% actions resolved
+                  {data.percentile}th percentile
+                  {data.resolutionPct != null && ` · ${data.resolutionPct}% actions resolved`}
                 </p>
               </div>
               {data.delta !== null && (

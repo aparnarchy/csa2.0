@@ -70,8 +70,8 @@ export async function getProfileStats(
     career.results.reduce((sum, c) => sum + monthsBetween(c.startDate, c.endDate), 0);
 
   return {
-    role: emp?.designation ?? "—",
-    company: emp?.companyName ?? "—",
+    role: emp?.designation ?? null,
+    company: emp?.companyName ?? null,
     overallScore: scores.overall ?? 0,
     delta: scores.delta ?? 0,
     streak: streak?.currentStreak ?? 0,

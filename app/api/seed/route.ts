@@ -287,5 +287,91 @@ export async function POST(request: Request) {
   }
   results.push("Streaks seeded");
 
+  // ── Owner account: fully populate the real owner login so every screen shows
+  //    its end state. Gives the owner employee data + all roles (to view every
+  //    dashboard from one login). Does NOT touch the auth rows, so the owner
+  //    keeps their own password. ────────────────────────────────────────────────
+  const OWNER_EMAIL = "aparna@kissflow.com";
+  const owner = await db
+    .prepare('SELECT id FROM "user" WHERE email = ?')
+    .bind(OWNER_EMAIL)
+    .first<{ id: string }>();
+  if (owner) {
+    const oid = owner.id;
+    // Clean any prior enrichment (leaves auth/account/session intact).
+    for (const tbl of ["checkIns", "careerCompanies", "employment", "streaks", "user_badges"]) {
+      await db.prepare(`DELETE FROM ${tbl} WHERE userId = ?`).bind(oid).run();
+    }
+
+    await db
+      .prepare(
+        'UPDATE "user" SET onboardingComplete = 1, teamId = ?, departmentId = ?, managerId = ?, currentCompany = ?, currentRole = ? WHERE id = ?',
+      )
+      .bind(teamId, deptId, managerId, "Kissflow", "Product Owner", oid)
+      .run();
+
+    for (const role of ["employee", "manager", "reviewing_manager", "ceo_hr", "admin"]) {
+      await db.prepare("INSERT OR IGNORE INTO user_roles (userId, role) VALUES (?, ?)").bind(oid, role).run();
+    }
+
+    const oEmp = `emp-${oid.slice(0, 8)}`;
+    await db
+      .prepare(
+        `INSERT OR IGNORE INTO employment
+           (id, userId, companyName, departmentId, teamId, managerId, designation,
+            workEmail, workEmailVerified, status, startedAt)
+         VALUES (?, ?, 'Kissflow', ?, ?, ?, 'Product Owner', ?, 1, 'active', '2026-01-05')`,
+      )
+      .bind(oEmp, oid, deptId, teamId, managerId, OWNER_EMAIL)
+      .run();
+
+    let oIdx = 1;
+    for (let wi = 0; wi < answeredWeeks.length; wi++) {
+      const weekId = answeredWeeks[wi];
+      const drift = (wi / answeredWeeks.length) * 1.0;
+      for (const q of questions) {
+        const base = pillarBase[q.pillarId] ?? 6.5;
+        const score = clampScore(base + drift + (Math.random() - 0.5) * 2.2);
+        await db
+          .prepare(
+            `INSERT OR IGNORE INTO checkIns (id, userId, questionId, pillarId, weekId, score, isRetrospective, employmentId)
+             VALUES (?, ?, ?, ?, ?, ?, 0, ?)`,
+          )
+          .bind(`ci-owner-${oIdx++}`, oid, q.id, q.pillarId, weekId, score, oEmp)
+          .run();
+      }
+    }
+
+    await db
+      .prepare("INSERT OR IGNORE INTO streaks (userId, currentStreak, longestStreak, lastCheckInWeek) VALUES (?, ?, ?, ?)")
+      .bind(oid, streakLen, streakLen, lastWeek)
+      .run();
+    for (const [moduleId, badge] of [["mod-know-worth", "Value Aware"], ["mod-growth-mindset", "Growth Explorer"]]) {
+      await db
+        .prepare("INSERT OR IGNORE INTO user_badges (userId, badge, moduleId) VALUES (?, ?, ?)")
+        .bind(oid, badge, moduleId)
+        .run();
+    }
+    await db
+      .prepare(
+        `INSERT INTO careerCompanies (id, userId, name, role, startDate, endDate, overallScore, pillarScores, questionnaire)
+         VALUES ('cc-owner-1', ?, 'Freshworks', 'Product Manager', '2020-04-01', '2025-12-31', 7.4, ?, ?)`,
+      )
+      .bind(
+        oid,
+        JSON.stringify({ meaningful_work: 7.8, growth: 7.5, culture: 7.2, compensation: 6.9 }),
+        JSON.stringify({
+          participationPct: 88,
+          strengths: [{ text: "Do you get opportunities to tackle complex problems?", score: 8.1 }],
+          concerns: [{ text: "Do you feel fairly compensated for your work?", score: 6.2 }],
+        }),
+      )
+      .run();
+
+    results.push(`Owner account (${OWNER_EMAIL}) fully populated with all roles`);
+  } else {
+    results.push(`Owner account (${OWNER_EMAIL}) not found — skipped`);
+  }
+
   return NextResponse.json({ ok: true, results });
 }

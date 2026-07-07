@@ -27,6 +27,10 @@ export async function POST(request: Request) {
       ? null
       : Number(body.yearsOfExperience);
 
+  const company = str(body.currentCompany);
+  const role = str(body.currentRole);
+  const now = new Date().toISOString();
+
   const { env } = getRequestContext();
   await env.DB.prepare(
     `UPDATE user
@@ -36,13 +40,30 @@ export async function POST(request: Request) {
   )
     .bind(
       str(body.name) ?? session.user.name,
-      str(body.currentCompany),
-      str(body.currentRole),
+      company,
+      role,
       Number.isFinite(years as number) ? years : null,
-      new Date().toISOString(),
+      now,
       session.user.id,
     )
     .run();
+
+  // Create the person's active EMPLOYMENT row (the lifelong-person / employment
+  // split). Without this, employment-scoped screens (Profile role/company,
+  // Career, tenure) render empty for every self-signup. Idempotent per user so a
+  // re-submitted onboarding updates rather than duplicates.
+  if (company || role) {
+    const empId = `emp-${session.user.id.slice(0, 8)}`;
+    await env.DB.prepare(
+      `INSERT INTO employment
+         (id, userId, companyName, designation, workEmail, workEmailVerified, status, startedAt)
+       VALUES (?, ?, ?, ?, ?, 1, 'active', ?)
+       ON CONFLICT(id) DO UPDATE SET companyName = excluded.companyName,
+                                     designation = excluded.designation`,
+    )
+      .bind(empId, session.user.id, company, role, session.user.email, now.slice(0, 10))
+      .run();
+  }
 
   return NextResponse.json({ ok: true });
 }

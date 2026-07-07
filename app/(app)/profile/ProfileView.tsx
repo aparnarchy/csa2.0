@@ -18,13 +18,16 @@ export function ProfileView({ session, stats }: { session: SessionUser; stats: P
   const isPlay = session.themeMode === "play";
   const firstName = (session.name || "there").trim().split(/\s+/)[0];
   const isManager = session.roles.includes("manager");
+  // Compose "role · company" from whatever is set; empty for a fresh account.
+  const roleCompany = [stats.role, stats.company].filter(Boolean).join(" · ");
+  const hasTenure = Boolean(stats.careerTenure) && stats.careerTenure !== "—";
 
   return (
     <ScreenShell active="profile">
       {/* Header — matches the dashboard look (mascot only in Play). */}
       {isPlay ? (
         <GradientHeader
-          eyebrow={`${stats.role} · ${stats.company}`}
+          eyebrow={roleCompany || undefined}
           title={session.name}
           avatar={<Mascot state="happy" size={HEADER_MASCOT_SIZE} float={false} sparkle={false} />}
         >
@@ -35,7 +38,7 @@ export function ProfileView({ session, stats }: { session: SessionUser; stats: P
           className="rounded-card px-5 py-6"
           style={{ background: "linear-gradient(135deg, #EDE7FF 0%, #C9B4FF 100%)" }}
         >
-          <p className="text-xs font-semibold text-brand/70">{stats.role} · {stats.company}</p>
+          {roleCompany && <p className="text-xs font-semibold text-brand/70">{roleCompany}</p>}
           <h1 className="mt-1 font-display text-[30px] font-black leading-tight text-brand">{session.name}</h1>
           <div className="mt-3">
             <HeaderStats stats={stats} />
@@ -84,7 +87,9 @@ export function ProfileView({ session, stats }: { session: SessionUser; stats: P
       >
         <div>
           <p className="text-sm font-bold text-ink">Career history</p>
-          <p className="mt-0.5 text-xs text-ink-3">Total tenure: {stats.careerTenure}</p>
+          <p className="mt-0.5 text-xs text-ink-3">
+            {hasTenure ? `Total tenure: ${stats.careerTenure}` : "Add your work history"}
+          </p>
         </div>
         <span className="text-xl text-ink-4">›</span>
       </button>

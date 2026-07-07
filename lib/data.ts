@@ -520,8 +520,8 @@ export async function getActionHistory(
 // ─────────────────────────────────────────────────────────────────────────────
 
 export interface ProfileStats {
-  role: string;
-  company: string;
+  role: string | null;
+  company: string | null;
   overallScore: number;
   delta: number;
   streak: number;
