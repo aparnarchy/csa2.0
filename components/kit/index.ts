@@ -16,3 +16,4 @@ export { InsightBarRow } from "./InsightBarRow";
 export { RecommendationCard } from "./RecommendationCard";
 export { NotEnoughData } from "./NotEnoughData";
 export { AIInsight } from "./AIInsight";
+export { Modal } from "./Modal";

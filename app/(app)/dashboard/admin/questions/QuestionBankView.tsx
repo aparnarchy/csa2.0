@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useMemo, useState, useTransition } from "react";
-import { Card, ScreenShell } from "@/components/kit";
+import { Card, Modal, ScreenShell } from "@/components/kit";
 import { PILLARS, PILLAR_ORDER } from "@/lib/pillars";
 import type { PillarId, Question, SessionUser } from "@/lib/types";
 import type { QuestionInput } from "@/lib/admin";
@@ -238,11 +238,7 @@ function Editor({
   const set = (patch: Partial<QuestionInput>) => setState({ id, input: { ...input, ...patch } });
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 px-3 pb-3 pt-16">
-      <div className="max-h-full w-full max-w-md overflow-y-auto rounded-card bg-white p-5 shadow-2xl">
-        <h2 className="font-display text-lg font-black text-ink">
-          {id ? "Edit question" : "New question"}
-        </h2>
+    <Modal title={id ? "Edit question" : "New question"} onClose={onCancel}>
 
         <label className="mt-3 block text-[11px] font-bold uppercase tracking-wide text-ink-3">
           Question text
@@ -333,7 +329,6 @@ function Editor({
             {pending ? "Saving…" : "Save"}
           </button>
         </div>
-      </div>
-    </div>
+    </Modal>
   );
 }

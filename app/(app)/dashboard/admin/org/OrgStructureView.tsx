@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useMemo, useState, useTransition } from "react";
-import { Card, ScreenShell } from "@/components/kit";
+import { Card, Modal, ScreenShell } from "@/components/kit";
 import type { SessionUser } from "@/lib/types";
 import type { OrgStructure, TeamInput } from "@/lib/admin";
 import {
@@ -365,9 +365,7 @@ function Sheet({
   error: string | null;
 }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 px-3 pb-3 pt-16">
-      <div className="max-h-full w-full max-w-md overflow-y-auto rounded-card bg-white p-5 shadow-2xl">
-        <h2 className="font-display text-lg font-black text-ink">{title}</h2>
+    <Modal title={title} onClose={onCancel}>
         {children}
         {error && (
           <p className="mt-3 rounded-xl bg-red-50 px-3 py-2 text-xs font-semibold text-red-600">
@@ -392,7 +390,6 @@ function Sheet({
             {pending ? "Saving…" : "Save"}
           </button>
         </div>
-      </div>
-    </div>
+    </Modal>
   );
 }
