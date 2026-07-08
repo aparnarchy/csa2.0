@@ -287,6 +287,85 @@ export async function POST(request: Request) {
   }
   results.push("Streaks seeded");
 
+  // ── Wisdom CMS content (so the admin Wisdom tab is populated) ────────────────
+  await db.prepare("DELETE FROM wisdomContent WHERE id LIKE 'wc-%'").run();
+  await db.prepare("DELETE FROM wisdomModules WHERE id LIKE 'wm-%'").run();
+  const wisdomModules = [
+    { id: "wm-mw-b", title: "Finding meaning in your work", pillarId: "meaningful_work", audience: "both", level: "beginner", badge: "Purpose Seeker" },
+    { id: "wm-gr-b", title: "Growth mindset basics", pillarId: "growth", audience: "both", level: "beginner", badge: "Growth Explorer" },
+    { id: "wm-cu-b", title: "Belonging at work", pillarId: "culture", audience: "both", level: "beginner", badge: "Culture Champion" },
+    { id: "wm-co-b", title: "Know your worth", pillarId: "compensation", audience: "both", level: "beginner", badge: "Value Aware" },
+    { id: "wm-gr-a", title: "Coaching your team to grow", pillarId: "growth", audience: "manager", level: "advanced", badge: "Growth Coach" },
+  ];
+  for (const m of wisdomModules) {
+    await db
+      .prepare("INSERT OR IGNORE INTO wisdomModules (id, title, pillarId, audience, level, badgeAwarded, isActive) VALUES (?, ?, ?, ?, ?, ?, 1)")
+      .bind(m.id, m.title, m.pillarId, m.audience, m.level, m.badge)
+      .run();
+  }
+  const wisdomContent = [
+    { id: "wc-mw-1", moduleId: "wm-mw-b", title: "What meaningful work really means", type: "article", body: "A short read on connecting daily tasks to a bigger purpose.", sort: 0, hasQuiz: 0 },
+    { id: "wc-mw-2", moduleId: "wm-mw-b", title: "Map your strengths to outcomes", type: "lesson", body: "An exercise to link what you're good at to what your team needs.", sort: 1, hasQuiz: 0 },
+    { id: "wc-mw-3", moduleId: "wm-mw-b", title: "Meaningful work quiz", type: "quiz", body: null, sort: 2, hasQuiz: 1 },
+    { id: "wc-gr-1", moduleId: "wm-gr-b", title: "The science of a growth mindset", type: "article", body: "Why believing skills can grow changes how you learn.", sort: 0, hasQuiz: 0 },
+    { id: "wc-gr-2", moduleId: "wm-gr-b", title: "Spotting your learning edges", type: "video", body: null, sort: 1, hasQuiz: 0 },
+    { id: "wc-gr-3", moduleId: "wm-gr-b", title: "Growth quiz", type: "quiz", body: null, sort: 2, hasQuiz: 1 },
+    { id: "wc-cu-1", moduleId: "wm-cu-b", title: "Why belonging drives performance", type: "article", body: "How psychological safety lifts a whole team.", sort: 0, hasQuiz: 0 },
+    { id: "wc-cu-2", moduleId: "wm-cu-b", title: "Small ways to build trust", type: "video", body: null, sort: 1, hasQuiz: 0 },
+    { id: "wc-co-1", moduleId: "wm-co-b", title: "How to research your market value", type: "article", body: "Sources and benchmarks for a fair pay conversation.", sort: 0, hasQuiz: 0 },
+    { id: "wc-co-2", moduleId: "wm-co-b", title: "Talking about pay with confidence", type: "video", body: null, sort: 1, hasQuiz: 0 },
+    { id: "wc-ga-1", moduleId: "wm-gr-a", title: "Running a growth 1:1", type: "lesson", body: "A manager's template for a development-focused check-in.", sort: 0, hasQuiz: 0 },
+  ];
+  for (const c of wisdomContent) {
+    const mod = wisdomModules.find((m) => m.id === c.moduleId)!;
+    await db
+      .prepare(
+        `INSERT OR IGNORE INTO wisdomContent (id, moduleId, title, type, pillarId, audience, body, sortOrder, isActive, level, hasQuiz)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)`,
+      )
+      .bind(c.id, c.moduleId, c.title, c.type, mod.pillarId, mod.audience, c.body, c.sort, mod.level, c.hasQuiz)
+      .run();
+  }
+  results.push("Wisdom CMS content seeded");
+
+  // ── Sample invites (so the admin Invites tab shows a list) ───────────────────
+  await db.prepare("DELETE FROM invites WHERE id LIKE 'inv-%'").run();
+  const adminId = createdUsers.find((u) => u.email === "admin@test.com")?.id ?? managerId;
+  if (adminId) {
+    const invites = [
+      { id: "inv-1", email: "priya.new@acme.com", role: "employee", teamId, status: "pending" },
+      { id: "inv-2", email: "sam.lead@acme.com", role: "manager", teamId: null, status: "pending" },
+      { id: "inv-3", email: "jordan.hire@acme.com", role: "employee", teamId, status: "accepted" },
+    ];
+    for (const iv of invites) {
+      await db
+        .prepare("INSERT OR IGNORE INTO invites (id, email, role, invitedBy, teamId, status) VALUES (?, ?, ?, ?, ?, ?)")
+        .bind(iv.id, iv.email, iv.role, adminId, iv.teamId, iv.status)
+        .run();
+    }
+    results.push("Sample invites seeded");
+  }
+
+  // ── Extra departments + teams (so the org chart looks like a real company) ───
+  const extraDepts = [
+    { id: "dept-product", name: "Product" },
+    { id: "dept-sales", name: "Sales" },
+  ];
+  for (const d of extraDepts) {
+    await db.prepare("INSERT OR IGNORE INTO departments (id, name) VALUES (?, ?)").bind(d.id, d.name).run();
+  }
+  const extraTeams = [
+    { id: "team-design", name: "Design Team", deptId: "dept-product", managerId: null },
+    { id: "team-sales", name: "Sales Team", deptId: "dept-sales", managerId: null },
+  ];
+  for (const t of extraTeams) {
+    await db
+      .prepare("INSERT OR IGNORE INTO teams (id, name, managerId, departmentId) VALUES (?, ?, ?, ?)")
+      .bind(t.id, t.name, t.managerId, t.deptId)
+      .run();
+  }
+  results.push("Extra org structure seeded");
+
   // ── Owner account: fully populate the real owner login so every screen shows
   //    its end state. Gives the owner employee data + all roles (to view every
   //    dashboard from one login). Does NOT touch the auth rows, so the owner
