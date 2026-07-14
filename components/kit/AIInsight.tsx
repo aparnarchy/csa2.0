@@ -1,6 +1,8 @@
 /**
- * Placeholder for the AI qualitative snapshot. The real LLM call is wired in
- * Phase 5 — for now this renders the slot so screens have the right shape.
+ * The AI qualitative snapshot box. Screens pass `text` from the server-side
+ * insight (lib/ai.ts); when it's missing (below the anonymity floor, no key,
+ * or the AI call failed) the fallback line renders instead — a dashboard is
+ * never blocked on the AI.
  */
 export function AIInsight({ text }: { text?: string }) {
   return (
@@ -10,7 +12,7 @@ export function AIInsight({ text }: { text?: string }) {
         <span className="text-sm font-bold text-brand">AI insight</span>
       </div>
       <p className="mt-2 text-sm leading-relaxed text-ink-2">
-        {text ?? "Your AI summary will appear here once enough check-ins are in. (Coming in Phase 5.)"}
+        {text ?? "No AI summary right now — the scores above are live, and a fresh summary will appear once enough check-ins are in."}
       </p>
     </div>
   );

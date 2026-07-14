@@ -15,7 +15,7 @@ import {
   TrendChart,
 } from "@/components/kit";
 import { getSampleRecommendation, type TeamAggregate, type Window } from "@/lib/data";
-import { getTeamAggregateAction } from "./actions";
+import { getTeamAggregateAction, getTeamInsightAction } from "./actions";
 import { HEADER_MASCOT_SIZE, mascotForScore } from "@/lib/mascot";
 import { PILLARS } from "@/lib/pillars";
 import type { SessionUser } from "@/lib/types";
@@ -23,18 +23,22 @@ import type { SessionUser } from "@/lib/types";
 export function ManagerDashboardView({
   session,
   initial,
+  initialInsight,
 }: {
   session: SessionUser;
   initial: TeamAggregate;
+  initialInsight: string | null;
 }) {
   const router = useRouter();
   const [window, setWindow] = useState<Window>("3M");
   const [data, setData] = useState<TeamAggregate>(initial);
+  const [aiText, setAiText] = useState<string | null>(initialInsight);
 
   // Time filter recomputes the whole aggregate via a server action (real D1,
   // privacy-enforced). The team is resolved server-side to the signed-in manager.
   useEffect(() => {
     getTeamAggregateAction(window).then(setData);
+    getTeamInsightAction(window).then(setAiText);
   }, [window]);
 
   const isPlay = session.themeMode === "play";
@@ -113,8 +117,8 @@ export function ManagerDashboardView({
             </div>
           </Card>
 
-          {/* AI insight (team) — real LLM lands in Phase 5 */}
-          <AIInsight />
+          {/* AI insight (team) — LLM summary of the aggregates, cached in D1 */}
+          <AIInsight text={aiText ?? undefined} />
 
           {/* Trend — team vs org / dept / industry */}
           <TrendChart data={data.trend} window={window} onWindowChange={setWindow} />

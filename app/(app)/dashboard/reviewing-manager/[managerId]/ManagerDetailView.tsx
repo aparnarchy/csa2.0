@@ -13,7 +13,7 @@ import {
   TrendChart,
 } from "@/components/kit";
 import { type ManagerDetail, type Window } from "@/lib/data";
-import { getReviewingManagerDetailAction } from "../actions";
+import { getManagerDetailInsightAction, getReviewingManagerDetailAction } from "../actions";
 import { PILLARS } from "@/lib/pillars";
 import type { PillarId } from "@/lib/types";
 import type { SessionUser } from "@/lib/types";
@@ -23,17 +23,21 @@ type HighLow = "high" | "low";
 export function ManagerDetailView({
   session,
   initial,
+  initialInsight,
 }: {
   session: SessionUser;
   initial: ManagerDetail;
+  initialInsight: string | null;
 }) {
   const router = useRouter();
   const [window, setWindow] = useState<Window>("3M");
   const [data, setData] = useState<ManagerDetail>(initial);
+  const [aiText, setAiText] = useState<string | null>(initialInsight);
   const [highLow, setHighLow] = useState<HighLow>("low");
 
   useEffect(() => {
     getReviewingManagerDetailAction(initial.managerId, window).then(setData);
+    getManagerDetailInsightAction(initial.managerId, window).then(setAiText);
   }, [initial.managerId, window]);
 
   const isPlay = session.themeMode === "play";
@@ -112,8 +116,8 @@ export function ManagerDetailView({
             </div>
           </Card>
 
-          {/* AI insight (team) — real LLM lands in Phase 5 */}
-          <AIInsight />
+          {/* AI insight (team) — LLM summary of the aggregates, cached in D1 */}
+          <AIInsight text={aiText ?? undefined} />
 
           {/* Trend — team vs org / dept / industry */}
           <TrendChart data={data.trend} window={window} onWindowChange={setWindow} />

@@ -356,6 +356,7 @@ Manager signs up + onboards → enters reportee emails → `invites` rows + emai
 | **11 Jun 2026** | **Invite email matching: allow any email at signup. An invite pre-links org structure only when emails match; anyone can sign up freely.** |
 | **11 Jun 2026** | **AI insights = Anthropic Claude API (Gemini dropped — org-blocked Google Cloud project creation).** |
 | 15 Jun 2026 | Added a "Find the Root" oracle journey on the employee dashboard: an immersive, full-screen root-cause dive (symptom → pillar → root → today's actions). Deterministic engine + research-informed copy now; AI-personalised in Phase 5 (same shape). |
+| **14 Jul 2026** | **AI insights = Groq API (`llama-3.3-70b-versatile`, plain fetch, no SDK) — owner supplied a Groq key; supersedes the 11 Jun Claude-API decision. Cached in D1, regenerated only when scores change.** |
 
 ---
 

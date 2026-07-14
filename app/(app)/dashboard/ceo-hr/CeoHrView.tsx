@@ -15,7 +15,7 @@ import {
   TrendChart,
 } from "@/components/kit";
 import { type CeoDashboard, type Window } from "@/lib/data";
-import { getCeoDashboardAction } from "./actions";
+import { getCeoDashboardAction, getCeoInsightAction } from "./actions";
 import { HEADER_MASCOT_SIZE, mascotForScore } from "@/lib/mascot";
 import { PILLARS } from "@/lib/pillars";
 import type { PillarId, SessionUser } from "@/lib/types";
@@ -31,19 +31,23 @@ const SCOPE_EYEBROW: Record<"org" | "dept" | "team", string> = {
 export function CeoHrView({
   session,
   initial,
+  initialInsight,
 }: {
   session: SessionUser;
   initial: CeoDashboard;
+  initialInsight: string | null;
 }) {
   const [window, setWindow] = useState<Window>("3M");
   const [scope, setScope] = useState<string>(initial.scope);
   const [data, setData] = useState<CeoDashboard>(initial);
+  const [aiText, setAiText] = useState<string | null>(initialInsight);
   const [highLow, setHighLow] = useState<HighLow>("low");
 
   // Scope or time-window change recomputes the whole aggregate via a server action
   // (real D1). Privacy + the anonymisation floor live server-side.
   useEffect(() => {
     getCeoDashboardAction(scope, window).then(setData);
+    getCeoInsightAction(scope, window).then(setAiText);
   }, [scope, window]);
 
   const isPlay = session.themeMode === "play";
@@ -139,8 +143,8 @@ export function CeoHrView({
             </div>
           </Card>
 
-          {/* AI insight — real LLM lands in Phase 5 */}
-          <AIInsight />
+          {/* AI insight — LLM summary of the aggregates, cached in D1 */}
+          <AIInsight text={aiText ?? undefined} />
 
           {/* Trend — scope vs org / dept / industry */}
           <TrendChart data={data.trend} window={window} onWindowChange={setWindow} />

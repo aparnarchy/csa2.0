@@ -3,6 +3,7 @@ export const runtime = "edge";
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth-session";
 import { getCeoDashboard } from "@/lib/ceo";
+import { getCeoInsight } from "@/lib/ai";
 import { CeoHrView } from "./CeoHrView";
 
 /** CEO / HR dashboard — org-wide aggregates with dept/team drill-down (Phase 4.3). */
@@ -13,6 +14,7 @@ export default async function CeoHrPage() {
   if (!session.user.roles.includes("ceo_hr")) redirect("/dashboard");
 
   const data = await getCeoDashboard(session.user, "org", "3M");
+  const insight = await getCeoInsight("3M", data);
 
-  return <CeoHrView session={session.user} initial={data} />;
+  return <CeoHrView session={session.user} initial={data} initialInsight={insight} />;
 }
