@@ -5,12 +5,13 @@ import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
 import { Card, GradientHeader, Mascot, ScreenShell } from "@/components/kit";
 import { HEADER_MASCOT_SIZE } from "@/lib/mascot";
+import { COPY, fill } from "@/lib/copy";
 import type { ProfileStats } from "@/lib/data";
 import type { Persona, SessionUser, ThemeMode } from "@/lib/types";
 
 const PERSONAS: { key: Persona; name: string; tagline: string; emoji: string }[] = [
-  { key: "spiderman", name: "Spiderman", tagline: "Warm, witty, friendly-neighbourhood pep talks.", emoji: "🕷️" },
-  { key: "batman", name: "Batman", tagline: "Brooding, disciplined, no-nonsense resolve.", emoji: "🦇" },
+  { key: "spiderman", name: COPY.profile.personaSpiderman, tagline: COPY.profile.personaSpidermanTagline, emoji: "🕷️" },
+  { key: "batman", name: COPY.profile.personaBatman, tagline: COPY.profile.personaBatmanTagline, emoji: "🦇" },
 ];
 
 export function ProfileView({ session, stats }: { session: SessionUser; stats: ProfileStats }) {
@@ -49,9 +50,9 @@ export function ProfileView({ session, stats }: { session: SessionUser; stats: P
       {/* Activity — streak + best + recent-week dots (no heatmap) */}
       <Card>
         <div className="flex items-center justify-between">
-          <p className="text-sm font-bold text-brand">Activity</p>
+          <p className="text-sm font-bold text-brand">{COPY.profile.activityTitle}</p>
           <span className="text-xs text-ink-3">
-            Best streak <span className="font-bold text-brand">🔥 {stats.longestStreak}</span>
+            {COPY.profile.bestStreak} <span className="font-bold text-brand">🔥 {stats.longestStreak}</span>
           </span>
         </div>
         <div className="mt-3 flex items-center gap-1.5">
@@ -63,19 +64,19 @@ export function ProfileView({ session, stats }: { session: SessionUser; stats: P
             />
           ))}
         </div>
-        <p className="mt-2 text-[11px] text-ink-4">Last {stats.recentWeeks.length} weeks · {stats.totalCheckIns} check-ins total</p>
+        <p className="mt-2 text-[11px] text-ink-4">{fill(COPY.profile.activitySummary, { weeks: stats.recentWeeks.length, total: stats.totalCheckIns })}</p>
       </Card>
 
       {/* Badges */}
       <Card>
-        <p className="text-sm font-bold text-brand">Badges</p>
+        <p className="text-sm font-bold text-brand">{COPY.profile.badgesTitle}</p>
         <div className="mt-3 flex flex-wrap gap-2">
           {stats.badges.map((b) => (
             <span key={b} className="rounded-full bg-lav-soft px-3 py-1.5 text-xs font-bold text-brand">
               🏅 {b}
             </span>
           ))}
-          {stats.badges.length === 0 && <p className="text-sm text-ink-3">No badges yet — earn them in Wisdom.</p>}
+          {stats.badges.length === 0 && <p className="text-sm text-ink-3">{COPY.profile.noBadges}</p>}
         </div>
       </Card>
 
@@ -86,9 +87,9 @@ export function ProfileView({ session, stats }: { session: SessionUser; stats: P
         className="flex w-full items-center justify-between rounded-card bg-white p-4 text-left shadow-card transition active:scale-[0.99]"
       >
         <div>
-          <p className="text-sm font-bold text-ink">Career history</p>
+          <p className="text-sm font-bold text-ink">{COPY.profile.careerHistoryTitle}</p>
           <p className="mt-0.5 text-xs text-ink-3">
-            {hasTenure ? `Total tenure: ${stats.careerTenure}` : "Add your work history"}
+            {hasTenure ? fill(COPY.profile.careerTenure, { tenure: stats.careerTenure }) : COPY.profile.addWorkHistory}
           </p>
         </div>
         <span className="text-xl text-ink-4">›</span>
@@ -108,8 +109,8 @@ export function ProfileView({ session, stats }: { session: SessionUser; stats: P
           className="flex w-full items-center justify-between rounded-card bg-white p-4 text-left shadow-card transition active:scale-[0.99]"
         >
           <div>
-            <p className="text-sm font-bold text-ink">Switch to Manager view</p>
-            <p className="mt-0.5 text-xs text-ink-3">See your team&apos;s insights</p>
+            <p className="text-sm font-bold text-ink">{COPY.profile.switchManagerTitle}</p>
+            <p className="mt-0.5 text-xs text-ink-3">{COPY.profile.switchManagerSub}</p>
           </div>
           <span className="text-xl text-ink-4">›</span>
         </button>
@@ -124,11 +125,11 @@ export function ProfileView({ session, stats }: { session: SessionUser; stats: P
           }}
           className="text-sm font-semibold text-ink-4 active:scale-95"
         >
-          Sign out
+          {COPY.profile.signOut}
         </button>
       </div>
 
-      <p className="pb-2 text-center text-[11px] text-ink-4">Signed in as {firstName} · {session.email}</p>
+      <p className="pb-2 text-center text-[11px] text-ink-4">{fill(COPY.profile.signedInAs, { name: firstName, email: session.email })}</p>
     </ScreenShell>
   );
 }
@@ -138,15 +139,15 @@ function HeaderStats({ stats }: { stats: ProfileStats }) {
     <div className="flex gap-2">
       <div className="flex-1 rounded-2xl bg-white/60 px-3 py-2 text-center">
         <p className="font-display text-xl font-black leading-none text-brand">{stats.overallScore.toFixed(1)}</p>
-        <p className="mt-1 text-[10px] font-semibold text-ink-3">happiness</p>
+        <p className="mt-1 text-[10px] font-semibold text-ink-3">{COPY.profile.statHappiness}</p>
       </div>
       <div className="flex-1 rounded-2xl bg-white/60 px-3 py-2 text-center">
         <p className="font-display text-xl font-black leading-none text-brand">🔥 {stats.streak}</p>
-        <p className="mt-1 text-[10px] font-semibold text-ink-3">day streak</p>
+        <p className="mt-1 text-[10px] font-semibold text-ink-3">{COPY.profile.statStreak}</p>
       </div>
       <div className="flex-1 rounded-2xl bg-white/60 px-3 py-2 text-center">
         <p className="font-display text-xl font-black leading-none text-brand">{stats.participationPct}%</p>
-        <p className="mt-1 text-[10px] font-semibold text-ink-3">participation</p>
+        <p className="mt-1 text-[10px] font-semibold text-ink-3">{COPY.profile.statParticipation}</p>
       </div>
     </div>
   );
@@ -174,13 +175,13 @@ function AppearanceCard({ session }: { session: SessionUser }) {
 
   return (
     <Card>
-      <p className="text-sm font-bold text-brand">Appearance</p>
-      <p className="mt-0.5 text-xs text-ink-3">Switch any time — the change applies right away.</p>
+      <p className="text-sm font-bold text-brand">{COPY.profile.appearanceTitle}</p>
+      <p className="mt-0.5 text-xs text-ink-3">{COPY.profile.appearanceSub}</p>
 
       <div className="mt-4 grid grid-cols-2 gap-2">
         {([
-          { key: "professional", label: "Professional", sub: "Clean & serious" },
-          { key: "play", label: "Play", sub: "Fun & playful" },
+          { key: "professional", label: COPY.profile.modeProfessional, sub: COPY.profile.modeProfessionalSub },
+          { key: "play", label: COPY.profile.modePlay, sub: COPY.profile.modePlaySub },
         ] as const).map((m) => {
           const sel = mode === m.key;
           return (
@@ -202,7 +203,7 @@ function AppearanceCard({ session }: { session: SessionUser }) {
 
       {mode === "play" && (
         <div className="screen-enter mt-5">
-          <p className="text-[11px] font-bold uppercase tracking-wide text-ink-3">Character voice</p>
+          <p className="text-[11px] font-bold uppercase tracking-wide text-ink-3">{COPY.profile.characterVoice}</p>
           <div className="mt-2 space-y-2">
             {PERSONAS.map((p) => {
               const sel = persona === p.key;
@@ -238,13 +239,13 @@ function PreferencesCard() {
   const [weekly, setWeekly] = useState(true);
 
   const rows: { label: string; desc: string; val: boolean; set: (v: boolean) => void }[] = [
-    { label: "Check-in reminders", desc: "A gentle nudge when a question is ready", val: reminders, set: setReminders },
-    { label: "Weekly summary", desc: "Your insights digest every Monday", val: weekly, set: setWeekly },
+    { label: COPY.profile.prefReminders, desc: COPY.profile.prefRemindersSub, val: reminders, set: setReminders },
+    { label: COPY.profile.prefWeekly, desc: COPY.profile.prefWeeklySub, val: weekly, set: setWeekly },
   ];
 
   return (
     <Card>
-      <p className="text-sm font-bold text-brand">Preferences</p>
+      <p className="text-sm font-bold text-brand">{COPY.profile.preferencesTitle}</p>
       <div className="mt-3 space-y-3">
         {rows.map((r, i) => (
           <div

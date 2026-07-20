@@ -3,22 +3,27 @@
 import { useMemo, useState } from "react";
 import { Card, GradientHeader, Mascot, ScreenShell } from "@/components/kit";
 import { HEADER_MASCOT_SIZE } from "@/lib/mascot";
+import { COPY, fill } from "@/lib/copy";
 import type { MascotState } from "@/lib/mascot";
 import type { WisdomData, WisdomItemType, WisdomLevelView, WisdomModuleView } from "@/lib/data";
 import type { SessionUser } from "@/lib/types";
 
 const TYPE_ICON: Record<WisdomItemType, string> = { video: "▶", article: "📄", quiz: "✎" };
-const TYPE_LABEL: Record<WisdomItemType, string> = { video: "Video", article: "Article", quiz: "Quiz" };
+const TYPE_LABEL: Record<WisdomItemType, string> = {
+  video: COPY.wisdom.typeVideo,
+  article: COPY.wisdom.typeArticle,
+  quiz: COPY.wisdom.typeQuiz,
+};
 
 // Header copy + nav differ by audience (employee growth vs manager leadership);
 // everything below the header is shared. Defaults keep the employee screen as-is.
 export function WisdomView({
   session,
   wisdom,
-  eyebrow = "📚 Wisdom",
+  eyebrow = COPY.wisdom.employeeEyebrow,
   title,
   mascotState = "happy",
-  footnote = "Modules are ordered by your weakest pillar first.",
+  footnote = COPY.wisdom.employeeFootnote,
   active = "wisdom",
 }: {
   session: SessionUser;
@@ -31,7 +36,7 @@ export function WisdomView({
 }) {
   const isPlay = session.themeMode === "play";
   const firstName = (session.name || "there").trim().split(/\s+/)[0];
-  const heading = title ?? `Keep growing, ${firstName}`;
+  const heading = title ?? fill(COPY.wisdom.employeeTitle, { name: firstName });
 
   // All item ids that start done; interaction adds to this set (sample state).
   const initialDone = useMemo(
@@ -114,7 +119,7 @@ export function WisdomView({
       )}
 
       {/* Learning path */}
-      <p className="px-1 pt-1 font-display text-sm font-black text-ink">Your learning path</p>
+      <p className="px-1 pt-1 font-display text-sm font-black text-ink">{COPY.wisdom.learningPath}</p>
       <div className="space-y-3">
         {levels.map((l, i) => (
           <LevelCard key={l.level} level={l} onToggle={toggle} isLast={i === levels.length - 1} />
@@ -123,7 +128,7 @@ export function WisdomView({
 
       {/* Badges */}
       <p className="px-1 pt-2 font-display text-sm font-black text-ink">
-        🏅 Badges <span className="font-bold text-ink-3">· {earnedBadges.length}/{wisdom.badges.length}</span>
+        {COPY.wisdom.badgesHeading} <span className="font-bold text-ink-3">· {earnedBadges.length}/{wisdom.badges.length}</span>
       </p>
       <div className="grid grid-cols-3 gap-2.5">
         {wisdom.badges.map((b, i) => {
@@ -155,7 +160,7 @@ function ProgressMeter({ pct, doneCount, totalCount }: { pct: number; doneCount:
       <div className="h-2 overflow-hidden rounded-full bg-white/50">
         <div className="h-full rounded-full bg-brand transition-all" style={{ width: `${pct}%` }} />
       </div>
-      <p className="mt-1.5 text-xs font-bold text-brand">{doneCount}/{totalCount} lessons complete · {pct}%</p>
+      <p className="mt-1.5 text-xs font-bold text-brand">{fill(COPY.wisdom.progressLine, { done: doneCount, total: totalCount, pct })}</p>
     </div>
   );
 }
@@ -175,12 +180,12 @@ function ActiveModuleCard({
     <Card className="border border-lav-mid">
       <div className="flex items-center justify-between">
         <span className="rounded-full bg-lav-soft px-2.5 py-1 text-[10px] font-black uppercase tracking-wide text-brand">
-          {level.icon} {level.name} · Up next
+          {level.icon} {level.name} · {COPY.wisdom.upNext}
         </span>
         <span className="text-[11px] font-bold text-ink-3">{doneN}/{module.items.length}</span>
       </div>
       <p className="mt-2.5 font-display text-lg font-black leading-tight text-ink">{module.title}</p>
-      <p className="text-xs text-ink-3">{module.pillarLabel} · earn the {module.badge} badge</p>
+      <p className="text-xs text-ink-3">{fill(COPY.wisdom.moduleSubtitle, { pillar: module.pillarLabel, badge: module.badge })}</p>
 
       <div className="mt-3 space-y-1">
         {module.items.map((it) => (
@@ -228,14 +233,14 @@ function LevelCard({
           <div className="flex items-center gap-2">
             <span className="font-display text-base font-black text-ink">{level.name}</span>
             {complete && (
-              <span className="rounded-full bg-lav-soft px-2 py-0.5 text-[10px] font-bold text-brand">Complete ✓</span>
+              <span className="rounded-full bg-lav-soft px-2 py-0.5 text-[10px] font-bold text-brand">{COPY.wisdom.completeChip}</span>
             )}
             {!level.unlocked && (
-              <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-bold text-ink-4">Locked</span>
+              <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-bold text-ink-4">{COPY.wisdom.lockedChip}</span>
             )}
           </div>
           <p className="mt-0.5 text-[11px] text-ink-3">
-            {level.unlocked ? level.subtitle : "Earn every badge in the level above to unlock"}
+            {level.unlocked ? level.subtitle : COPY.wisdom.lockedHint}
           </p>
         </div>
         <div className="flex flex-shrink-0 items-center gap-2">
@@ -260,7 +265,7 @@ function LevelCard({
           {complete && (
             <div className="rounded-card bg-lav-soft px-4 py-3 text-center">
               <p className="text-[13px] font-bold text-brand">
-                {isLast ? "🏆 You've mastered every level!" : "🎉 Level complete — next level unlocked."}
+                {isLast ? COPY.wisdom.allMastered : COPY.wisdom.levelComplete}
               </p>
             </div>
           )}
@@ -319,7 +324,7 @@ function ItemRow({
           item.done ? "bg-lav-mid text-brand" : item.type === "quiz" ? "bg-brand text-white" : "bg-lav-soft text-brand"
         }`}
       >
-        {item.done ? "Done" : item.type === "quiz" ? "Take quiz" : "Start"}
+        {item.done ? COPY.wisdom.itemDone : item.type === "quiz" ? COPY.wisdom.itemTakeQuiz : COPY.wisdom.itemStart}
       </button>
     </div>
   );

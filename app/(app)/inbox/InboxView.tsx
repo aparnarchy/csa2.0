@@ -12,13 +12,14 @@ import {
   type LatestCheckIn,
 } from "@/lib/data";
 import type { SessionUser } from "@/lib/types";
+import { COPY, fill } from "@/lib/copy";
 import { submitCheckInAction } from "../check-in/actions";
 import { submitActionResponseAction } from "./actions";
 
 const RESPONSE_META: Record<ActionResponseValue, { label: string; prompt: string | null }> = {
-  yes: { label: "Yes ✅", prompt: null },
-  maybe: { label: "Maybe", prompt: "What could have been better?" },
-  not_yet: { label: "Not yet", prompt: "What still needs to happen?" },
+  yes: { label: COPY.inbox.responseYes, prompt: null },
+  maybe: { label: COPY.inbox.responseMaybe, prompt: COPY.inbox.maybePrompt },
+  not_yet: { label: COPY.inbox.responseNotYet, prompt: COPY.inbox.notYetPrompt },
 };
 
 export function InboxView({
@@ -48,13 +49,13 @@ export function InboxView({
           Professional: a smaller richer-gradient card, no mascot. */}
       {isPlay ? (
         <GradientHeader
-          eyebrow="📥 Inbox"
-          title={`Hi ${firstName}`}
+          eyebrow={COPY.inbox.eyebrow}
+          title={fill(COPY.inbox.greeting, { name: firstName })}
           avatar={<Mascot state="welcome" size={HEADER_MASCOT_SIZE} float={false} sparkle={false} />}
           className="flex min-h-[180px] flex-col justify-center"
         >
           <p className="mt-2 text-sm font-bold leading-snug text-brand">
-            Your latest updates and actions.
+            {COPY.inbox.tagline}
           </p>
         </GradientHeader>
       ) : (
@@ -62,12 +63,12 @@ export function InboxView({
           className="rounded-card px-5 py-6"
           style={{ background: "linear-gradient(135deg, #EDE7FF 0%, #C9B4FF 100%)" }}
         >
-          <p className="text-xs font-semibold text-brand/70">📥 Inbox</p>
+          <p className="text-xs font-semibold text-brand/70">{COPY.inbox.eyebrow}</p>
           <h1 className="mt-1 font-display text-[34px] font-black leading-tight text-brand">
-            Hi {firstName}
+            {fill(COPY.inbox.greeting, { name: firstName })}
           </h1>
           <p className="mt-2 font-display text-base font-black leading-snug text-brand-light">
-            Your latest updates and actions.
+            {COPY.inbox.tagline}
           </p>
         </div>
       )}
@@ -84,7 +85,7 @@ export function InboxView({
           onClick={() => setShowHistory(true)}
           className="w-full py-1 text-center text-sm font-bold text-brand active:scale-[0.99]"
         >
-          View past responses →
+          {COPY.inbox.viewPastResponses}
         </button>
       )}
     </ScreenShell>
@@ -99,7 +100,7 @@ function LatestCheckInCard({ latest }: { latest: LatestCheckIn }) {
   return (
     <Card>
       <p className="text-[11px] font-bold uppercase tracking-wide text-brand">
-        📋 Latest check-in · {latest.dateLabel}
+        {fill(COPY.inbox.latestCheckInLabel, { date: latest.dateLabel })}
       </p>
       <p className="mt-2 text-sm font-semibold leading-snug text-ink">&ldquo;{latest.questionText}&rdquo;</p>
       <p className="mt-2 flex items-baseline gap-1">
@@ -111,20 +112,20 @@ function LatestCheckInCard({ latest }: { latest: LatestCheckIn }) {
 
       {latest.isLow && latest.recommendation ? (
         <div className="mt-3 rounded-card bg-lav-soft p-3.5">
-          <p className="text-xs font-bold text-brand">Recommendation</p>
+          <p className="text-xs font-bold text-brand">{COPY.inbox.recommendationLabel}</p>
           <p className="mt-1 text-[13px] leading-relaxed text-ink-2">{latest.recommendation}</p>
         </div>
       ) : shared ? (
         <div className="mt-3 rounded-card bg-good/10 p-3 text-center">
-          <p className="text-sm font-bold text-good">Shared! 🙏</p>
+          <p className="text-sm font-bold text-good">{COPY.inbox.sharedThanks}</p>
         </div>
       ) : (
         <div className="mt-3">
-          <p className="mb-2 text-[13px] text-ink-3">You&apos;re doing great — share what&apos;s working ✨</p>
+          <p className="mb-2 text-[13px] text-ink-3">{COPY.inbox.doingGreatPrompt}</p>
           <textarea
             value={note}
             onChange={(e) => setNote(e.target.value)}
-            placeholder="What's been making work feel meaningful?"
+            placeholder={COPY.inbox.shareNotePlaceholder}
             className="h-16 w-full resize-none rounded-xl border border-gray-300 bg-white p-3 text-sm text-ink placeholder-ink-4 focus:outline-none focus:ring-2 focus:ring-brand"
           />
           <button
@@ -133,7 +134,7 @@ function LatestCheckInCard({ latest }: { latest: LatestCheckIn }) {
             onClick={() => setShared(true)}
             className="mt-2 w-full rounded-xl bg-brand py-2.5 text-sm font-bold text-white transition active:scale-[0.98] disabled:opacity-40"
           >
-            Share with community ✨
+            {COPY.inbox.shareButton}
           </button>
         </div>
       )}
@@ -149,8 +150,8 @@ function UnansweredCard({ questions }: { questions: CheckInQuestion[] }) {
   if (questions.length === 0) {
     return (
       <Card>
-        <p className="text-[11px] font-bold uppercase tracking-wide text-amber-600">❓ Unanswered questions</p>
-        <p className="mt-2 text-sm text-ink-3">All caught up — nothing waiting on you. 🎉</p>
+        <p className="text-[11px] font-bold uppercase tracking-wide text-amber-600">{COPY.inbox.unansweredLabel}</p>
+        <p className="mt-2 text-sm text-ink-3">{COPY.inbox.allCaughtUpEmpty}</p>
       </Card>
     );
   }
@@ -167,9 +168,9 @@ function UnansweredCard({ questions }: { questions: CheckInQuestion[] }) {
   return (
     <Card>
       <div className="flex items-center justify-between">
-        <p className="text-[11px] font-bold uppercase tracking-wide text-amber-600">❓ Unanswered questions</p>
+        <p className="text-[11px] font-bold uppercase tracking-wide text-amber-600">{COPY.inbox.unansweredLabel}</p>
         <span className="text-[11px] font-bold text-brand">
-          {answeredCount}/{questions.length} answered
+          {fill(COPY.inbox.answeredCount, { answered: answeredCount, total: questions.length })}
         </span>
       </div>
 
@@ -193,7 +194,7 @@ function UnansweredCard({ questions }: { questions: CheckInQuestion[] }) {
         {q.weekLabel && <p className="mb-1 text-[11px] font-semibold text-ink-4">{q.weekLabel}</p>}
         {selected && (
           <span className="mb-2 inline-block rounded-md bg-good/15 px-2 py-0.5 text-[10px] font-bold text-good">
-            ✓ Answered
+            {COPY.inbox.answeredChip}
           </span>
         )}
         <p className="mb-3 text-sm font-bold leading-snug text-ink">{q.text}</p>
@@ -225,7 +226,7 @@ function UnansweredCard({ questions }: { questions: CheckInQuestion[] }) {
 
         {selected && selected.score < 7 && (
           <div className="mt-3 rounded-xl bg-lav-soft p-3">
-            <p className="text-[11px] font-bold text-brand">Recommendation</p>
+            <p className="text-[11px] font-bold text-brand">{COPY.inbox.recommendationLabel}</p>
             <p className="mt-1 text-[12px] leading-relaxed text-ink-2">
               {getSampleRecommendation(q.pillarId).text}
             </p>
@@ -244,7 +245,7 @@ function UnansweredCard({ questions }: { questions: CheckInQuestion[] }) {
           ←
         </button>
         <span className="text-xs font-semibold text-ink-3">
-          {idx + 1} of {questions.length}
+          {fill(COPY.inbox.questionProgress, { current: idx + 1, total: questions.length })}
         </span>
         <button
           type="button"
@@ -258,7 +259,7 @@ function UnansweredCard({ questions }: { questions: CheckInQuestion[] }) {
 
       {answeredCount === questions.length && (
         <p className="mt-3 text-center text-xs font-semibold text-good">
-          All caught up! Your answers will appear in your next analysis.
+          {COPY.inbox.allAnsweredNote}
         </p>
       )}
     </Card>
@@ -269,11 +270,10 @@ function UnansweredCard({ questions }: { questions: CheckInQuestion[] }) {
 function FeedbackActionsCard({ actions }: { actions: FeedbackAction[] }) {
   return (
     <Card>
-      <p className="text-[11px] font-bold uppercase tracking-wide text-good">⚡ Actions taken on your feedback</p>
+      <p className="text-[11px] font-bold uppercase tracking-wide text-good">{COPY.inbox.actionsLabel}</p>
       {actions.length === 0 ? (
         <p className="mt-2 text-sm leading-relaxed text-ink-3">
-          No actions logged yet. Your manager will update this when they&apos;ve made a change based on your
-          feedback.
+          {COPY.inbox.noActionsBody}
         </p>
       ) : (
         <div className="mt-3 space-y-3">
@@ -312,13 +312,14 @@ function ActionRow({ action }: { action: FeedbackAction }) {
   return (
     <div className="rounded-2xl border border-gray-200 bg-white p-3.5">
       <p className="text-[13px] leading-snug text-ink-2">
-        You flagged <strong className="text-ink">{action.pillarLabel}</strong>. Here&apos;s what changed:
+        {COPY.inbox.flaggedIntroBefore} <strong className="text-ink">{action.pillarLabel}</strong>
+        {COPY.inbox.flaggedIntroAfter}
       </p>
       <div className="mt-2 rounded-xl bg-lav-soft p-3">
         <p className="text-[13px] leading-relaxed text-ink">{action.actionNote}</p>
       </div>
 
-      <p className="mt-3 text-xs font-semibold text-ink-3">Did you see a difference?</p>
+      <p className="mt-3 text-xs font-semibold text-ink-3">{COPY.inbox.didYouSeeDifference}</p>
       <div className="mt-2 flex gap-1.5 rounded-xl bg-lav-soft p-1">
         {(Object.keys(RESPONSE_META) as ActionResponseValue[]).map((key) => {
           const active = response === key;
@@ -339,7 +340,7 @@ function ActionRow({ action }: { action: FeedbackAction }) {
 
       {response === "yes" && (
         <div className="mt-2 rounded-xl bg-good/10 p-2.5 text-center">
-          <p className="text-[13px] font-bold text-good">Great to hear! Marked as resolved ✅</p>
+          <p className="text-[13px] font-bold text-good">{COPY.inbox.resolvedGreat}</p>
         </div>
       )}
 
@@ -348,7 +349,7 @@ function ActionRow({ action }: { action: FeedbackAction }) {
           {sent ? (
             <div className="rounded-xl bg-lav-soft p-3">
               <p className="text-[11px] font-bold text-brand">
-                Note sent ✓ <span className="font-normal text-ink-4">· Anonymous</span>
+                {COPY.inbox.noteSent} <span className="font-normal text-ink-4">{COPY.inbox.noteAnonymous}</span>
               </p>
               {note.trim() && <p className="mt-1 text-[12px] leading-relaxed text-ink-2">{note}</p>}
             </div>
@@ -358,16 +359,16 @@ function ActionRow({ action }: { action: FeedbackAction }) {
               <textarea
                 value={note}
                 onChange={(e) => setNote(e.target.value)}
-                placeholder="Share your thoughts with your manager…"
+                placeholder={COPY.inbox.notePlaceholder}
                 className="h-20 w-full resize-none rounded-xl border border-gray-300 bg-white p-3 text-sm text-ink placeholder-ink-4 focus:outline-none focus:ring-2 focus:ring-brand"
               />
-              <p className="mb-2 mt-1 text-[10px] text-ink-4">🔒 Anonymous — your manager won&apos;t see your name</p>
+              <p className="mb-2 mt-1 text-[10px] text-ink-4">{COPY.inbox.anonNote}</p>
               <button
                 type="button"
                 onClick={send}
                 className="w-full rounded-xl bg-brand py-2.5 text-xs font-bold text-white transition active:scale-[0.98]"
               >
-                Send to manager
+                {COPY.inbox.sendToManager}
               </button>
             </>
           )}
@@ -379,13 +380,11 @@ function ActionRow({ action }: { action: FeedbackAction }) {
         onClick={() => setHowOpen((o) => !o)}
         className="mt-2 block text-[11px] text-ink-4"
       >
-        How this works {howOpen ? "▴" : "▾"}
+        {COPY.inbox.howThisWorks} {howOpen ? "▴" : "▾"}
       </button>
       {howOpen && (
         <p className="mt-1.5 rounded-xl bg-lav-light p-3 text-[11px] leading-relaxed text-ink-3">
-          Your feedback feeds <strong className="text-brand">aggregated team data</strong> — your manager sees
-          anonymised patterns, never individual responses. Notes are paraphrased and your name is never shown.
-          Data only surfaces when a manager has <strong className="text-brand">3 or more reportees</strong>.
+          {COPY.inbox.howItWorksBody}
         </p>
       )}
     </div>
@@ -395,14 +394,14 @@ function ActionRow({ action }: { action: FeedbackAction }) {
 // ── History (2.6b) — read-only ───────────────────────────────────────────────
 function HistoryView({ history, onBack }: { history: ActionHistoryItem[]; onBack: () => void }) {
   return (
-    <ScreenShell title="Response history" active="inbox">
+    <ScreenShell title={COPY.inbox.historyTitle} active="inbox">
       <button type="button" onClick={onBack} className="px-1 text-sm font-bold text-brand active:scale-[0.99]">
-        ← Back to inbox
+        {COPY.inbox.backToInbox}
       </button>
 
       {history.length === 0 ? (
         <Card>
-          <p className="text-sm text-ink-3">No past responses yet.</p>
+          <p className="text-sm text-ink-3">{COPY.inbox.noPastResponses}</p>
         </Card>
       ) : (
         history.map((h) => (
@@ -413,7 +412,7 @@ function HistoryView({ history, onBack }: { history: ActionHistoryItem[]; onBack
             </div>
             <p className="mt-2 text-[13px] leading-relaxed text-ink-2">{h.actionNote}</p>
             <p className="mt-2 text-xs font-bold text-ink">
-              Your response: <span className="text-brand">{RESPONSE_META[h.response].label}</span>
+              {COPY.inbox.yourResponse} <span className="text-brand">{RESPONSE_META[h.response].label}</span>
             </p>
             {h.note && <p className="mt-1 text-[12px] italic leading-relaxed text-ink-3">&ldquo;{h.note}&rdquo;</p>}
           </Card>

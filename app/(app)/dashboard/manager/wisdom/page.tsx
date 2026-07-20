@@ -3,6 +3,7 @@ export const runtime = "edge";
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth-session";
 import { getWisdom } from "@/lib/data";
+import { COPY, fill } from "@/lib/copy";
 import { WisdomView } from "@/app/(app)/wisdom/WisdomView";
 
 /** Manager (leadership) Wisdom (Phase 3.4): the manager-audience learning path. */
@@ -19,10 +20,10 @@ export default async function ManagerWisdomPage() {
     <WisdomView
       session={session.user}
       wisdom={wisdom}
-      eyebrow="🧭 Leadership wisdom"
-      title={`Lead better, ${firstName}`}
+      eyebrow={COPY.wisdom.managerEyebrow}
+      title={fill(COPY.wisdom.managerTitle, { name: firstName })}
       mascotState="welcome"
-      footnote="Leadership modules are ordered by your team's weakest pillar first."
+      footnote={COPY.wisdom.managerFootnote}
       active="insights"
     />
   );

@@ -4,15 +4,17 @@
  * or the AI call failed) the fallback line renders instead — a dashboard is
  * never blocked on the AI.
  */
+import { COPY } from "@/lib/copy";
+
 export function AIInsight({ text }: { text?: string }) {
   return (
     <div className="rounded-card bg-lav-soft p-4">
       <div className="flex items-center gap-2">
         <span className="text-lg" aria-hidden>✨</span>
-        <span className="text-sm font-bold text-brand">AI insight</span>
+        <span className="text-sm font-bold text-brand">{COPY.shared.aiInsightTitle}</span>
       </div>
       <p className="mt-2 text-sm leading-relaxed text-ink-2">
-        {text ?? "No AI summary right now — the scores above are live, and a fresh summary will appear once enough check-ins are in."}
+        {text ?? COPY.shared.aiInsightFallback}
       </p>
     </div>
   );

@@ -2,46 +2,39 @@
   CSA — APP WORDING (edit the words here)
 ============================================================
 
-This folder is YOURS. Every file here is one screen of the app.
-You can change any of the wording, titles, and button text
-WITHOUT touching code.
+ALL the app's wording now lives in ONE file:
+
+    copy/copy.html
 
 ------------------------------------------------------------
-HOW TO EDIT
+HOW TO EDIT (the easy way — in your browser)
 ------------------------------------------------------------
-1. Open the screen's file (e.g. 01_login.txt).
-2. Find the bit you want to change — each one looks like:
+1. Double-click copy.html — it opens in your browser as a
+   friendly editing page, one section per screen.
+2. Click any text box and type your change. Edited boxes
+   turn green so you can see what you've touched.
+3. Click "Download updated file" at the top. A new copy.html
+   lands in your Downloads folder.
+4. Replace this folder's copy.html with the downloaded one
+   (or just ask Claude to do it for you).
+5. The new wording appears the next time the app is
+   restarted or rebuilt (or run:  npm run copy).
 
-       # Section 1 — the big title
-       [Page title]
-       Sign in to CSA
+You can also edit copy.html in any text editor — change only
+the text between the tags, never the data-copy="..." labels.
 
-3. Change ONLY the text on the line(s) UNDER the [Label].
-   In the example above, you'd change "Sign in to CSA".
-
-4. DO NOT change the [Labels in brackets] or the # comment
-   lines — those tell the app where each piece of text goes.
-
-5. Anything in curly braces like {name} or {email} is filled
-   in by the app automatically. Keep it as-is, move it if you
-   like — e.g. "Nice work, {name}!" → "Way to go, {name}!"
-
-------------------------------------------------------------
-HOW TO SEE YOUR CHANGES
-------------------------------------------------------------
-After editing, the changes show up the next time the app is
-(re)started/rebuilt. If Claude is running the dev server, just
-ask it to restart, or run:  npm run copy
+Anything in curly braces like {name} or {date} is filled in
+by the app automatically. Keep it, but feel free to move it
+around inside the sentence.
 
 ------------------------------------------------------------
-THE SCREENS
+WHAT'S COVERED
 ------------------------------------------------------------
-01_login.txt        Screen 1  — Log in
-02_signup.txt       Screen 2  — Create account
-03_reset.txt        Screen 3  — Reset password
-04_onboarding.txt   Screen 4  — First-time setup
-05_checkin.txt      Screen 5  — Weekly check-in
-06_catchup.txt      Screen 6  — Catch up on missed weeks
-07_followup.txt     Screen 7  — Follow up on a past nudge
+Log in · Create account · Reset password · First-time setup ·
+Weekly check-in · Catch-up · Follow-up · the AI-insight box ·
+Inbox · Profile · Career history · Wisdom (employee + manager)
+· Manager team dashboard · Manager Action Inbox.
 
-(More screens — the dashboards — can be added here on request.)
+Not in this file (by design): the check-in questions and
+recommendations (uploaded via the Admin panel), Wisdom lesson
+content (Admin panel), and the AI-written summaries.

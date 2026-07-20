@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Card, ScreenShell } from "@/components/kit";
+import { COPY, fill } from "@/lib/copy";
 import { type CareerHistory, type CompanyDetail } from "@/lib/data";
 import { getCompanyDetailAction } from "./actions";
 
@@ -33,7 +34,7 @@ export function CareerView({ history }: { history: CareerHistory }) {
         onClick={() => router.push("/profile")}
         className="px-1 text-sm font-bold text-brand active:scale-[0.99]"
       >
-        ← Profile
+        {COPY.career.backToProfile}
       </button>
 
       {/* Overall career header */}
@@ -41,14 +42,14 @@ export function CareerView({ history }: { history: CareerHistory }) {
         className="rounded-card px-5 py-6"
         style={{ background: "linear-gradient(135deg, #EDE7FF 0%, #C9B4FF 100%)" }}
       >
-        <p className="text-xs font-semibold text-brand/70">Career happiness</p>
+        <p className="text-xs font-semibold text-brand/70">{COPY.career.headerLabel}</p>
         <div className="mt-1 flex items-baseline gap-2">
           <span className="font-display text-[44px] font-black leading-none text-brand">
             {history.overall.toFixed(1)}
           </span>
           <span className="text-sm text-brand/70">/10</span>
         </div>
-        <p className="mt-2 text-sm font-bold text-brand-light">Across {history.tenure} and {history.companies.length} companies.</p>
+        <p className="mt-2 text-sm font-bold text-brand-light">{fill(COPY.career.acrossSummary, { tenure: history.tenure, count: history.companies.length })}</p>
       </div>
 
       {/* Company list */}
@@ -64,7 +65,7 @@ export function CareerView({ history }: { history: CareerHistory }) {
               <div className="flex items-center gap-2">
                 <p className="font-display text-base font-black text-ink">{c.company}</p>
                 {c.current && (
-                  <span className="rounded-full bg-lav-soft px-2 py-0.5 text-[10px] font-bold text-brand">Current</span>
+                  <span className="rounded-full bg-lav-soft px-2 py-0.5 text-[10px] font-bold text-brand">{COPY.career.currentChip}</span>
                 )}
               </div>
               <p className="mt-0.5 text-xs text-ink-3">{c.role}</p>
@@ -91,7 +92,7 @@ function CompanyDetailView({ detail, onBack }: { detail: CompanyDetail; onBack: 
   return (
     <ScreenShell active="profile">
       <button type="button" onClick={onBack} className="px-1 text-sm font-bold text-brand active:scale-[0.99]">
-        ← Career history
+        {COPY.career.backToCareer}
       </button>
 
       {/* Header */}
@@ -103,13 +104,13 @@ function CompanyDetailView({ detail, onBack }: { detail: CompanyDetail; onBack: 
         </div>
         <p className="mt-1 text-[11px] text-white/70">{detail.period}</p>
         <span className="mt-3 inline-block rounded-full bg-white/20 px-3 py-1 text-[11px] font-semibold text-white">
-          {detail.current ? "📍 Live data" : `🔒 Snapshot · ${detail.frozenAt}`}
+          {detail.current ? COPY.career.liveDataChip : fill(COPY.career.snapshotChip, { date: detail.frozenAt ?? "" })}
         </span>
       </div>
 
       {/* Pillar 2×2 */}
       <Card>
-        <p className="mb-3 text-sm font-bold text-brand">Pillars</p>
+        <p className="mb-3 text-sm font-bold text-brand">{COPY.career.pillarsTitle}</p>
         <div className="grid grid-cols-2 gap-2">
           {detail.pillars.map((p) => (
             <div key={p.pillarId} className="rounded-card bg-lav-soft p-3">
@@ -124,11 +125,11 @@ function CompanyDetailView({ detail, onBack }: { detail: CompanyDetail; onBack: 
 
       {/* Strengths / concerns */}
       <Card>
-        <p className="mb-3 text-sm font-bold text-brand">Insights</p>
+        <p className="mb-3 text-sm font-bold text-brand">{COPY.career.insightsTitle}</p>
         <div className="mb-4 flex gap-1.5 rounded-xl bg-lav-soft p-1">
           {([
-            { key: "strengths", label: "💪 Strengths" },
-            { key: "concerns", label: "⚠️ Concerns" },
+            { key: "strengths", label: COPY.career.strengthsTab },
+            { key: "concerns", label: COPY.career.concernsTab },
           ] as const).map((o) => (
             <button
               key={o.key}
@@ -158,7 +159,7 @@ function CompanyDetailView({ detail, onBack }: { detail: CompanyDetail; onBack: 
       </Card>
 
       <p className="pb-2 text-center text-[11px] text-ink-4">
-        {detail.current ? "Live data from your current company." : `Frozen snapshot · ${detail.frozenAt} · read-only`}
+        {detail.current ? COPY.career.liveFootnote : fill(COPY.career.frozenFootnote, { date: detail.frozenAt ?? "" })}
       </p>
     </ScreenShell>
   );

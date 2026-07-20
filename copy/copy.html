@@ -1,0 +1,603 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CSA — App wording (edit me)</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #F6F4FF; color: #1F1B33; }
+  .topbar { position: sticky; top: 0; z-index: 10; background: #7C6FFF; color: #fff; padding: 14px 20px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+  .topbar h1 { font-size: 17px; margin: 0; flex: 1; min-width: 200px; }
+  .topbar button { background: #fff; color: #7C6FFF; border: 0; border-radius: 999px; padding: 10px 18px; font-weight: 800; font-size: 14px; cursor: pointer; }
+  .topbar .count { font-size: 12px; opacity: .9; }
+  .howto { max-width: 760px; margin: 18px auto 0; padding: 16px 20px; background: #fff; border-radius: 16px; box-shadow: 0 2px 10px rgba(124,111,255,.08); font-size: 14px; line-height: 1.55; }
+  .howto ol { margin: 8px 0 0; padding-left: 20px; }
+  main { max-width: 760px; margin: 0 auto; padding: 10px 16px 80px; }
+  .toc { max-width: 760px; margin: 14px auto 0; padding: 0 20px; font-size: 13px; line-height: 2; }
+  .toc a { color: #7C6FFF; text-decoration: none; margin-right: 14px; white-space: nowrap; font-weight: 600; }
+  section { margin-top: 28px; background: #fff; border-radius: 16px; padding: 18px 20px 8px; box-shadow: 0 2px 10px rgba(124,111,255,.08); }
+  h2 { font-size: 16px; margin: 0 0 4px; color: #7C6FFF; }
+  .screen-note { font-size: 12px; color: #6B6584; margin: 0 0 10px; }
+  .entry { padding: 10px 0 12px; border-bottom: 1px solid #F0EDFF; }
+  .entry:last-child { border-bottom: 0; }
+  .hint { display: block; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: #9A93B5; margin-bottom: 4px; }
+  .txt { margin: 0; font-size: 15px; line-height: 1.5; background: #F6F4FF; border: 1px dashed #C9B4FF; border-radius: 10px; padding: 8px 12px; white-space: pre-wrap; outline: none; }
+  .txt:focus { border-style: solid; border-color: #7C6FFF; background: #fff; }
+  .entry.edited .txt { border-color: #10B981; background: #ECFDF5; }
+  .entry.edited .hint::after { content: " · edited ✓"; color: #10B981; }
+  .ph { color: #7C6FFF; font-weight: 700; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <h1>CSA — App wording</h1>
+  <span class="count" id="editCount"></span>
+  <button type="button" onclick="downloadCopy()">⬇ Download updated file</button>
+</div>
+
+<div class="howto">
+  <strong>This one page holds every word in the app.</strong> To change any wording:
+  <ol>
+    <li>Click on any text box below and type your change (edited boxes turn green).</li>
+    <li>Click <strong>Download updated file</strong> at the top — it saves a new <strong>copy.html</strong> to your Downloads.</li>
+    <li>Replace the old file at <strong>csa2.0/copy/copy.html</strong> with the downloaded one (or ask Claude to do it).</li>
+    <li>The new wording appears the next time the app is restarted or rebuilt.</li>
+  </ol>
+  <p>Anything in curly braces like <span class="ph">{name}</span> or <span class="ph">{date}</span> is filled in by the app automatically — keep it, but feel free to move it around inside the sentence.</p>
+</div>
+
+<nav class="toc">
+  <a href="#login">Log in</a><a href="#signup">Create account</a><a href="#reset">Reset password</a><a href="#onboarding">First-time setup</a><a href="#checkin">Weekly check-in</a><a href="#catchup">Catch-up</a><a href="#followup">Follow-up</a><a href="#shared">Shared bits</a><a href="#inbox">Inbox</a><a href="#profile">Profile</a><a href="#career">Career history</a><a href="#wisdom">Wisdom</a><a href="#managerDashboard">Manager dashboard</a><a href="#managerInbox">Manager Action Inbox</a>
+</nav>
+
+<main>
+
+<section id="login">
+  <h2>Screen 1 — Log in</h2>
+  <div class="entry"><span class="hint">The big title at the top</span>
+    <p class="txt" data-copy="login.pageTitle" contenteditable="plaintext-only">Sign in to CSA</p></div>
+  <div class="entry"><span class="hint">Email field — label</span>
+    <p class="txt" data-copy="login.emailLabel" contenteditable="plaintext-only">Email</p></div>
+  <div class="entry"><span class="hint">Email field — grey example text</span>
+    <p class="txt" data-copy="login.emailPlaceholder" contenteditable="plaintext-only">you@example.com</p></div>
+  <div class="entry"><span class="hint">Password field — label</span>
+    <p class="txt" data-copy="login.passwordLabel" contenteditable="plaintext-only">Password</p></div>
+  <div class="entry"><span class="hint">Password field — grey example text</span>
+    <p class="txt" data-copy="login.passwordPlaceholder" contenteditable="plaintext-only">••••••••</p></div>
+  <div class="entry"><span class="hint">Shown if login fails</span>
+    <p class="txt" data-copy="login.errorMessage" contenteditable="plaintext-only">Invalid email or password.</p></div>
+  <div class="entry"><span class="hint">The main button</span>
+    <p class="txt" data-copy="login.signInButton" contenteditable="plaintext-only">Sign in</p></div>
+  <div class="entry"><span class="hint">The main button while it works</span>
+    <p class="txt" data-copy="login.signInButtonLoading" contenteditable="plaintext-only">Signing in…</p></div>
+  <div class="entry"><span class="hint">Link below the form</span>
+    <p class="txt" data-copy="login.forgotPasswordLink" contenteditable="plaintext-only">Forgot password?</p></div>
+  <div class="entry"><span class="hint">Text before the sign-up link</span>
+    <p class="txt" data-copy="login.noAccountText" contenteditable="plaintext-only">No account?</p></div>
+  <div class="entry"><span class="hint">The sign-up link</span>
+    <p class="txt" data-copy="login.signUpLink" contenteditable="plaintext-only">Sign up</p></div>
+</section>
+
+<section id="signup">
+  <h2>Screen 2 — Create account</h2>
+  <div class="entry"><span class="hint">The big title</span>
+    <p class="txt" data-copy="signup.pageTitle" contenteditable="plaintext-only">Create your account</p></div>
+  <div class="entry"><span class="hint">Line under the title</span>
+    <p class="txt" data-copy="signup.subtitle" contenteditable="plaintext-only">Open to anyone — no invite needed.</p></div>
+  <div class="entry"><span class="hint">Name field — label</span>
+    <p class="txt" data-copy="signup.nameLabel" contenteditable="plaintext-only">Your name</p></div>
+  <div class="entry"><span class="hint">Name field — grey example text</span>
+    <p class="txt" data-copy="signup.namePlaceholder" contenteditable="plaintext-only">Aparna</p></div>
+  <div class="entry"><span class="hint">Email field — label</span>
+    <p class="txt" data-copy="signup.emailLabel" contenteditable="plaintext-only">Email</p></div>
+  <div class="entry"><span class="hint">Email field — grey example text</span>
+    <p class="txt" data-copy="signup.emailPlaceholder" contenteditable="plaintext-only">you@example.com</p></div>
+  <div class="entry"><span class="hint">Password field — label</span>
+    <p class="txt" data-copy="signup.passwordLabel" contenteditable="plaintext-only">Password</p></div>
+  <div class="entry"><span class="hint">Password field — grey example text</span>
+    <p class="txt" data-copy="signup.passwordPlaceholder" contenteditable="plaintext-only">At least 8 characters</p></div>
+  <div class="entry"><span class="hint">Shown if signup fails with no specific reason</span>
+    <p class="txt" data-copy="signup.defaultError" contenteditable="plaintext-only">Signup failed. Please try again.</p></div>
+  <div class="entry"><span class="hint">The main button</span>
+    <p class="txt" data-copy="signup.createButton" contenteditable="plaintext-only">Create account</p></div>
+  <div class="entry"><span class="hint">The main button while it works</span>
+    <p class="txt" data-copy="signup.createButtonLoading" contenteditable="plaintext-only">Creating account…</p></div>
+  <div class="entry"><span class="hint">Text before the sign-in link</span>
+    <p class="txt" data-copy="signup.haveAccountText" contenteditable="plaintext-only">Already have an account?</p></div>
+  <div class="entry"><span class="hint">The sign-in link</span>
+    <p class="txt" data-copy="signup.signInLink" contenteditable="plaintext-only">Sign in</p></div>
+</section>
+
+<section id="reset">
+  <h2>Screen 3 — Reset password</h2>
+  <div class="entry"><span class="hint">The big title</span>
+    <p class="txt" data-copy="reset.pageTitle" contenteditable="plaintext-only">Reset password</p></div>
+  <div class="entry"><span class="hint">Line under the title</span>
+    <p class="txt" data-copy="reset.subtitle" contenteditable="plaintext-only">Enter your email and we'll send you a reset link.</p></div>
+  <div class="entry"><span class="hint">Email field — grey example text</span>
+    <p class="txt" data-copy="reset.emailPlaceholder" contenteditable="plaintext-only">you@example.com</p></div>
+  <div class="entry"><span class="hint">The main button</span>
+    <p class="txt" data-copy="reset.sendButton" contenteditable="plaintext-only">Send reset link</p></div>
+  <div class="entry"><span class="hint">The main button while it works</span>
+    <p class="txt" data-copy="reset.sendButtonLoading" contenteditable="plaintext-only">Sending…</p></div>
+  <div class="entry"><span class="hint">Link back to sign-in</span>
+    <p class="txt" data-copy="reset.backToSignInLink" contenteditable="plaintext-only">Back to sign in</p></div>
+  <div class="entry"><span class="hint">Confirmation title after sending</span>
+    <p class="txt" data-copy="reset.sentTitle" contenteditable="plaintext-only">Check your email</p></div>
+  <div class="entry"><span class="hint">Confirmation body — {email} is the address they typed</span>
+    <p class="txt" data-copy="reset.sentBody" contenteditable="plaintext-only">If an account exists for {email}, we sent a reset link. It expires in 1 hour.</p></div>
+</section>
+
+<section id="onboarding">
+  <h2>Screen 4 — First-time setup</h2>
+  <div class="entry"><span class="hint">The big title</span>
+    <p class="txt" data-copy="onboarding.title" contenteditable="plaintext-only">Let's set you up</p></div>
+  <div class="entry"><span class="hint">Line under the title</span>
+    <p class="txt" data-copy="onboarding.subtitle" contenteditable="plaintext-only">A few quick details so your insights feel like yours.</p></div>
+  <div class="entry"><span class="hint">Name field — label</span>
+    <p class="txt" data-copy="onboarding.nameLabel" contenteditable="plaintext-only">Your name</p></div>
+  <div class="entry"><span class="hint">Name field — grey example text</span>
+    <p class="txt" data-copy="onboarding.namePlaceholder" contenteditable="plaintext-only">Aparna</p></div>
+  <div class="entry"><span class="hint">Company field — label</span>
+    <p class="txt" data-copy="onboarding.companyLabel" contenteditable="plaintext-only">Current company</p></div>
+  <div class="entry"><span class="hint">Company field — grey example text</span>
+    <p class="txt" data-copy="onboarding.companyPlaceholder" contenteditable="plaintext-only">Kissflow</p></div>
+  <div class="entry"><span class="hint">Role field — label</span>
+    <p class="txt" data-copy="onboarding.roleLabel" contenteditable="plaintext-only">Current role</p></div>
+  <div class="entry"><span class="hint">Role field — grey example text</span>
+    <p class="txt" data-copy="onboarding.rolePlaceholder" contenteditable="plaintext-only">Product Manager</p></div>
+  <div class="entry"><span class="hint">Experience field — label</span>
+    <p class="txt" data-copy="onboarding.experienceLabel" contenteditable="plaintext-only">Years of experience</p></div>
+  <div class="entry"><span class="hint">Experience field — grey example text</span>
+    <p class="txt" data-copy="onboarding.experiencePlaceholder" contenteditable="plaintext-only">5</p></div>
+  <div class="entry"><span class="hint">Optional manager box — title</span>
+    <p class="txt" data-copy="onboarding.managerSectionTitle" contenteditable="plaintext-only">Add a manager (optional)</p></div>
+  <div class="entry"><span class="hint">Manager name — grey example text</span>
+    <p class="txt" data-copy="onboarding.managerNamePlaceholder" contenteditable="plaintext-only">Manager's name</p></div>
+  <div class="entry"><span class="hint">Manager email — grey example text</span>
+    <p class="txt" data-copy="onboarding.managerEmailPlaceholder" contenteditable="plaintext-only">Manager's email</p></div>
+  <div class="entry"><span class="hint">Optional mentor box — title</span>
+    <p class="txt" data-copy="onboarding.mentorSectionTitle" contenteditable="plaintext-only">Add a mentor (optional)</p></div>
+  <div class="entry"><span class="hint">Mentor name — grey example text</span>
+    <p class="txt" data-copy="onboarding.mentorNamePlaceholder" contenteditable="plaintext-only">Mentor's name</p></div>
+  <div class="entry"><span class="hint">Mentor email — grey example text</span>
+    <p class="txt" data-copy="onboarding.mentorEmailPlaceholder" contenteditable="plaintext-only">Mentor's email</p></div>
+  <div class="entry"><span class="hint">Shown if saving fails</span>
+    <p class="txt" data-copy="onboarding.errorMessage" contenteditable="plaintext-only">Something went wrong. Please try again.</p></div>
+  <div class="entry"><span class="hint">The main button</span>
+    <p class="txt" data-copy="onboarding.submitButton" contenteditable="plaintext-only">Start using CSA →</p></div>
+  <div class="entry"><span class="hint">The main button while it works</span>
+    <p class="txt" data-copy="onboarding.submitButtonLoading" contenteditable="plaintext-only">Saving…</p></div>
+</section>
+
+<section id="checkin">
+  <h2>Screen 5 — Weekly check-in</h2>
+  <div class="entry"><span class="hint">"All done" screen when nothing was waiting — title</span>
+    <p class="txt" data-copy="checkin.doneAllCaughtUpTitle" contenteditable="plaintext-only">You're all caught up!</p></div>
+  <div class="entry"><span class="hint">"All done" screen when nothing was waiting — body</span>
+    <p class="txt" data-copy="checkin.doneAllCaughtUpBody" contenteditable="plaintext-only">No check-ins waiting right now — we'll nudge you when the next one's ready.</p></div>
+  <div class="entry"><span class="hint">"All done" screen after answering — title ({name} = first name)</span>
+    <p class="txt" data-copy="checkin.doneNiceWorkTitle" contenteditable="plaintext-only">Nice work, {name}!</p></div>
+  <div class="entry"><span class="hint">"All done" screen after answering — body</span>
+    <p class="txt" data-copy="checkin.doneLoggedBody" contenteditable="plaintext-only">That's logged. Every answer sharpens your insights.</p></div>
+  <div class="entry"><span class="hint">Button on the "all done" screen</span>
+    <p class="txt" data-copy="checkin.seeDashboardButton" contenteditable="plaintext-only">See my dashboard →</p></div>
+  <div class="entry"><span class="hint">Greeting above each question ({name} = first name)</span>
+    <p class="txt" data-copy="checkin.greeting" contenteditable="plaintext-only">Hey {name}!</p></div>
+  <div class="entry"><span class="hint">Back link</span>
+    <p class="txt" data-copy="checkin.backLink" contenteditable="plaintext-only">← Back</p></div>
+  <div class="entry"><span class="hint">Button between questions</span>
+    <p class="txt" data-copy="checkin.continueButton" contenteditable="plaintext-only">Continue</p></div>
+  <div class="entry"><span class="hint">Button on the last question</span>
+    <p class="txt" data-copy="checkin.finishButton" contenteditable="plaintext-only">Submit →</p></div>
+</section>
+
+<section id="catchup">
+  <h2>Screen 6 — Catch up on missed weeks</h2>
+  <div class="entry"><span class="hint">Chip above the question (shows as "Catch-up · Last week")</span>
+    <p class="txt" data-copy="catchup.chipPrefix" contenteditable="plaintext-only">Catch-up</p></div>
+  <div class="entry"><span class="hint">Fallback week label when the week is unknown</span>
+    <p class="txt" data-copy="catchup.defaultWeekLabel" contenteditable="plaintext-only">earlier</p></div>
+  <div class="entry"><span class="hint">Save button</span>
+    <p class="txt" data-copy="catchup.saveButton" contenteditable="plaintext-only">Save &amp; next</p></div>
+  <div class="entry"><span class="hint">Skip button</span>
+    <p class="txt" data-copy="catchup.skipButton" contenteditable="plaintext-only">Skip this for now</p></div>
+</section>
+
+<section id="followup">
+  <h2>Screen 7 — Follow up on a past nudge</h2>
+  <div class="entry"><span class="hint">Small line above the title</span>
+    <p class="txt" data-copy="followup.eyebrow" contenteditable="plaintext-only">Welcome back</p></div>
+  <div class="entry"><span class="hint">The big title</span>
+    <p class="txt" data-copy="followup.title" contenteditable="plaintext-only">Following up on your last nudge</p></div>
+  <div class="entry"><span class="hint">Line that recalls the old recommendation</span>
+    <p class="txt" data-copy="followup.recallIntro" contenteditable="plaintext-only">Your score here was a little lower than your recent average, so we suggested:</p></div>
+  <div class="entry"><span class="hint">The question</span>
+    <p class="txt" data-copy="followup.prompt" contenteditable="plaintext-only">Were you able to act on it?</p></div>
+  <div class="entry"><span class="hint">Yes button</span>
+    <p class="txt" data-copy="followup.yesButton" contenteditable="plaintext-only">Yes ✓</p></div>
+  <div class="entry"><span class="hint">Not-yet button</span>
+    <p class="txt" data-copy="followup.notYetButton" contenteditable="plaintext-only">Not yet</p></div>
+  <div class="entry"><span class="hint">After "Yes" — journal label</span>
+    <p class="txt" data-copy="followup.journalLabel" contenteditable="plaintext-only">What did you do?</p></div>
+  <div class="entry"><span class="hint">After "Yes" — journal grey example text</span>
+    <p class="txt" data-copy="followup.journalPlaceholder" contenteditable="plaintext-only">e.g. Asked my manager for a stretch project in our 1:1…</p></div>
+  <div class="entry"><span class="hint">After "Not yet" — encouragement</span>
+    <p class="txt" data-copy="followup.encouragement" contenteditable="plaintext-only">No worries — life gets busy. Keep it in mind this week; even one small step counts.</p></div>
+  <div class="entry"><span class="hint">Save button (after Yes)</span>
+    <p class="txt" data-copy="followup.saveButton" contenteditable="plaintext-only">Save</p></div>
+  <div class="entry"><span class="hint">Okay button (after Not yet)</span>
+    <p class="txt" data-copy="followup.notYetSaveButton" contenteditable="plaintext-only">Okay, got it</p></div>
+  <div class="entry"><span class="hint">Celebration after saving "Yes" — title</span>
+    <p class="txt" data-copy="followup.celebrateTitle" contenteditable="plaintext-only">Love that! 🎉</p></div>
+  <div class="entry"><span class="hint">Celebration after saving "Yes" — body</span>
+    <p class="txt" data-copy="followup.celebrateBody" contenteditable="plaintext-only">Acting on small things is exactly how your score moves. That's saved to your journal.</p></div>
+  <div class="entry"><span class="hint">Continue button</span>
+    <p class="txt" data-copy="followup.continueButton" contenteditable="plaintext-only">Continue →</p></div>
+</section>
+
+<section id="shared">
+  <h2>Shared bits — used on several screens</h2>
+  <div class="entry"><span class="hint">Title of the purple AI box on the dashboards</span>
+    <p class="txt" data-copy="shared.aiInsightTitle" contenteditable="plaintext-only">AI insight</p></div>
+  <div class="entry"><span class="hint">Shown in the AI box when there is no summary (too little data, or the AI is unavailable)</span>
+    <p class="txt" data-copy="shared.aiInsightFallback" contenteditable="plaintext-only">No AI summary right now — the scores above are live, and a fresh summary will appear once enough check-ins are in.</p></div>
+</section>
+
+<section id="inbox">
+  <h2>Screen 8 — Inbox (employee)</h2>
+  <div class="entry"><span class="hint">Small line above the greeting</span>
+    <p class="txt" data-copy="inbox.eyebrow" contenteditable="plaintext-only">📥 Inbox</p></div>
+  <div class="entry"><span class="hint">The greeting ({name} = first name)</span>
+    <p class="txt" data-copy="inbox.greeting" contenteditable="plaintext-only">Hi {name}</p></div>
+  <div class="entry"><span class="hint">Line under the greeting</span>
+    <p class="txt" data-copy="inbox.tagline" contenteditable="plaintext-only">Your latest updates and actions.</p></div>
+  <div class="entry"><span class="hint">Link to past responses</span>
+    <p class="txt" data-copy="inbox.viewPastResponses" contenteditable="plaintext-only">View past responses →</p></div>
+  <div class="entry"><span class="hint">Latest check-in card — label ({date} = when)</span>
+    <p class="txt" data-copy="inbox.latestCheckInLabel" contenteditable="plaintext-only">📋 Latest check-in · {date}</p></div>
+  <div class="entry"><span class="hint">Label above a recommendation</span>
+    <p class="txt" data-copy="inbox.recommendationLabel" contenteditable="plaintext-only">Recommendation</p></div>
+  <div class="entry"><span class="hint">Thanks after sharing a positive note</span>
+    <p class="txt" data-copy="inbox.sharedThanks" contenteditable="plaintext-only">Shared! 🙏</p></div>
+  <div class="entry"><span class="hint">Prompt when the latest score was good</span>
+    <p class="txt" data-copy="inbox.doingGreatPrompt" contenteditable="plaintext-only">You're doing great — share what's working ✨</p></div>
+  <div class="entry"><span class="hint">Positive note — grey example text</span>
+    <p class="txt" data-copy="inbox.shareNotePlaceholder" contenteditable="plaintext-only">What's been making work feel meaningful?</p></div>
+  <div class="entry"><span class="hint">Share button</span>
+    <p class="txt" data-copy="inbox.shareButton" contenteditable="plaintext-only">Share with community ✨</p></div>
+  <div class="entry"><span class="hint">Unanswered questions card — label</span>
+    <p class="txt" data-copy="inbox.unansweredLabel" contenteditable="plaintext-only">❓ Unanswered questions</p></div>
+  <div class="entry"><span class="hint">Unanswered questions — empty state</span>
+    <p class="txt" data-copy="inbox.allCaughtUpEmpty" contenteditable="plaintext-only">All caught up — nothing waiting on you. 🎉</p></div>
+  <div class="entry"><span class="hint">Progress counter ({answered} and {total} are numbers)</span>
+    <p class="txt" data-copy="inbox.answeredCount" contenteditable="plaintext-only">{answered}/{total} answered</p></div>
+  <div class="entry"><span class="hint">Chip on an answered question</span>
+    <p class="txt" data-copy="inbox.answeredChip" contenteditable="plaintext-only">✓ Answered</p></div>
+  <div class="entry"><span class="hint">Position under the question ({current} of {total})</span>
+    <p class="txt" data-copy="inbox.questionProgress" contenteditable="plaintext-only">{current} of {total}</p></div>
+  <div class="entry"><span class="hint">Shown when every waiting question is answered</span>
+    <p class="txt" data-copy="inbox.allAnsweredNote" contenteditable="plaintext-only">All caught up! Your answers will appear in your next analysis.</p></div>
+  <div class="entry"><span class="hint">Actions card — label</span>
+    <p class="txt" data-copy="inbox.actionsLabel" contenteditable="plaintext-only">⚡ Actions taken on your feedback</p></div>
+  <div class="entry"><span class="hint">Actions card — empty state</span>
+    <p class="txt" data-copy="inbox.noActionsBody" contenteditable="plaintext-only">No actions logged yet. Your manager will update this when they've made a change based on your feedback.</p></div>
+  <div class="entry"><span class="hint">Action row intro — the words BEFORE the bold pillar name</span>
+    <p class="txt" data-copy="inbox.flaggedIntroBefore" contenteditable="plaintext-only">You flagged</p></div>
+  <div class="entry"><span class="hint">Action row intro — the words AFTER the bold pillar name</span>
+    <p class="txt" data-copy="inbox.flaggedIntroAfter" contenteditable="plaintext-only">. Here's what changed:</p></div>
+  <div class="entry"><span class="hint">Question under an action</span>
+    <p class="txt" data-copy="inbox.didYouSeeDifference" contenteditable="plaintext-only">Did you see a difference?</p></div>
+  <div class="entry"><span class="hint">Answer button 1</span>
+    <p class="txt" data-copy="inbox.responseYes" contenteditable="plaintext-only">Yes ✅</p></div>
+  <div class="entry"><span class="hint">Answer button 2</span>
+    <p class="txt" data-copy="inbox.responseMaybe" contenteditable="plaintext-only">Maybe</p></div>
+  <div class="entry"><span class="hint">Answer button 3</span>
+    <p class="txt" data-copy="inbox.responseNotYet" contenteditable="plaintext-only">Not yet</p></div>
+  <div class="entry"><span class="hint">Follow-up question after "Maybe"</span>
+    <p class="txt" data-copy="inbox.maybePrompt" contenteditable="plaintext-only">What could have been better?</p></div>
+  <div class="entry"><span class="hint">Follow-up question after "Not yet"</span>
+    <p class="txt" data-copy="inbox.notYetPrompt" contenteditable="plaintext-only">What still needs to happen?</p></div>
+  <div class="entry"><span class="hint">Shown after answering "Yes"</span>
+    <p class="txt" data-copy="inbox.resolvedGreat" contenteditable="plaintext-only">Great to hear! Marked as resolved ✅</p></div>
+  <div class="entry"><span class="hint">Confirmation that a note went out</span>
+    <p class="txt" data-copy="inbox.noteSent" contenteditable="plaintext-only">Note sent ✓</p></div>
+  <div class="entry"><span class="hint">Small suffix after "Note sent"</span>
+    <p class="txt" data-copy="inbox.noteAnonymous" contenteditable="plaintext-only">· Anonymous</p></div>
+  <div class="entry"><span class="hint">Note to manager — grey example text</span>
+    <p class="txt" data-copy="inbox.notePlaceholder" contenteditable="plaintext-only">Share your thoughts with your manager…</p></div>
+  <div class="entry"><span class="hint">Anonymity reassurance under the note box</span>
+    <p class="txt" data-copy="inbox.anonNote" contenteditable="plaintext-only">🔒 Anonymous — your manager won't see your name</p></div>
+  <div class="entry"><span class="hint">Send button</span>
+    <p class="txt" data-copy="inbox.sendToManager" contenteditable="plaintext-only">Send to manager</p></div>
+  <div class="entry"><span class="hint">Expandable explainer — link text</span>
+    <p class="txt" data-copy="inbox.howThisWorks" contenteditable="plaintext-only">How this works</p></div>
+  <div class="entry"><span class="hint">Expandable explainer — body</span>
+    <p class="txt" data-copy="inbox.howItWorksBody" contenteditable="plaintext-only">Your feedback feeds aggregated team data — your manager sees anonymised patterns, never individual responses. Notes are paraphrased and your name is never shown. Data only surfaces when a manager has 3 or more reportees.</p></div>
+  <div class="entry"><span class="hint">History page — title</span>
+    <p class="txt" data-copy="inbox.historyTitle" contenteditable="plaintext-only">Response history</p></div>
+  <div class="entry"><span class="hint">History page — back link</span>
+    <p class="txt" data-copy="inbox.backToInbox" contenteditable="plaintext-only">← Back to inbox</p></div>
+  <div class="entry"><span class="hint">History page — empty state</span>
+    <p class="txt" data-copy="inbox.noPastResponses" contenteditable="plaintext-only">No past responses yet.</p></div>
+  <div class="entry"><span class="hint">History page — label before your answer</span>
+    <p class="txt" data-copy="inbox.yourResponse" contenteditable="plaintext-only">Your response:</p></div>
+</section>
+
+<section id="profile">
+  <h2>Screen 9 — Profile</h2>
+  <div class="entry"><span class="hint">Header stat captions (under the three numbers)</span>
+    <p class="txt" data-copy="profile.statHappiness" contenteditable="plaintext-only">happiness</p></div>
+  <div class="entry"><span class="hint">&nbsp;</span>
+    <p class="txt" data-copy="profile.statStreak" contenteditable="plaintext-only">day streak</p></div>
+  <div class="entry"><span class="hint">&nbsp;</span>
+    <p class="txt" data-copy="profile.statParticipation" contenteditable="plaintext-only">participation</p></div>
+  <div class="entry"><span class="hint">Activity card — title</span>
+    <p class="txt" data-copy="profile.activityTitle" contenteditable="plaintext-only">Activity</p></div>
+  <div class="entry"><span class="hint">Best streak label (the number follows it)</span>
+    <p class="txt" data-copy="profile.bestStreak" contenteditable="plaintext-only">Best streak</p></div>
+  <div class="entry"><span class="hint">Activity summary ({weeks} and {total} are numbers)</span>
+    <p class="txt" data-copy="profile.activitySummary" contenteditable="plaintext-only">Last {weeks} weeks · {total} check-ins total</p></div>
+  <div class="entry"><span class="hint">Badges card — title</span>
+    <p class="txt" data-copy="profile.badgesTitle" contenteditable="plaintext-only">Badges</p></div>
+  <div class="entry"><span class="hint">Badges card — empty state</span>
+    <p class="txt" data-copy="profile.noBadges" contenteditable="plaintext-only">No badges yet — earn them in Wisdom.</p></div>
+  <div class="entry"><span class="hint">Career history row — title</span>
+    <p class="txt" data-copy="profile.careerHistoryTitle" contenteditable="plaintext-only">Career history</p></div>
+  <div class="entry"><span class="hint">Career history row — with tenure ({tenure} = e.g. "6 yrs 2 mos")</span>
+    <p class="txt" data-copy="profile.careerTenure" contenteditable="plaintext-only">Total tenure: {tenure}</p></div>
+  <div class="entry"><span class="hint">Career history row — when empty</span>
+    <p class="txt" data-copy="profile.addWorkHistory" contenteditable="plaintext-only">Add your work history</p></div>
+  <div class="entry"><span class="hint">Appearance card — title</span>
+    <p class="txt" data-copy="profile.appearanceTitle" contenteditable="plaintext-only">Appearance</p></div>
+  <div class="entry"><span class="hint">Appearance card — subtitle</span>
+    <p class="txt" data-copy="profile.appearanceSub" contenteditable="plaintext-only">Switch any time — the change applies right away.</p></div>
+  <div class="entry"><span class="hint">Mode 1 — name</span>
+    <p class="txt" data-copy="profile.modeProfessional" contenteditable="plaintext-only">Professional</p></div>
+  <div class="entry"><span class="hint">Mode 1 — description</span>
+    <p class="txt" data-copy="profile.modeProfessionalSub" contenteditable="plaintext-only">Clean &amp; serious</p></div>
+  <div class="entry"><span class="hint">Mode 2 — name</span>
+    <p class="txt" data-copy="profile.modePlay" contenteditable="plaintext-only">Play</p></div>
+  <div class="entry"><span class="hint">Mode 2 — description</span>
+    <p class="txt" data-copy="profile.modePlaySub" contenteditable="plaintext-only">Fun &amp; playful</p></div>
+  <div class="entry"><span class="hint">Character voice — section label</span>
+    <p class="txt" data-copy="profile.characterVoice" contenteditable="plaintext-only">Character voice</p></div>
+  <div class="entry"><span class="hint">Persona 1 — name</span>
+    <p class="txt" data-copy="profile.personaSpiderman" contenteditable="plaintext-only">Spiderman</p></div>
+  <div class="entry"><span class="hint">Persona 1 — tagline</span>
+    <p class="txt" data-copy="profile.personaSpidermanTagline" contenteditable="plaintext-only">Warm, witty, friendly-neighbourhood pep talks.</p></div>
+  <div class="entry"><span class="hint">Persona 2 — name</span>
+    <p class="txt" data-copy="profile.personaBatman" contenteditable="plaintext-only">Batman</p></div>
+  <div class="entry"><span class="hint">Persona 2 — tagline</span>
+    <p class="txt" data-copy="profile.personaBatmanTagline" contenteditable="plaintext-only">Brooding, disciplined, no-nonsense resolve.</p></div>
+  <div class="entry"><span class="hint">Preferences card — title</span>
+    <p class="txt" data-copy="profile.preferencesTitle" contenteditable="plaintext-only">Preferences</p></div>
+  <div class="entry"><span class="hint">Preference 1 — name</span>
+    <p class="txt" data-copy="profile.prefReminders" contenteditable="plaintext-only">Check-in reminders</p></div>
+  <div class="entry"><span class="hint">Preference 1 — description</span>
+    <p class="txt" data-copy="profile.prefRemindersSub" contenteditable="plaintext-only">A gentle nudge when a question is ready</p></div>
+  <div class="entry"><span class="hint">Preference 2 — name</span>
+    <p class="txt" data-copy="profile.prefWeekly" contenteditable="plaintext-only">Weekly summary</p></div>
+  <div class="entry"><span class="hint">Preference 2 — description</span>
+    <p class="txt" data-copy="profile.prefWeeklySub" contenteditable="plaintext-only">Your insights digest every Monday</p></div>
+  <div class="entry"><span class="hint">Manager-only row — title</span>
+    <p class="txt" data-copy="profile.switchManagerTitle" contenteditable="plaintext-only">Switch to Manager view</p></div>
+  <div class="entry"><span class="hint">Manager-only row — subtitle</span>
+    <p class="txt" data-copy="profile.switchManagerSub" contenteditable="plaintext-only">See your team's insights</p></div>
+  <div class="entry"><span class="hint">Sign-out link</span>
+    <p class="txt" data-copy="profile.signOut" contenteditable="plaintext-only">Sign out</p></div>
+  <div class="entry"><span class="hint">Footer line ({name} and {email} are filled in)</span>
+    <p class="txt" data-copy="profile.signedInAs" contenteditable="plaintext-only">Signed in as {name} · {email}</p></div>
+</section>
+
+<section id="career">
+  <h2>Screen 10 — Career history</h2>
+  <div class="entry"><span class="hint">Back link to Profile</span>
+    <p class="txt" data-copy="career.backToProfile" contenteditable="plaintext-only">← Profile</p></div>
+  <div class="entry"><span class="hint">Header — small line above the score</span>
+    <p class="txt" data-copy="career.headerLabel" contenteditable="plaintext-only">Career happiness</p></div>
+  <div class="entry"><span class="hint">Header — summary ({tenure} = e.g. "6 yrs", {count} = number of companies)</span>
+    <p class="txt" data-copy="career.acrossSummary" contenteditable="plaintext-only">Across {tenure} and {count} companies.</p></div>
+  <div class="entry"><span class="hint">Chip on your current company</span>
+    <p class="txt" data-copy="career.currentChip" contenteditable="plaintext-only">Current</p></div>
+  <div class="entry"><span class="hint">Company page — back link</span>
+    <p class="txt" data-copy="career.backToCareer" contenteditable="plaintext-only">← Career history</p></div>
+  <div class="entry"><span class="hint">Company page — chip for your current company</span>
+    <p class="txt" data-copy="career.liveDataChip" contenteditable="plaintext-only">📍 Live data</p></div>
+  <div class="entry"><span class="hint">Company page — chip for a past company ({date} = when it was frozen)</span>
+    <p class="txt" data-copy="career.snapshotChip" contenteditable="plaintext-only">🔒 Snapshot · {date}</p></div>
+  <div class="entry"><span class="hint">Pillars card — title</span>
+    <p class="txt" data-copy="career.pillarsTitle" contenteditable="plaintext-only">Pillars</p></div>
+  <div class="entry"><span class="hint">Insights card — title</span>
+    <p class="txt" data-copy="career.insightsTitle" contenteditable="plaintext-only">Insights</p></div>
+  <div class="entry"><span class="hint">Toggle — strengths tab</span>
+    <p class="txt" data-copy="career.strengthsTab" contenteditable="plaintext-only">💪 Strengths</p></div>
+  <div class="entry"><span class="hint">Toggle — concerns tab</span>
+    <p class="txt" data-copy="career.concernsTab" contenteditable="plaintext-only">⚠️ Concerns</p></div>
+  <div class="entry"><span class="hint">Footnote on your current company</span>
+    <p class="txt" data-copy="career.liveFootnote" contenteditable="plaintext-only">Live data from your current company.</p></div>
+  <div class="entry"><span class="hint">Footnote on a past company ({date} = when it was frozen)</span>
+    <p class="txt" data-copy="career.frozenFootnote" contenteditable="plaintext-only">Frozen snapshot · {date} · read-only</p></div>
+</section>
+
+<section id="wisdom">
+  <h2>Screen 11 — Wisdom (learning)</h2>
+  <p class="screen-note">The same screen is used twice: for employees ("Wisdom") and for managers ("Leadership wisdom").</p>
+  <div class="entry"><span class="hint">Employee version — small line above the title</span>
+    <p class="txt" data-copy="wisdom.employeeEyebrow" contenteditable="plaintext-only">📚 Wisdom</p></div>
+  <div class="entry"><span class="hint">Employee version — title ({name} = first name)</span>
+    <p class="txt" data-copy="wisdom.employeeTitle" contenteditable="plaintext-only">Keep growing, {name}</p></div>
+  <div class="entry"><span class="hint">Employee version — footnote at the bottom</span>
+    <p class="txt" data-copy="wisdom.employeeFootnote" contenteditable="plaintext-only">Modules are ordered by your weakest pillar first.</p></div>
+  <div class="entry"><span class="hint">Manager version — small line above the title</span>
+    <p class="txt" data-copy="wisdom.managerEyebrow" contenteditable="plaintext-only">🧭 Leadership wisdom</p></div>
+  <div class="entry"><span class="hint">Manager version — title ({name} = first name)</span>
+    <p class="txt" data-copy="wisdom.managerTitle" contenteditable="plaintext-only">Lead better, {name}</p></div>
+  <div class="entry"><span class="hint">Manager version — footnote at the bottom</span>
+    <p class="txt" data-copy="wisdom.managerFootnote" contenteditable="plaintext-only">Leadership modules are ordered by your team's weakest pillar first.</p></div>
+  <div class="entry"><span class="hint">Progress line ({done}, {total}, {pct} are numbers)</span>
+    <p class="txt" data-copy="wisdom.progressLine" contenteditable="plaintext-only">{done}/{total} lessons complete · {pct}%</p></div>
+  <div class="entry"><span class="hint">Chip on the module to do next (level name comes before it)</span>
+    <p class="txt" data-copy="wisdom.upNext" contenteditable="plaintext-only">Up next</p></div>
+  <div class="entry"><span class="hint">Module subtitle ({pillar} and {badge} are filled in)</span>
+    <p class="txt" data-copy="wisdom.moduleSubtitle" contenteditable="plaintext-only">{pillar} · earn the {badge} badge</p></div>
+  <div class="entry"><span class="hint">Heading above the levels</span>
+    <p class="txt" data-copy="wisdom.learningPath" contenteditable="plaintext-only">Your learning path</p></div>
+  <div class="entry"><span class="hint">Heading above the badge grid (counts come after it)</span>
+    <p class="txt" data-copy="wisdom.badgesHeading" contenteditable="plaintext-only">🏅 Badges</p></div>
+  <div class="entry"><span class="hint">Chip on a finished level</span>
+    <p class="txt" data-copy="wisdom.completeChip" contenteditable="plaintext-only">Complete ✓</p></div>
+  <div class="entry"><span class="hint">Chip on a locked level</span>
+    <p class="txt" data-copy="wisdom.lockedChip" contenteditable="plaintext-only">Locked</p></div>
+  <div class="entry"><span class="hint">Hint under a locked level</span>
+    <p class="txt" data-copy="wisdom.lockedHint" contenteditable="plaintext-only">Earn every badge in the level above to unlock</p></div>
+  <div class="entry"><span class="hint">Celebration when a level is finished</span>
+    <p class="txt" data-copy="wisdom.levelComplete" contenteditable="plaintext-only">🎉 Level complete — next level unlocked.</p></div>
+  <div class="entry"><span class="hint">Celebration when EVERY level is finished</span>
+    <p class="txt" data-copy="wisdom.allMastered" contenteditable="plaintext-only">🏆 You've mastered every level!</p></div>
+  <div class="entry"><span class="hint">Lesson button — already done</span>
+    <p class="txt" data-copy="wisdom.itemDone" contenteditable="plaintext-only">Done</p></div>
+  <div class="entry"><span class="hint">Lesson button — a quiz</span>
+    <p class="txt" data-copy="wisdom.itemTakeQuiz" contenteditable="plaintext-only">Take quiz</p></div>
+  <div class="entry"><span class="hint">Lesson button — anything else</span>
+    <p class="txt" data-copy="wisdom.itemStart" contenteditable="plaintext-only">Start</p></div>
+  <div class="entry"><span class="hint">Lesson type names</span>
+    <p class="txt" data-copy="wisdom.typeVideo" contenteditable="plaintext-only">Video</p></div>
+  <div class="entry"><span class="hint">&nbsp;</span>
+    <p class="txt" data-copy="wisdom.typeArticle" contenteditable="plaintext-only">Article</p></div>
+  <div class="entry"><span class="hint">&nbsp;</span>
+    <p class="txt" data-copy="wisdom.typeQuiz" contenteditable="plaintext-only">Quiz</p></div>
+</section>
+
+<section id="managerDashboard">
+  <h2>Screen 12 — Manager team dashboard</h2>
+  <div class="entry"><span class="hint">Small line above the title</span>
+    <p class="txt" data-copy="managerDashboard.eyebrow" contenteditable="plaintext-only">👥 Team dashboard</p></div>
+  <div class="entry"><span class="hint">The title ({name} = the manager's first name)</span>
+    <p class="txt" data-copy="managerDashboard.teamTitle" contenteditable="plaintext-only">{name}'s team</p></div>
+  <div class="entry"><span class="hint">Anonymity line in the header</span>
+    <p class="txt" data-copy="managerDashboard.anonNote" contenteditable="plaintext-only">Anonymous team aggregates — never an individual.</p></div>
+  <div class="entry"><span class="hint">Under the team score ({count} and {pct} are numbers)</span>
+    <p class="txt" data-copy="managerDashboard.peopleParticipation" contenteditable="plaintext-only">{count} people · {pct}% participation</p></div>
+  <div class="entry"><span class="hint">Small suffix next to the score change</span>
+    <p class="txt" data-copy="managerDashboard.vsLast" contenteditable="plaintext-only">vs last</p></div>
+  <div class="entry"><span class="hint">Recommendations card — title</span>
+    <p class="txt" data-copy="managerDashboard.whereToFocus" contenteditable="plaintext-only">Where to focus</p></div>
+  <div class="entry"><span class="hint">Recommendations card — subtitle</span>
+    <p class="txt" data-copy="managerDashboard.whereToFocusSub" contenteditable="plaintext-only">Pillars below 7 across your team. Act on these in your Action Inbox.</p></div>
+  <div class="entry"><span class="hint">Start of each recommendation ({pillar} and {score} are filled in; the tip follows)</span>
+    <p class="txt" data-copy="managerDashboard.teamPillarAt" contenteditable="plaintext-only">Team {pillar} is at {score}.</p></div>
+  <div class="entry"><span class="hint">Button to the Action Inbox</span>
+    <p class="txt" data-copy="managerDashboard.openActionInbox" contenteditable="plaintext-only">Open Action Inbox →</p></div>
+  <div class="entry"><span class="hint">Leadership wisdom row — title</span>
+    <p class="txt" data-copy="managerDashboard.leadershipWisdomTitle" contenteditable="plaintext-only">Leadership wisdom</p></div>
+  <div class="entry"><span class="hint">Leadership wisdom row — subtitle</span>
+    <p class="txt" data-copy="managerDashboard.leadershipWisdomSub" contenteditable="plaintext-only">Short lessons on leading your team, weakest pillar first.</p></div>
+  <div class="entry"><span class="hint">Footnote at the bottom</span>
+    <p class="txt" data-copy="managerDashboard.footnote" contenteditable="plaintext-only">Aggregates only. Nothing here can identify an individual.</p></div>
+</section>
+
+<section id="managerInbox">
+  <h2>Screen 13 — Manager Action Inbox</h2>
+  <div class="entry"><span class="hint">Back link</span>
+    <p class="txt" data-copy="managerInbox.backToDashboard" contenteditable="plaintext-only">← Team dashboard</p></div>
+  <div class="entry"><span class="hint">Small line above the title</span>
+    <p class="txt" data-copy="managerInbox.eyebrow" contenteditable="plaintext-only">✅ Action Inbox</p></div>
+  <div class="entry"><span class="hint">The title</span>
+    <p class="txt" data-copy="managerInbox.title" contenteditable="plaintext-only">Your team's actions</p></div>
+  <div class="entry"><span class="hint">Progress line ({resolved}, {total}, {pct} are numbers)</span>
+    <p class="txt" data-copy="managerInbox.resolvedMeter" contenteditable="plaintext-only">{resolved}/{total} resolved · {pct}%</p></div>
+  <div class="entry"><span class="hint">Shown when the team is under 3 reportees</span>
+    <p class="txt" data-copy="managerInbox.belowFloor" contenteditable="plaintext-only">Your team has fewer than 3 reportees, so the Action Inbox is hidden to protect everyone's anonymity.</p></div>
+  <div class="entry"><span class="hint">Tab 1 (its count is added after it)</span>
+    <p class="txt" data-copy="managerInbox.openTab" contenteditable="plaintext-only">Open</p></div>
+  <div class="entry"><span class="hint">Tab 2 (its count is added after it)</span>
+    <p class="txt" data-copy="managerInbox.resolvedTab" contenteditable="plaintext-only">Resolved</p></div>
+  <div class="entry"><span class="hint">Open tab — empty state</span>
+    <p class="txt" data-copy="managerInbox.emptyOpen" contenteditable="plaintext-only">Nothing to act on right now. New items appear when a team pillar dips below 7.</p></div>
+  <div class="entry"><span class="hint">Heading above flagged items</span>
+    <p class="txt" data-copy="managerInbox.flaggedHeading" contenteditable="plaintext-only">🚩 Flagged — revisit</p></div>
+  <div class="entry"><span class="hint">Resolved tab — empty state</span>
+    <p class="txt" data-copy="managerInbox.emptyResolved" contenteditable="plaintext-only">No resolved actions yet. Items you act on will appear here.</p></div>
+  <div class="entry"><span class="hint">Footnote at the bottom ({weeks} = the delay)</span>
+    <p class="txt" data-copy="managerInbox.footnote" contenteditable="plaintext-only">Aggregates only. Submitted actions appear to affected teammates after {weeks} weeks.</p></div>
+  <div class="entry"><span class="hint">Label before the team average score</span>
+    <p class="txt" data-copy="managerInbox.teamAverage" contenteditable="plaintext-only">Team average</p></div>
+  <div class="entry"><span class="hint">Tip label ({pillar} is filled in)</span>
+    <p class="txt" data-copy="managerInbox.tipLabel" contenteditable="plaintext-only">💡 {pillar} tip</p></div>
+  <div class="entry"><span class="hint">Act button</span>
+    <p class="txt" data-copy="managerInbox.yesAct" contenteditable="plaintext-only">Yes, I'll act</p></div>
+  <div class="entry"><span class="hint">Defer button</span>
+    <p class="txt" data-copy="managerInbox.notYet" contenteditable="plaintext-only">Not yet</p></div>
+  <div class="entry"><span class="hint">Action note — grey example text</span>
+    <p class="txt" data-copy="managerInbox.notePlaceholder" contenteditable="plaintext-only">What will you change? (saved privately to your journal)</p></div>
+  <div class="entry"><span class="hint">Warning above Submit ({weeks} = the delay)</span>
+    <p class="txt" data-copy="managerInbox.delayWarning" contenteditable="plaintext-only">⏳ Once submitted, this becomes visible to affected teammates after {weeks} weeks — and only to those who scored low on this question.</p></div>
+  <div class="entry"><span class="hint">Submit button</span>
+    <p class="txt" data-copy="managerInbox.submitAction" contenteditable="plaintext-only">Submit action</p></div>
+  <div class="entry"><span class="hint">Cancel button</span>
+    <p class="txt" data-copy="managerInbox.cancel" contenteditable="plaintext-only">Cancel</p></div>
+  <div class="entry"><span class="hint">Chip on a resolved item</span>
+    <p class="txt" data-copy="managerInbox.resolvedChip" contenteditable="plaintext-only">Resolved ✓</p></div>
+  <div class="entry"><span class="hint">Chip on an item inherited from a previous manager</span>
+    <p class="txt" data-copy="managerInbox.carriedOver" contenteditable="plaintext-only">Carried over from a previous manager</p></div>
+  <div class="entry"><span class="hint">Shown right after submitting</span>
+    <p class="txt" data-copy="managerInbox.submittedJustNow" contenteditable="plaintext-only">Submitted just now</p></div>
+  <div class="entry"><span class="hint">When teammates will see it ({date} = e.g. "Aug 2026")</span>
+    <p class="txt" data-copy="managerInbox.visibleFrom" contenteditable="plaintext-only">Visible to team from {date}</p></div>
+  <div class="entry"><span class="hint">Team reaction box — title</span>
+    <p class="txt" data-copy="managerInbox.howTeamFelt" contenteditable="plaintext-only">How the team felt</p></div>
+  <div class="entry"><span class="hint">Team reaction counts ({n} = a number)</span>
+    <p class="txt" data-copy="managerInbox.reactionHelped" contenteditable="plaintext-only">✅ {n} helped</p></div>
+  <div class="entry"><span class="hint">&nbsp;</span>
+    <p class="txt" data-copy="managerInbox.reactionUnsure" contenteditable="plaintext-only">😐 {n} unsure</p></div>
+  <div class="entry"><span class="hint">&nbsp;</span>
+    <p class="txt" data-copy="managerInbox.reactionNotYet" contenteditable="plaintext-only">🚩 {n} not yet</p></div>
+</section>
+
+</main>
+
+<script>
+  // Mark entries as edited so the owner can see what they've changed.
+  var edits = 0;
+  document.querySelectorAll(".txt").forEach(function (el) {
+    el.addEventListener("input", function () {
+      var entry = el.closest(".entry");
+      if (entry && !entry.classList.contains("edited")) {
+        entry.classList.add("edited");
+        edits++;
+        document.getElementById("editCount").textContent = edits + " change" + (edits === 1 ? "" : "s");
+      }
+    });
+  });
+
+  function escapeHtml(s) {
+    return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
+
+  function downloadCopy() {
+    // Normalise every text box to clean escaped text + <br> line breaks so the
+    // saved file stays easy for the build script to read.
+    document.querySelectorAll("[data-copy]").forEach(function (el) {
+      var text = el.innerText.replace(/\u00a0/g, " ").replace(/\s+$/g, "").replace(/^\s+/g, "");
+      el.innerHTML = text.split("\n").map(escapeHtml).join("<br>");
+    });
+    // Save a clean copy (no green "edited" marks) without losing them on screen.
+    var edited = Array.prototype.slice.call(document.querySelectorAll(".entry.edited"));
+    edited.forEach(function (e) { e.classList.remove("edited"); });
+    var html = "<!doctype html>\n" + document.documentElement.outerHTML;
+    edited.forEach(function (e) { e.classList.add("edited"); });
+
+    var blob = new Blob([html], { type: "text/html" });
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "copy.html";
+    a.click();
+    URL.revokeObjectURL(a.href);
+  }
+</script>
+
+</body>
+</html>

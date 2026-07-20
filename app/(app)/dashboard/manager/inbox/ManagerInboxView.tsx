@@ -11,6 +11,7 @@ import {
   type ManagerInbox,
 } from "@/lib/data";
 import { getManagerInboxAction, submitManagerActionAction } from "./actions";
+import { COPY, fill } from "@/lib/copy";
 import type { SessionUser } from "@/lib/types";
 
 type Tab = "open" | "resolved";
@@ -19,7 +20,9 @@ type Tab = "open" | "resolved";
 function visibleFromLabel(): string {
   const d = new Date();
   d.setDate(d.getDate() + MANAGER_ACTION_DELAY_WEEKS * 7);
-  return `Visible to team from ${d.toLocaleDateString("en-GB", { month: "short", year: "numeric" })}`;
+  return fill(COPY.managerInbox.visibleFrom, {
+    date: d.toLocaleDateString("en-GB", { month: "short", year: "numeric" }),
+  });
 }
 
 export function ManagerInboxView({ session, initial }: { session: SessionUser; initial: ManagerInbox }) {
@@ -71,7 +74,7 @@ export function ManagerInboxView({ session, initial }: { session: SessionUser; i
         ...item,
         status: "resolved",
         actionNote: note,
-        submittedAtLabel: "Submitted just now",
+        submittedAtLabel: COPY.managerInbox.submittedJustNow,
         visibleToEmployeesLabel: visibleFromLabel(),
         employeeResponse: { yes: 0, maybe: 0, notYet: 0 },
       },
@@ -92,14 +95,14 @@ export function ManagerInboxView({ session, initial }: { session: SessionUser; i
         onClick={() => router.push("/dashboard/manager")}
         className="px-1 text-sm font-bold text-brand active:scale-[0.99]"
       >
-        ← Team dashboard
+        {COPY.managerInbox.backToDashboard}
       </button>
 
       {/* Header — Play: lavender card + mascot; Professional: gradient card. */}
       {isPlay ? (
         <GradientHeader
-          eyebrow="✅ Action Inbox"
-          title="Your team's actions"
+          eyebrow={COPY.managerInbox.eyebrow}
+          title={COPY.managerInbox.title}
           avatar={<Mascot state="happy" size={HEADER_MASCOT_SIZE} float={false} sparkle={false} />}
           className="flex min-h-[180px] flex-col justify-center"
         >
@@ -110,8 +113,8 @@ export function ManagerInboxView({ session, initial }: { session: SessionUser; i
           className="rounded-card px-5 py-6"
           style={{ background: "linear-gradient(135deg, #EDE7FF 0%, #C9B4FF 100%)" }}
         >
-          <p className="text-xs font-semibold text-brand/70">✅ Action Inbox</p>
-          <h1 className="mt-1 font-display text-[30px] font-black leading-tight text-brand">Your team&apos;s actions</h1>
+          <p className="text-xs font-semibold text-brand/70">{COPY.managerInbox.eyebrow}</p>
+          <h1 className="mt-1 font-display text-[30px] font-black leading-tight text-brand">{COPY.managerInbox.title}</h1>
           <div className="mt-3">
             <ResolvedMeter pct={resolvedPct} resolved={resolved.length} total={open.length + resolved.length} />
           </div>
@@ -119,14 +122,14 @@ export function ManagerInboxView({ session, initial }: { session: SessionUser; i
       )}
 
       {!initial.enoughReportees ? (
-        <NotEnoughData message="Your team has fewer than 3 reportees, so the Action Inbox is hidden to protect everyone's anonymity." />
+        <NotEnoughData message={COPY.managerInbox.belowFloor} />
       ) : (
         <>
           {/* Tabs */}
           <div className="flex gap-1.5 rounded-2xl bg-white/70 p-1 shadow-card">
             {([
-              { key: "open", label: `Open · ${open.length}` },
-              { key: "resolved", label: `Resolved · ${resolved.length}` },
+              { key: "open", label: `${COPY.managerInbox.openTab} · ${open.length}` },
+              { key: "resolved", label: `${COPY.managerInbox.resolvedTab} · ${resolved.length}` },
             ] as const).map((t) => (
               <button
                 key={t.key}
@@ -144,7 +147,7 @@ export function ManagerInboxView({ session, initial }: { session: SessionUser; i
           {tab === "open" ? (
             <>
               {active.length === 0 && flagged.length === 0 && (
-                <NotEnoughData message="Nothing to act on right now. New items appear when a team pillar dips below 7." />
+                <NotEnoughData message={COPY.managerInbox.emptyOpen} />
               )}
               {active.map((item) => (
                 <OpenActionCard key={item.id} item={item} onSubmit={handleSubmit} onNotYet={handleNotYet} />
@@ -152,7 +155,7 @@ export function ManagerInboxView({ session, initial }: { session: SessionUser; i
 
               {flagged.length > 0 && (
                 <>
-                  <p className="px-1 pt-2 font-display text-sm font-black text-ink">🚩 Flagged — revisit</p>
+                  <p className="px-1 pt-2 font-display text-sm font-black text-ink">{COPY.managerInbox.flaggedHeading}</p>
                   {flagged.map((item) => (
                     <OpenActionCard key={item.id} item={item} onSubmit={handleSubmit} onNotYet={handleNotYet} flagged />
                   ))}
@@ -162,7 +165,7 @@ export function ManagerInboxView({ session, initial }: { session: SessionUser; i
           ) : (
             <>
               {resolved.length === 0 && (
-                <NotEnoughData message="No resolved actions yet. Items you act on will appear here." />
+                <NotEnoughData message={COPY.managerInbox.emptyResolved} />
               )}
               {resolved.map((item) => (
                 <ResolvedActionCard key={item.id} item={item} />
@@ -171,7 +174,7 @@ export function ManagerInboxView({ session, initial }: { session: SessionUser; i
           )}
 
           <p className="pb-2 text-center text-[11px] text-ink-4">
-            Aggregates only. Submitted actions appear to affected teammates after {MANAGER_ACTION_DELAY_WEEKS} weeks.
+            {fill(COPY.managerInbox.footnote, { weeks: MANAGER_ACTION_DELAY_WEEKS })}
           </p>
         </>
       )}
@@ -185,7 +188,7 @@ function ResolvedMeter({ pct, resolved, total }: { pct: number; resolved: number
       <div className="h-2 overflow-hidden rounded-full bg-white/50">
         <div className="h-full rounded-full bg-brand transition-all" style={{ width: `${pct}%` }} />
       </div>
-      <p className="mt-1.5 text-xs font-bold text-brand">{resolved}/{total} resolved · {pct}%</p>
+      <p className="mt-1.5 text-xs font-bold text-brand">{fill(COPY.managerInbox.resolvedMeter, { resolved, total, pct })}</p>
     </div>
   );
 }
@@ -237,7 +240,7 @@ function OpenActionCard({
 
       <p className="mt-2.5 font-display text-base font-black leading-snug text-ink">{item.triggerQuestion}</p>
       <p className="mt-1 text-xs text-ink-3">
-        Team average <span className="font-bold text-brand">{item.teamAvg.toFixed(1)}</span> / 10
+        {COPY.managerInbox.teamAverage} <span className="font-bold text-brand">{item.teamAvg.toFixed(1)}</span> / 10
       </p>
 
       <div className="mt-3">
@@ -245,7 +248,7 @@ function OpenActionCard({
       </div>
 
       <div className="mt-4 rounded-card bg-lav-soft p-3">
-        <p className="text-[10px] font-bold uppercase tracking-wide text-brand">💡 {PILLARS[item.pillarId].label} tip</p>
+        <p className="text-[10px] font-bold uppercase tracking-wide text-brand">{fill(COPY.managerInbox.tipLabel, { pillar: PILLARS[item.pillarId].label })}</p>
         <p className="mt-1 text-[13px] leading-relaxed text-ink-2">{item.recommendation}</p>
       </div>
 
@@ -256,7 +259,7 @@ function OpenActionCard({
             onClick={() => setComposing(true)}
             className="flex-1 rounded-2xl bg-brand py-3 font-display text-sm font-black text-white transition active:scale-[0.98]"
           >
-            Yes, I&apos;ll act
+            {COPY.managerInbox.yesAct}
           </button>
           {!flagged && (
             <button
@@ -264,7 +267,7 @@ function OpenActionCard({
               onClick={() => onNotYet(item)}
               className="flex-1 rounded-2xl bg-white py-3 font-display text-sm font-black text-ink-3 shadow-card transition active:scale-[0.98]"
             >
-              Not yet
+              {COPY.managerInbox.notYet}
             </button>
           )}
         </div>
@@ -274,11 +277,11 @@ function OpenActionCard({
             value={note}
             onChange={(e) => setNote(e.target.value)}
             rows={3}
-            placeholder="What will you change? (saved privately to your journal)"
+            placeholder={COPY.managerInbox.notePlaceholder}
             className="w-full resize-none rounded-2xl border border-lav-mid bg-white p-3 text-sm text-ink outline-none placeholder:text-ink-4 focus:border-brand"
           />
           <p className="mt-2 text-[11px] leading-snug text-warn">
-            ⏳ Once submitted, this becomes visible to affected teammates after {MANAGER_ACTION_DELAY_WEEKS} weeks — and only to those who scored low on this question.
+            {fill(COPY.managerInbox.delayWarning, { weeks: MANAGER_ACTION_DELAY_WEEKS })}
           </p>
           <div className="mt-2 flex gap-2">
             <button
@@ -287,14 +290,14 @@ function OpenActionCard({
               onClick={() => onSubmit(item, note.trim())}
               className="flex-1 rounded-2xl bg-brand py-3 font-display text-sm font-black text-white transition active:scale-[0.98] disabled:opacity-40"
             >
-              Submit action
+              {COPY.managerInbox.submitAction}
             </button>
             <button
               type="button"
               onClick={() => setComposing(false)}
               className="rounded-2xl bg-white px-4 py-3 font-display text-sm font-black text-ink-4 shadow-card transition active:scale-[0.98]"
             >
-              Cancel
+              {COPY.managerInbox.cancel}
             </button>
           </div>
         </div>
@@ -312,12 +315,12 @@ function ResolvedActionCard({ item }: { item: ManagerActionItem }) {
         <span className="rounded-full bg-lav-soft px-2.5 py-1 text-[10px] font-black uppercase tracking-wide text-brand">
           {item.pillarLabel}
         </span>
-        <span className="text-[11px] font-bold text-good">Resolved ✓</span>
+        <span className="text-[11px] font-bold text-good">{COPY.managerInbox.resolvedChip}</span>
       </div>
 
       {item.carriedOver && (
         <p className="mt-2 inline-flex items-center gap-1 rounded-full bg-lav-soft px-2.5 py-1 text-[10px] font-semibold text-ink-3">
-          🔁 {item.handledByLabel ?? "Carried over from a previous manager"}
+          🔁 {item.handledByLabel ?? COPY.managerInbox.carriedOver}
         </p>
       )}
 
@@ -331,11 +334,11 @@ function ResolvedActionCard({ item }: { item: ManagerActionItem }) {
 
       {r && (
         <div className="mt-3 rounded-card bg-lav-soft p-3">
-          <p className="text-[10px] font-bold uppercase tracking-wide text-brand">How the team felt</p>
+          <p className="text-[10px] font-bold uppercase tracking-wide text-brand">{COPY.managerInbox.howTeamFelt}</p>
           <div className="mt-2 flex gap-4 text-xs font-semibold text-ink-2">
-            <span>✅ {r.yes} helped</span>
-            <span>😐 {r.maybe} unsure</span>
-            <span>🚩 {r.notYet} not yet</span>
+            <span>{fill(COPY.managerInbox.reactionHelped, { n: r.yes })}</span>
+            <span>{fill(COPY.managerInbox.reactionUnsure, { n: r.maybe })}</span>
+            <span>{fill(COPY.managerInbox.reactionNotYet, { n: r.notYet })}</span>
           </div>
         </div>
       )}
