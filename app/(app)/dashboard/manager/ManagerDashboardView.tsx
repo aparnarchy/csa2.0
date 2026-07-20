@@ -111,7 +111,7 @@ export function ManagerDashboardView({
             </div>
 
             {/* Pillar cards — aggregates only, no drill into individuals. */}
-            <div className="grid grid-cols-4 gap-1.5">
+            <div className="-mx-1.5 grid grid-cols-4 gap-2">
               {data.pillars.map((p) => (
                 <PillarCard key={p.pillarId} data={p} />
               ))}

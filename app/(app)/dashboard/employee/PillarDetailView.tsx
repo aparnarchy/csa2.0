@@ -30,6 +30,8 @@ export function PillarDetailView({
   const [window, setWindow] = useState<Window>("3M");
   const [tab, setTab] = useState<"strengths" | "concerns">("concerns");
   const [detail, setDetail] = useState<Detail | null>(null);
+  /** Accordion: at most one question row is expanded at a time. */
+  const [openId, setOpenId] = useState<string | null>(null);
 
   useEffect(() => {
     getPillarDetailAction(pillarId, window).then(setDetail);
@@ -69,7 +71,10 @@ export function PillarDetailView({
         <div className="mb-4">
           <SegmentedToggle
             value={tab}
-            onChange={setTab}
+            onChange={(v) => {
+              setTab(v);
+              setOpenId(null);
+            }}
             options={[
               { value: "strengths", label: "💪 Strengths" },
               { value: "concerns", label: "⚠️ Concerns" },
@@ -77,7 +82,14 @@ export function PillarDetailView({
           />
         </div>
         {shown.map((q) => (
-          <InsightBarRow key={q.id} q={q} isStrength={tab === "strengths"} onGoToInbox={onGoToInbox} />
+          <InsightBarRow
+            key={q.id}
+            q={q}
+            isStrength={tab === "strengths"}
+            open={openId === q.id}
+            onToggle={() => setOpenId((cur) => (cur === q.id ? null : q.id))}
+            onGoToInbox={onGoToInbox}
+          />
         ))}
         {shown.length === 0 && <p className="text-xs text-ink-4">No data for this pillar.</p>}
       </Card>

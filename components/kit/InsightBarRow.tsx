@@ -1,29 +1,36 @@
 "use client";
 
-import { useState } from "react";
 import type { QuestionInsight } from "@/lib/data";
 
 /**
  * Expandable question row: score bar; tap to reveal the A/B/C response
  * breakdown and (for concerns) a recommendation + inbox link.
  * Bars use uniform lavender + purple (no score colour bands), per design.
+ *
+ * Controlled on purpose: the parent owns which row is open so the list behaves
+ * as an accordion — opening one smoothly collapses the other. The panel is
+ * always mounted and animated via grid-template-rows 0fr→1fr, which transitions
+ * to the content's natural height without having to measure it.
  */
 export function InsightBarRow({
   q,
   isStrength,
+  open,
+  onToggle,
   onGoToInbox,
 }: {
   q: QuestionInsight;
   isStrength: boolean;
+  open: boolean;
+  onToggle: () => void;
   onGoToInbox?: () => void;
 }) {
-  const [open, setOpen] = useState(false);
-
   return (
     <div className="mb-2.5">
       <button
         type="button"
-        onClick={() => setOpen((v) => !v)}
+        onClick={onToggle}
+        aria-expanded={open}
         className="w-full text-left"
       >
         <div className="mb-1.5 flex items-start justify-between">
@@ -32,8 +39,12 @@ export function InsightBarRow({
             <span className="font-display text-[17px] font-black leading-none text-brand">
               {q.score.toFixed(1)}
             </span>
-            <span className="text-[9px] text-brand opacity-60">
-              {open ? "▲" : "▼"}
+            <span
+              className={`text-[9px] text-brand opacity-60 transition-transform duration-300 ease-out ${
+                open ? "rotate-180" : ""
+              }`}
+            >
+              ▼
             </span>
           </div>
         </div>
@@ -45,8 +56,13 @@ export function InsightBarRow({
         </div>
       </button>
 
-      {open && (
-        <div className="mt-2 rounded-xl border border-lav-soft bg-lav-light p-3">
+      <div
+        className={`grid transition-[grid-template-rows] duration-300 ease-out ${
+          open ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
+        }`}
+      >
+        <div className="min-h-0 overflow-hidden">
+          <div className="mt-2 rounded-xl border border-lav-soft bg-lav-light p-3">
           <p className="mb-2.5 text-[10px] font-bold uppercase tracking-wide text-ink-3">
             Response breakdown
           </p>
@@ -87,8 +103,9 @@ export function InsightBarRow({
               )}
             </div>
           )}
+          </div>
         </div>
-      )}
+      </div>
     </div>
   );
 }

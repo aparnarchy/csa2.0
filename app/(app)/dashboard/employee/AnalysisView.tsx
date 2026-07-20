@@ -38,6 +38,8 @@ export function AnalysisView({
   const [tab, setTab] = useState<Tab>("concerns");
   const [selectedPillar, setSelectedPillar] = useState<PillarId | null>(null);
   const [showRoot, setShowRoot] = useState(false);
+  /** Accordion: at most one question row is expanded at a time. */
+  const [openId, setOpenId] = useState<string | null>(null);
 
   // Time filter refreshes score + pillars + chart together via a server action
   // (real aggregation over the user's own check-ins).
@@ -206,20 +208,26 @@ export function AnalysisView({
 
           {/* ── Everything below is unchanged ───────────────────────────────── */}
           <Card>
-            <div className="mb-4 flex items-start justify-between">
-              <BigScore score={data.overall} />
-              {data.delta !== null && (
-                <div
-                  className="mt-1.5 inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold"
-                  style={{ background: up ? "#E8FBF0" : "#FDECEC", color: up ? "#059669" : "#DC2626" }}
-                >
-                  {up ? "↑" : "↓"} {Math.abs(data.delta).toFixed(1)}
-                  <span className="text-[10px] font-medium text-ink-3">vs last</span>
-                </div>
-              )}
+            {/* Delta rides beside the numeral (via BigScore's `trailing` slot)
+                so score, badge and message read as one block. */}
+            <div className="mb-4">
+              <BigScore
+                score={data.overall}
+                trailing={
+                  data.delta !== null ? (
+                    <div
+                      className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold"
+                      style={{ background: up ? "#E8FBF0" : "#FDECEC", color: up ? "#059669" : "#DC2626" }}
+                    >
+                      {up ? "↑" : "↓"} {Math.abs(data.delta).toFixed(1)}
+                      <span className="text-[10px] font-medium text-ink-3">vs last</span>
+                    </div>
+                  ) : undefined
+                }
+              />
             </div>
 
-            <div className="grid grid-cols-4 gap-1.5">
+            <div className="-mx-1.5 grid grid-cols-4 gap-2">
               {data.pillars.map((p) => (
                 <PillarCard key={p.pillarId} data={p} onClick={() => setSelectedPillar(p.pillarId)} />
               ))}
@@ -231,7 +239,10 @@ export function AnalysisView({
             <div className="mb-4">
               <SegmentedToggle
                 value={tab}
-                onChange={setTab}
+                onChange={(v) => {
+                  setTab(v);
+                  setOpenId(null);
+                }}
                 options={[
                   { value: "strengths", label: "💪 Strengths" },
                   { value: "concerns", label: "⚠️ Concerns" },
@@ -239,7 +250,13 @@ export function AnalysisView({
               />
             </div>
             {shownQs.map((q) => (
-              <InsightBarRow key={q.id} q={q} isStrength={tab === "strengths"} />
+              <InsightBarRow
+                key={q.id}
+                q={q}
+                isStrength={tab === "strengths"}
+                open={openId === q.id}
+                onToggle={() => setOpenId((cur) => (cur === q.id ? null : q.id))}
+              />
             ))}
           </Card>
 

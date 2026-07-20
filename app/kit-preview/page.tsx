@@ -82,7 +82,7 @@ export default function KitPreviewPage() {
 
       <Section title="PillarCard (single row)">
         {emp ? (
-          <div className="grid grid-cols-4 gap-1.5">
+          <div className="-mx-1.5 grid grid-cols-4 gap-2">
             {emp.pillars.map((p) => (
               <PillarCard key={p.pillarId} data={p} onClick={() => alert(p.pillarId)} />
             ))}
