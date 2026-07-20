@@ -136,7 +136,7 @@ export function CeoHrView({
             </div>
 
             {/* Pillar grid — aggregates only, no drill into individuals. */}
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-4 gap-1.5">
               {data.pillars.map((p) => (
                 <PillarCard key={p.pillarId} data={p} />
               ))}
@@ -145,9 +145,6 @@ export function CeoHrView({
 
           {/* AI insight — LLM summary of the aggregates, cached in D1 */}
           <AIInsight text={aiText ?? undefined} />
-
-          {/* Trend — scope vs org / dept / industry */}
-          <TrendChart data={data.trend} window={window} onWindowChange={setWindow} />
 
           {/* Action-impact summary — how much feedback turned into action */}
           {data.impact && (
@@ -189,6 +186,9 @@ export function CeoHrView({
               ))}
             </div>
           </Card>
+
+          {/* Trend — scope vs org / dept / industry */}
+          <TrendChart data={data.trend} window={window} onWindowChange={setWindow} />
 
           <p className="pb-2 text-center text-[11px] text-ink-4">
             Aggregates only. No participation rate, and nothing here can identify an individual.

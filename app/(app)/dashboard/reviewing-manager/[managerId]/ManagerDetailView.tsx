@@ -109,7 +109,7 @@ export function ManagerDetailView({
             </div>
 
             {/* Pillar grid — aggregates only, no drill into individuals. */}
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-4 gap-1.5">
               {data.pillars.map((p) => (
                 <PillarCard key={p.pillarId} data={p} />
               ))}
@@ -118,9 +118,6 @@ export function ManagerDetailView({
 
           {/* AI insight (team) — LLM summary of the aggregates, cached in D1 */}
           <AIInsight text={aiText ?? undefined} />
-
-          {/* Trend — team vs org / dept / industry */}
-          <TrendChart data={data.trend} window={window} onWindowChange={setWindow} />
 
           {/* High / Low pillar ranking */}
           <Card>
@@ -143,6 +140,9 @@ export function ManagerDetailView({
               ))}
             </div>
           </Card>
+
+          {/* Trend — team vs org / dept / industry */}
+          <TrendChart data={data.trend} window={window} onWindowChange={setWindow} />
 
           <p className="pb-2 text-center text-[11px] text-ink-4">
             Aggregates only. Nothing here can identify an individual.

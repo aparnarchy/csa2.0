@@ -15,6 +15,7 @@ import {
   TrendChart,
 } from "@/components/kit";
 import { getSampleRecommendation, type TeamAggregate, type Window } from "@/lib/data";
+import { COPY, fill } from "@/lib/copy";
 import { getTeamAggregateAction, getTeamInsightAction } from "./actions";
 import { HEADER_MASCOT_SIZE, mascotForScore } from "@/lib/mascot";
 import { PILLARS } from "@/lib/pillars";
@@ -56,8 +57,8 @@ export function ManagerDashboardView({
           mascot. Same palette and fonts as every other screen. */}
       {isPlay ? (
         <GradientHeader
-          eyebrow="👥 Team dashboard"
-          title={`${firstName}'s team`}
+          eyebrow={COPY.managerDashboard.eyebrow}
+          title={fill(COPY.managerDashboard.teamTitle, { name: firstName })}
           avatar={
             <Mascot
               state={mascotForScore(data.teamScore, data.enoughData)}
@@ -69,7 +70,7 @@ export function ManagerDashboardView({
           className="flex min-h-[180px] flex-col justify-center"
         >
           <p className="mt-2 text-sm font-bold text-brand">
-            Anonymous team aggregates — never an individual.
+            {COPY.managerDashboard.anonNote}
           </p>
         </GradientHeader>
       ) : (
@@ -77,12 +78,12 @@ export function ManagerDashboardView({
           className="rounded-card px-5 py-6"
           style={{ background: "linear-gradient(135deg, #EDE7FF 0%, #C9B4FF 100%)" }}
         >
-          <p className="text-xs font-semibold text-brand/70">👥 Team dashboard</p>
+          <p className="text-xs font-semibold text-brand/70">{COPY.managerDashboard.eyebrow}</p>
           <h1 className="mt-1 font-display text-[30px] font-black leading-tight text-brand">
-            {firstName}&apos;s team
+            {fill(COPY.managerDashboard.teamTitle, { name: firstName })}
           </h1>
           <p className="mt-2 font-display text-base font-black leading-snug text-brand-light">
-            Anonymous team aggregates — never an individual.
+            {COPY.managerDashboard.anonNote}
           </p>
         </div>
       )}
@@ -96,7 +97,7 @@ export function ManagerDashboardView({
             <div className="mb-4 flex items-start justify-between">
               <div>
                 <BigScore score={data.teamScore} />
-                <p className="mt-1 text-xs text-ink-3">{data.reporteeCount} people · {data.participation}% participation</p>
+                <p className="mt-1 text-xs text-ink-3">{fill(COPY.managerDashboard.peopleParticipation, { count: data.reporteeCount, pct: data.participation })}</p>
               </div>
               {data.delta !== null && (
                 <div
@@ -104,13 +105,13 @@ export function ManagerDashboardView({
                   style={{ background: up ? "#E8FBF0" : "#FDECEC", color: up ? "#059669" : "#DC2626" }}
                 >
                   {up ? "↑" : "↓"} {Math.abs(data.delta).toFixed(1)}
-                  <span className="text-[10px] font-medium text-ink-3">vs last</span>
+                  <span className="text-[10px] font-medium text-ink-3">{COPY.managerDashboard.vsLast}</span>
                 </div>
               )}
             </div>
 
             {/* Pillar cards — aggregates only, no drill into individuals. */}
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-4 gap-1.5">
               {data.pillars.map((p) => (
                 <PillarCard key={p.pillarId} data={p} />
               ))}
@@ -120,22 +121,19 @@ export function ManagerDashboardView({
           {/* AI insight (team) — LLM summary of the aggregates, cached in D1 */}
           <AIInsight text={aiText ?? undefined} />
 
-          {/* Trend — team vs org / dept / industry */}
-          <TrendChart data={data.trend} window={window} onWindowChange={setWindow} />
-
           {/* Recommendations — one per low pillar, weakest first */}
           {lowPillars.length > 0 && (
             <Card>
-              <p className="mb-1 text-sm font-bold text-brand">Where to focus</p>
+              <p className="mb-1 text-sm font-bold text-brand">{COPY.managerDashboard.whereToFocus}</p>
               <p className="mb-3 text-xs text-ink-3">
-                Pillars below 7 across your team. Act on these in your Action Inbox.
+                {COPY.managerDashboard.whereToFocusSub}
               </p>
               <div className="space-y-3">
                 {lowPillars.map((p) => (
                   <RecommendationCard
                     key={p.pillarId}
                     pillarId={p.pillarId}
-                    text={`Team ${PILLARS[p.pillarId].label} is at ${p.score!.toFixed(1)}. ${getSampleRecommendation(p.pillarId).text}`}
+                    text={`${fill(COPY.managerDashboard.teamPillarAt, { pillar: PILLARS[p.pillarId].label, score: p.score!.toFixed(1) })} ${getSampleRecommendation(p.pillarId).text}`}
                   />
                 ))}
               </div>
@@ -144,7 +142,7 @@ export function ManagerDashboardView({
                 onClick={() => router.push("/dashboard/manager/inbox")}
                 className="mt-4 w-full rounded-2xl bg-brand py-3 font-display text-sm font-black text-white transition active:scale-[0.98]"
               >
-                Open Action Inbox →
+                {COPY.managerDashboard.openActionInbox}
               </button>
             </Card>
           )}
@@ -160,17 +158,20 @@ export function ManagerDashboardView({
                 🧭
               </div>
               <div className="min-w-0 flex-1">
-                <p className="font-display text-base font-black leading-tight text-ink">Leadership wisdom</p>
+                <p className="font-display text-base font-black leading-tight text-ink">{COPY.managerDashboard.leadershipWisdomTitle}</p>
                 <p className="mt-0.5 text-[11px] text-ink-3">
-                  Short lessons on leading your team, weakest pillar first.
+                  {COPY.managerDashboard.leadershipWisdomSub}
                 </p>
               </div>
               <span className="flex-shrink-0 text-brand-light">→</span>
             </div>
           </button>
 
+          {/* Trend — team vs org / dept / industry */}
+          <TrendChart data={data.trend} window={window} onWindowChange={setWindow} />
+
           <p className="pb-2 text-center text-[11px] text-ink-4">
-            Aggregates only. Nothing here can identify an individual.
+            {COPY.managerDashboard.footnote}
           </p>
         </>
       )}
