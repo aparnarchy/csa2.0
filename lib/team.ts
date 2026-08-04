@@ -14,9 +14,11 @@
 
 import { getDB } from "./db";
 import { assertRole } from "./access-control";
-import type { PillarScore, TeamAggregate, TrendPoint, Window } from "./data";
+import { getSampleRecommendation } from "./data";
+import type { PillarScore, QuestionInsight, TeamAggregate, TrendPoint, Window } from "./data";
 import { PILLAR_ORDER } from "./pillars";
 import { ANONYMISATION_FLOOR, scoreBand } from "./scoring";
+import type { PillarDetail } from "./scores";
 import type { PillarId, SessionUser } from "./types";
 
 function round1(n: number): number {

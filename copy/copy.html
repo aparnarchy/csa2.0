@@ -49,7 +49,7 @@
 </div>
 
 <nav class="toc">
-  <a href="#login">Log in</a><a href="#signup">Create account</a><a href="#reset">Reset password</a><a href="#onboarding">First-time setup</a><a href="#checkin">Weekly check-in</a><a href="#catchup">Catch-up</a><a href="#followup">Follow-up</a><a href="#shared">Shared bits</a><a href="#inbox">Inbox</a><a href="#profile">Profile</a><a href="#career">Career history</a><a href="#wisdom">Wisdom</a><a href="#managerDashboard">Manager dashboard</a><a href="#managerInbox">Manager Action Inbox</a>
+  <a href="#login">Log in</a><a href="#signup">Create account</a><a href="#reset">Reset password</a><a href="#onboarding">First-time setup</a><a href="#checkin">Weekly check-in</a><a href="#catchup">Catch-up</a><a href="#followup">Follow-up</a><a href="#shared">Shared bits</a><a href="#inbox">Inbox</a><a href="#profile">Profile</a><a href="#career">Career history</a><a href="#careerAdd">Career questionnaire</a><a href="#wisdom">Wisdom</a><a href="#managerDashboard">Manager dashboard</a><a href="#managerInbox">Manager Action Inbox</a>
 </nav>
 
 <main>
@@ -420,6 +420,79 @@
     <p class="txt" data-copy="career.liveFootnote" contenteditable="plaintext-only">Live data from your current company.</p></div>
   <div class="entry"><span class="hint">Footnote on a past company ({date} = when it was frozen)</span>
     <p class="txt" data-copy="career.frozenFootnote" contenteditable="plaintext-only">Frozen snapshot · {date} · read-only</p></div>
+  <div class="entry"><span class="hint">Prompt card — title, shown when they can add a past company</span>
+    <p class="txt" data-copy="career.addPromptTitle" contenteditable="plaintext-only">Fill in your historical data here!</p></div>
+  <div class="entry"><span class="hint">Prompt card — line underneath the title</span>
+    <p class="txt" data-copy="career.addPromptBody" contenteditable="plaintext-only">Answer 7 quick questions about a company you used to work at, and we'll add it to your career history.</p></div>
+  <div class="entry"><span class="hint">Prompt card — the button</span>
+    <p class="txt" data-copy="career.addPromptButton" contenteditable="plaintext-only">Add a past company</p></div>
+  <div class="entry"><span class="hint">Remove a past company — the ✕ button's label for screen readers ({company} = its name)</span>
+    <p class="txt" data-copy="career.deleteAria" contenteditable="plaintext-only">Remove {company} from your career history</p></div>
+  <div class="entry"><span class="hint">Remove a past company — the "are you sure?" question ({company} = its name)</span>
+    <p class="txt" data-copy="career.deleteConfirmTitle" contenteditable="plaintext-only">Remove {company}?</p></div>
+  <div class="entry"><span class="hint">Remove a past company — the warning under the question</span>
+    <p class="txt" data-copy="career.deleteConfirmBody" contenteditable="plaintext-only">Your answers about this company will be deleted for good. You can always add it again by filling in the questionnaire.</p></div>
+  <div class="entry"><span class="hint">Remove a past company — the confirm button</span>
+    <p class="txt" data-copy="career.deleteConfirmButton" contenteditable="plaintext-only">Yes, remove it</p></div>
+  <div class="entry"><span class="hint">Remove a past company — the cancel button</span>
+    <p class="txt" data-copy="career.deleteCancelButton" contenteditable="plaintext-only">Keep it</p></div>
+  <div class="entry"><span class="hint">Remove a past company — shown if the removal fails</span>
+    <p class="txt" data-copy="career.deleteError" contenteditable="plaintext-only">That didn't work. Please try again.</p></div>
+  <div class="entry"><span class="hint">Link to career history at the bottom of the Insights screen — title</span>
+    <p class="txt" data-copy="career.insightsLinkTitle" contenteditable="plaintext-only">Career history</p></div>
+  <div class="entry"><span class="hint">Link to career history at the bottom of the Insights screen — line underneath</span>
+    <p class="txt" data-copy="career.insightsLinkSub" contenteditable="plaintext-only">Your happiness across every company you've worked at</p></div>
+  <div class="entry"><span class="hint">Company page — label above the big score</span>
+    <p class="txt" data-copy="career.scoreCaption" contenteditable="plaintext-only">Overall Happiness</p></div>
+  <div class="entry"><span class="hint">Company page — label on the delta badge next to the big score</span>
+    <p class="txt" data-copy="career.vsLast" contenteditable="plaintext-only">vs last</p></div>
+  <div class="entry"><span class="hint">Company page — note explaining why a past company shows less detail</span>
+    <p class="txt" data-copy="career.questionnaireNote" contenteditable="plaintext-only">Based on the one-time questionnaire you filled in, so there's no week-by-week trend here.</p></div>
+</section>
+
+<section id="careerAdd">
+  <h2>Screen 10b — Career history questionnaire</h2>
+  <p class="screen-note">Filled in once per past company. First the company details, then 7 questions one per screen — tapping an answer moves straight to the next question.</p>
+  <div class="entry"><span class="hint">Back link out of the questionnaire</span>
+    <p class="txt" data-copy="careerAdd.backLink" contenteditable="plaintext-only">← Career history</p></div>
+  <div class="entry"><span class="hint">Details screen — title</span>
+    <p class="txt" data-copy="careerAdd.detailsTitle" contenteditable="plaintext-only">Where did you work?</p></div>
+  <div class="entry"><span class="hint">Details screen — line under the title</span>
+    <p class="txt" data-copy="careerAdd.detailsSubtitle" contenteditable="plaintext-only">Tell us about one company, then we'll ask how it felt to work there.</p></div>
+  <div class="entry"><span class="hint">Details screen — company name box placeholder</span>
+    <p class="txt" data-copy="careerAdd.companyNamePlaceholder" contenteditable="plaintext-only">Company name</p></div>
+  <div class="entry"><span class="hint">Details screen — role box placeholder</span>
+    <p class="txt" data-copy="careerAdd.rolePlaceholder" contenteditable="plaintext-only">Your role there (optional)</p></div>
+  <div class="entry"><span class="hint">Details screen — label above the start date</span>
+    <p class="txt" data-copy="careerAdd.startLabel" contenteditable="plaintext-only">Started</p></div>
+  <div class="entry"><span class="hint">Details screen — label above the end date</span>
+    <p class="txt" data-copy="careerAdd.endLabel" contenteditable="plaintext-only">Left</p></div>
+  <div class="entry"><span class="hint">Details screen — button that starts the questions</span>
+    <p class="txt" data-copy="careerAdd.startButton" contenteditable="plaintext-only">Start the questions</p></div>
+  <div class="entry"><span class="hint">Details screen — button label while the questions are still loading</span>
+    <p class="txt" data-copy="careerAdd.loadingButton" contenteditable="plaintext-only">Loading…</p></div>
+  <div class="entry"><span class="hint">Question screen — line above the question ({company} = company name)</span>
+    <p class="txt" data-copy="careerAdd.atCompany" contenteditable="plaintext-only">About your time at {company}</p></div>
+  <div class="entry"><span class="hint">Question screen — description of the back arrow, read aloud by screen readers</span>
+    <p class="txt" data-copy="careerAdd.backAria" contenteditable="plaintext-only">Previous question</p></div>
+  <div class="entry"><span class="hint">Shown while the answers are being saved</span>
+    <p class="txt" data-copy="careerAdd.savingLabel" contenteditable="plaintext-only">Saving your answers…</p></div>
+  <div class="entry"><span class="hint">Finished screen — title</span>
+    <p class="txt" data-copy="careerAdd.doneTitle" contenteditable="plaintext-only">All done!</p></div>
+  <div class="entry"><span class="hint">Finished screen — line underneath ({company} = company name)</span>
+    <p class="txt" data-copy="careerAdd.doneBody" contenteditable="plaintext-only">{company} is now part of your career history.</p></div>
+  <div class="entry"><span class="hint">Finished screen — button back to the list</span>
+    <p class="txt" data-copy="careerAdd.doneButton" contenteditable="plaintext-only">See my career history</p></div>
+  <div class="entry"><span class="hint">Error — no company name typed in</span>
+    <p class="txt" data-copy="careerAdd.errorNameRequired" contenteditable="plaintext-only">Please enter the company name.</p></div>
+  <div class="entry"><span class="hint">Error — a date is missing</span>
+    <p class="txt" data-copy="careerAdd.errorDatesRequired" contenteditable="plaintext-only">Please add both the start and end dates.</p></div>
+  <div class="entry"><span class="hint">Error — the end date is before the start date</span>
+    <p class="txt" data-copy="careerAdd.errorEndBeforeStart" contenteditable="plaintext-only">The date you left must be after the date you started.</p></div>
+  <div class="entry"><span class="hint">Error — the questions couldn't be loaded</span>
+    <p class="txt" data-copy="careerAdd.loadError" contenteditable="plaintext-only">We couldn't load the questions. Please try again.</p></div>
+  <div class="entry"><span class="hint">Error — the answers couldn't be saved</span>
+    <p class="txt" data-copy="careerAdd.saveError" contenteditable="plaintext-only">We couldn't save your answers. Please try again.</p></div>
 </section>
 
 <section id="wisdom">

@@ -145,53 +145,12 @@ export async function POST(request: Request) {
   }
   results.push("Department, team and employment created");
 
-  // ── Past companies (career history) for Alice, so the career screen is real ──
+  // ── Career history is NOT seeded ─────────────────────────────────────────────
+  // Past companies come only from the career questionnaire the user fills in, so
+  // the screen never shows invented data. This clear-out removes rows left by
+  // earlier seeds that did fabricate them.
   await db.prepare("DELETE FROM careerCompanies WHERE id LIKE 'cc-%'").run();
-  const aliceId = createdUsers.find((u) => u.email === "employee@test.com")?.id ?? null;
-  if (aliceId) {
-    const pastCompanies = [
-      {
-        id: "cc-alice-google", name: "Google", role: "UX Researcher",
-        startDate: "2022-06-01", endDate: "2023-12-31", overallScore: 8.5,
-        pillarScores: { meaningful_work: 9.1, growth: 8.9, culture: 8.3, compensation: 8.0 },
-        questionnaire: {
-          participationPct: 94,
-          strengths: [
-            { text: "Do you feel a strong sense of belonging on your team?", score: 9.2 },
-            { text: "Does your manager support your development?", score: 9.0 },
-          ],
-          concerns: [
-            { text: "Do you maintain a healthy work-life balance?", score: 6.0 },
-            { text: "Do you feel your workload is manageable?", score: 6.2 },
-          ],
-        },
-      },
-      {
-        id: "cc-alice-razorpay", name: "Razorpay", role: "UI Designer",
-        startDate: "2021-08-01", endDate: "2022-05-31", overallScore: 6.2,
-        pillarScores: { meaningful_work: 6.5, growth: 6.3, culture: 5.8, compensation: 5.4 },
-        questionnaire: {
-          participationPct: 78,
-          strengths: [{ text: "Are you learning new skills in your role?", score: 7.8 }],
-          concerns: [
-            { text: "Do you feel heard in group discussions?", score: 5.0 },
-            { text: "Do you feel fairly compensated?", score: 5.5 },
-          ],
-        },
-      },
-    ];
-    for (const c of pastCompanies) {
-      await db
-        .prepare(
-          `INSERT INTO careerCompanies (id, userId, name, role, startDate, endDate, overallScore, pillarScores, questionnaire)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        )
-        .bind(c.id, aliceId, c.name, c.role, c.startDate, c.endDate, c.overallScore,
-          JSON.stringify(c.pillarScores), JSON.stringify(c.questionnaire))
-        .run();
-    }
-    results.push("Career history seeded");
-  }
+  results.push("Career history cleared (filled by the questionnaire, never seeded)");
 
   // ── Weekly windows (W13–W24; W13 Monday = 2026-03-23 → W24 = 2026-06-08) ──────
   const iso = (d: Date) => d.toISOString().slice(0, 10);
@@ -218,21 +177,27 @@ export async function POST(request: Request) {
   results.push("Weekly windows created");
 
   // ── 10 questions ─────────────────────────────────────────────────────────────
+  // Every option scores 4 / 7 / 10 — the app's standard three-point scale, the
+  // same one the career questionnaire uses. Note the letters are ordered
+  // worst -> best -> middle here (A=4, B=10, C=7), which is why the numbers
+  // below don't read in order.
   const questions = [
-    { id: "q1",  pillarId: "meaningful_work", text: "Do you get opportunities to tackle complex problems?",       a: "No, my work is routine",       as: 3, b: "Yes, regularly",     bs: 9,  c: "Sometimes",         cs: 6 },
-    { id: "q2",  pillarId: "meaningful_work", text: "Does your work feel connected to a bigger purpose?",         a: "Not really",                   as: 2, b: "Absolutely",         bs: 9,  c: "Somewhat",           cs: 6 },
-    { id: "q3",  pillarId: "growth",          text: "Are you learning new skills in your current role?",          a: "Rarely",                       as: 3, b: "Constantly",         bs: 10, c: "Occasionally",       cs: 6 },
-    { id: "q4",  pillarId: "growth",          text: "Does your manager invest in your development?",              a: "Not at all",                   as: 2, b: "Very much",          bs: 9,  c: "Sometimes",          cs: 5 },
-    { id: "q5",  pillarId: "growth",          text: "Do you have a clear path to grow in this company?",          a: "No",                           as: 2, b: "Yes, it's clear",    bs: 8,  c: "Somewhat",           cs: 5 },
-    { id: "q6",  pillarId: "culture",         text: "Do you feel psychologically safe raising concerns?",         a: "No",                           as: 1, b: "Yes, always",        bs: 10, c: "Usually",            cs: 7 },
-    { id: "q7",  pillarId: "culture",         text: "Does your team collaborate effectively?",                    a: "We struggle",                  as: 3, b: "Very well",          bs: 9,  c: "It varies",          cs: 6 },
-    { id: "q8",  pillarId: "culture",         text: "Do you feel recognised for good work?",                      a: "Rarely",                       as: 2, b: "Regularly",          bs: 9,  c: "Sometimes",          cs: 5 },
-    { id: "q9",  pillarId: "compensation",    text: "Do you feel fairly compensated for your work?",              a: "No",                           as: 2, b: "Yes",                bs: 9,  c: "Roughly",            cs: 6 },
-    { id: "q10", pillarId: "compensation",    text: "Are your benefits competitive in the market?",               a: "Below market",                 as: 3, b: "Above market",       bs: 9,  c: "About average",      cs: 6 },
+    { id: "q1",  pillarId: "meaningful_work", text: "Do you get opportunities to tackle complex problems?",       a: "No, my work is routine",       as: 4, b: "Yes, regularly",     bs: 10,  c: "Sometimes",         cs: 7 },
+    { id: "q2",  pillarId: "meaningful_work", text: "Does your work feel connected to a bigger purpose?",         a: "Not really",                   as: 4, b: "Absolutely",         bs: 10,  c: "Somewhat",           cs: 7 },
+    { id: "q3",  pillarId: "growth",          text: "Are you learning new skills in your current role?",          a: "Rarely",                       as: 4, b: "Constantly",         bs: 10, c: "Occasionally",       cs: 7 },
+    { id: "q4",  pillarId: "growth",          text: "Does your manager invest in your development?",              a: "Not at all",                   as: 4, b: "Very much",          bs: 10,  c: "Sometimes",          cs: 7 },
+    { id: "q5",  pillarId: "growth",          text: "Do you have a clear path to grow in this company?",          a: "No",                           as: 4, b: "Yes, it's clear",    bs: 10,  c: "Somewhat",           cs: 7 },
+    { id: "q6",  pillarId: "culture",         text: "Do you feel psychologically safe raising concerns?",         a: "No",                           as: 4, b: "Yes, always",        bs: 10, c: "Usually",            cs: 7 },
+    { id: "q7",  pillarId: "culture",         text: "Does your team collaborate effectively?",                    a: "We struggle",                  as: 4, b: "Very well",          bs: 10,  c: "It varies",          cs: 7 },
+    { id: "q8",  pillarId: "culture",         text: "Do you feel recognised for good work?",                      a: "Rarely",                       as: 4, b: "Regularly",          bs: 10,  c: "Sometimes",          cs: 7 },
+    { id: "q9",  pillarId: "compensation",    text: "Do you feel fairly compensated for your work?",              a: "No",                           as: 4, b: "Yes",                bs: 10,  c: "Roughly",            cs: 7 },
+    { id: "q10", pillarId: "compensation",    text: "Are your benefits competitive in the market?",               a: "Below market",                 as: 4, b: "Above market",       bs: 10,  c: "About average",      cs: 7 },
   ];
   for (const q of questions) {
+    // REPLACE, not IGNORE: re-seeding must be able to correct the scores on a
+    // question bank that already exists, otherwise a scale change never lands.
     await db
-      .prepare(`INSERT OR IGNORE INTO questions
+      .prepare(`INSERT OR REPLACE INTO questions
         (id, text, pillarId, optionA_text, optionA_score, optionB_text, optionB_score, optionC_text, optionC_score)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`)
       .bind(q.id, q.text, q.pillarId, q.a, q.as, q.b, q.bs, q.c, q.cs)
@@ -241,9 +206,14 @@ export async function POST(request: Request) {
   results.push("10 questions created");
 
   // ── Check-ins: every employee answers all 10 questions for W13–W23 ───────────
-  //    (W24 is left open so the check-in flow has something "due"). Scores lean on
-  //    a per-pillar base + a small upward drift + noise, so pillar cards and the
-  //    trend look believable and differ by pillar. Stored scoped to employment.
+  //    (W24 is left open so the check-in flow has something "due").
+  //
+  //    A real check-in can only ever store 4, 7 or 10 — the score of whichever
+  //    option was tapped — so the seed must not invent anything in between, or
+  //    dev dashboards show distributions production can never produce. The
+  //    per-pillar base, upward drift and noise are still what shape the data;
+  //    they now set the ODDS of each answer rather than the score itself.
+  //    Stored scoped to employment.
   const employeeIds = createdUsers
     .filter((u) => employeeEmails.includes(u.email))
     .map((u) => u.id);
@@ -254,7 +224,28 @@ export async function POST(request: Request) {
     compensation: 5.6,
   };
   const answeredWeeks = WEEK_NUMS.filter((wk) => wk !== 24).map((wk) => `2026-W${wk}`);
-  const clampScore = (n: number) => Math.max(1, Math.min(10, Math.round(n)));
+
+  /**
+   * Turn a target average into one real answer of 4, 7 or 10.
+   *
+   * The target is clamped into range, then split between the two SURROUNDING
+   * options in the proportion that makes the long-run average come out at the
+   * target — e.g. 6.4 lands on 7 four times in five and on 4 the fifth time.
+   * Mixing only adjacent options is what keeps a run of answers looking like a
+   * person rather than a coin flip; the noise added by the caller is what
+   * occasionally pushes a pillar far enough to reach the option beyond.
+   */
+  const pickScore = (target: number): number => {
+    const t = Math.max(4, Math.min(10, target));
+    if (t <= 7) return Math.random() < (t - 4) / 3 ? 7 : 4;
+    return Math.random() < (t - 7) / 3 ? 10 : 7;
+  };
+
+  // Re-seeding has to be able to correct existing rows, and the ids are
+  // deterministic (ci-1, ci-2, …), so clear the previous run rather than
+  // INSERT OR IGNORE over the top of it and silently keep the old scores.
+  await db.prepare("DELETE FROM checkIns WHERE id LIKE 'ci-%'").run();
+
   let ciIdx = 1;
   for (let wi = 0; wi < answeredWeeks.length; wi++) {
     const weekId = answeredWeeks[wi];
@@ -263,9 +254,9 @@ export async function POST(request: Request) {
       for (const q of questions) {
         const base = pillarBase[q.pillarId] ?? 6.5;
         const noise = (Math.random() - 0.5) * 2.2;
-        const score = clampScore(base + drift + noise);
+        const score = pickScore(base + drift + noise);
         await db
-          .prepare(`INSERT OR IGNORE INTO checkIns (id, userId, questionId, pillarId, weekId, score, isRetrospective, employmentId)
+          .prepare(`INSERT INTO checkIns (id, userId, questionId, pillarId, weekId, score, isRetrospective, employmentId)
             VALUES (?, ?, ?, ?, ?, ?, 0, ?)`)
           .bind(`ci-${ciIdx++}`, userId, q.id, q.pillarId, weekId, score, employmentByUser.get(userId) ?? null)
           .run();
@@ -410,10 +401,10 @@ export async function POST(request: Request) {
       const drift = (wi / answeredWeeks.length) * 1.0;
       for (const q of questions) {
         const base = pillarBase[q.pillarId] ?? 6.5;
-        const score = clampScore(base + drift + (Math.random() - 0.5) * 2.2);
+        const score = pickScore(base + drift + (Math.random() - 0.5) * 2.2);
         await db
           .prepare(
-            `INSERT OR IGNORE INTO checkIns (id, userId, questionId, pillarId, weekId, score, isRetrospective, employmentId)
+            `INSERT INTO checkIns (id, userId, questionId, pillarId, weekId, score, isRetrospective, employmentId)
              VALUES (?, ?, ?, ?, ?, ?, 0, ?)`,
           )
           .bind(`ci-owner-${oIdx++}`, oid, q.id, q.pillarId, weekId, score, oEmp)
@@ -431,21 +422,7 @@ export async function POST(request: Request) {
         .bind(oid, badge, moduleId)
         .run();
     }
-    await db
-      .prepare(
-        `INSERT INTO careerCompanies (id, userId, name, role, startDate, endDate, overallScore, pillarScores, questionnaire)
-         VALUES ('cc-owner-1', ?, 'Freshworks', 'Product Manager', '2020-04-01', '2025-12-31', 7.4, ?, ?)`,
-      )
-      .bind(
-        oid,
-        JSON.stringify({ meaningful_work: 7.8, growth: 7.5, culture: 7.2, compensation: 6.9 }),
-        JSON.stringify({
-          participationPct: 88,
-          strengths: [{ text: "Do you get opportunities to tackle complex problems?", score: 8.1 }],
-          concerns: [{ text: "Do you feel fairly compensated for your work?", score: 6.2 }],
-        }),
-      )
-      .run();
+    // No career history seeded for the owner either — see the note above.
 
     results.push(`Owner account (${OWNER_EMAIL}) fully populated with all roles`);
   } else {

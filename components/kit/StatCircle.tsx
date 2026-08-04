@@ -19,6 +19,17 @@ export function StatCircle({
   const icon = kind === "bright" ? "☀️" : "❗";
   const arcId = `arc-${kind}`;
 
+  // The pillar sits on a fixed-length arc — roughly 91 units of this 100-wide
+  // viewBox. A textPath neither wraps nor scales: anything longer than the path
+  // is simply not drawn. Long labels step down a size to stay well inside that
+  // length, and textLength is the backstop whatever the font metrics turn out
+  // to be. (The longest real pillar, "Meaningful Work", measures ~81 here, so
+  // it clears the arc comfortably — what used to shear its "M" and "k" was the
+  // arc's height, not its length. See the note on the arc itself below.)
+  const ARC_LEN = 88; // usable length, leaving a small margin at each end
+  const pillarSize = pillar.length > 12 ? 8.6 : pillar.length > 9 ? 9.6 : 10.5;
+  const tooLong = pillar.length * (pillarSize * 0.58 + 0.5) > ARC_LEN;
+
   return (
     <div className="relative aspect-square w-full">
       {/* two floating blobs behind, each morphing + drifting on its own rhythm */}
@@ -42,13 +53,24 @@ export function StatCircle({
             </text>
           </svg>
           <p className="-mt-1 font-display text-[46px] font-black leading-none">{score.toFixed(1)}</p>
-          {/* pillar, curved along the bottom */}
+          {/* pillar, curved along the bottom. The arc sits low in its box on
+              purpose: its ends are its highest points, and a long label reaches
+              out towards them, where the letters are also tilted. With the ends
+              near the top of the viewBox the tops of "M" and "k" in "Meaningful
+              Work" rose above y=0 and were sliced off by the SVG viewport. The
+              curve is unchanged — just moved down into the empty space that was
+              sitting below it, which leaves every label clear of both edges. */}
           <svg viewBox="0 0 100 24" className="mt-1.5 w-[94%]" aria-hidden>
             <defs>
-              <path id={`${arcId}-b`} d="M 6 4 Q 50 24 94 4" fill="none" />
+              <path id={`${arcId}-b`} d="M 6 9 Q 50 29 94 9" fill="none" />
             </defs>
-            <text fill="#ffffff" fillOpacity="0.9" fontSize="10.5" fontWeight="800" letterSpacing="0.5">
-              <textPath href={`#${arcId}-b`} startOffset="50%" textAnchor="middle">
+            <text fill="#ffffff" fillOpacity="0.9" fontSize={pillarSize} fontWeight="800" letterSpacing="0.5">
+              <textPath
+                href={`#${arcId}-b`}
+                startOffset="50%"
+                textAnchor="middle"
+                {...(tooLong ? { textLength: ARC_LEN, lengthAdjust: "spacingAndGlyphs" as const } : {})}
+              >
                 {pillar}
               </textPath>
             </text>

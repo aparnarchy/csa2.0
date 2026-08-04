@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Mascot, RecommendationCard } from "@/components/kit";
+import { Mascot, OptionCard, RecommendationCard } from "@/components/kit";
 import { COPY } from "@/lib/copy";
 import { getSampleRecommendation, skipCheckIn, type CheckInQuestion } from "@/lib/data";
 import type { SessionUser } from "@/lib/types";
@@ -73,30 +73,15 @@ export function CatchUpFlow({
         </div>
 
         <div className="mt-8 space-y-3">
-          {q.options.map((o) => {
-            const isSel = o.key === selected;
-            return (
-              <button
-                key={o.key}
-                type="button"
-                onClick={() => setSelected(o.key)}
-                className={`flex w-full items-center gap-3.5 rounded-2xl border p-3.5 text-left text-sm font-semibold transition active:scale-[0.99] ${
-                  isSel
-                    ? "border-brand bg-lav-soft text-brand shadow-card"
-                    : "border-transparent bg-white text-ink shadow-card"
-                }`}
-              >
-                <span
-                  className={`flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full text-sm font-black ${
-                    isSel ? "bg-brand text-white" : "bg-lav-soft text-brand"
-                  }`}
-                >
-                  {o.key}
-                </span>
-                <span className="leading-snug">{o.text}</span>
-              </button>
-            );
-          })}
+          {q.options.map((o) => (
+            <OptionCard
+              key={o.key}
+              optionKey={o.key}
+              text={o.text}
+              selected={o.key === selected}
+              onClick={() => setSelected(o.key)}
+            />
+          ))}
         </div>
 
         {lowScore && (

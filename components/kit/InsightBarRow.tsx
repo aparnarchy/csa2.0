@@ -11,6 +11,10 @@ import type { QuestionInsight } from "@/lib/data";
  * as an accordion — opening one smoothly collapses the other. The panel is
  * always mounted and animated via grid-template-rows 0fr→1fr, which transitions
  * to the content's natural height without having to measure it.
+ *
+ * With no `responses` the row is static: no chevron, no tap target, no panel.
+ * That's the career-questionnaire case — one person answering once has no
+ * distribution to break down, and a lone 100% bar would imply a survey result.
  */
 export function InsightBarRow({
   q,
@@ -25,6 +29,40 @@ export function InsightBarRow({
   onToggle: () => void;
   onGoToInbox?: () => void;
 }) {
+  const expandable = q.responses.length > 0;
+
+  const summary = (
+    <>
+      <div className="mb-1.5 flex items-start justify-between">
+        <p className="flex-1 pr-2.5 text-xs leading-snug text-ink">{q.text}</p>
+        <div className="flex flex-shrink-0 items-center gap-1">
+          <span className="font-display text-[17px] font-black leading-none text-brand">
+            {q.score.toFixed(1)}
+          </span>
+          {expandable && (
+            <span
+              className={`text-[9px] text-brand opacity-60 transition-transform duration-300 ease-out ${
+                open ? "rotate-180" : ""
+              }`}
+            >
+              ▼
+            </span>
+          )}
+        </div>
+      </div>
+      <div className="h-1.5 overflow-hidden rounded-full bg-lav-soft">
+        <div
+          className="h-full rounded-full bg-brand transition-[width] duration-500"
+          style={{ width: `${q.score * 10}%` }}
+        />
+      </div>
+    </>
+  );
+
+  if (!expandable) {
+    return <div className="mb-2.5">{summary}</div>;
+  }
+
   return (
     <div className="mb-2.5">
       <button
@@ -33,27 +71,7 @@ export function InsightBarRow({
         aria-expanded={open}
         className="w-full text-left"
       >
-        <div className="mb-1.5 flex items-start justify-between">
-          <p className="flex-1 pr-2.5 text-xs leading-snug text-ink">{q.text}</p>
-          <div className="flex flex-shrink-0 items-center gap-1">
-            <span className="font-display text-[17px] font-black leading-none text-brand">
-              {q.score.toFixed(1)}
-            </span>
-            <span
-              className={`text-[9px] text-brand opacity-60 transition-transform duration-300 ease-out ${
-                open ? "rotate-180" : ""
-              }`}
-            >
-              ▼
-            </span>
-          </div>
-        </div>
-        <div className="h-1.5 overflow-hidden rounded-full bg-lav-soft">
-          <div
-            className="h-full rounded-full bg-brand transition-[width] duration-500"
-            style={{ width: `${q.score * 10}%` }}
-          />
-        </div>
+        {summary}
       </button>
 
       <div

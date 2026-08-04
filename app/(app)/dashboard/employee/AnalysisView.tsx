@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { COPY } from "@/lib/copy";
 import {
   BigScore,
   Card,
@@ -33,6 +35,7 @@ export function AnalysisView({
   session: SessionUser;
   initial: EmployeeScores;
 }) {
+  const router = useRouter();
   const [window, setWindow] = useState<Window>("3M");
   const [data, setData] = useState<EmployeeScores>(initial);
   const [tab, setTab] = useState<Tab>("concerns");
@@ -261,6 +264,26 @@ export function AnalysisView({
           </Card>
 
           <TrendChart data={data.trend} window={window} onWindowChange={setWindow} />
+
+          {/* Career history — the second way in, alongside the Profile link. */}
+          <button
+            type="button"
+            onClick={() => router.push("/career")}
+            className="w-full rounded-card border border-lav-mid bg-white p-4 text-left shadow-card transition active:scale-[0.99]"
+          >
+            <div className="flex items-center gap-3">
+              <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-2xl bg-lav-soft text-xl">
+                🗂️
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="font-display text-base font-black leading-tight text-ink">
+                  {COPY.career.insightsLinkTitle}
+                </p>
+                <p className="mt-0.5 text-[11px] text-ink-3">{COPY.career.insightsLinkSub}</p>
+              </div>
+              <span className="flex-shrink-0 text-brand-light">→</span>
+            </div>
+          </button>
         </>
       )}
 

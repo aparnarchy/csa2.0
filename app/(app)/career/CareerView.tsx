@@ -1,11 +1,22 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
-import { Card, ScreenShell } from "@/components/kit";
+import {
+  AIInsight,
+  BigScore,
+  Card,
+  InsightBarRow,
+  PillarCard,
+  ScreenShell,
+  SegmentedToggle,
+  TrendChart,
+} from "@/components/kit";
 import { COPY, fill } from "@/lib/copy";
 import { type CareerHistory, type CompanyDetail } from "@/lib/data";
-import { getCompanyDetailAction } from "./actions";
+import { deleteCareerCompanyAction, getCompanyDetailAction } from "./actions";
+import { AddCompanyFlow } from "./AddCompanyFlow";
 
 function scoreColor(score: number) {
   if (score >= 7.5) return "text-good";
@@ -17,6 +28,31 @@ export function CareerView({ history }: { history: CareerHistory }) {
   const router = useRouter();
   const [openId, setOpenId] = useState<string | null>(null);
   const [detail, setDetail] = useState<CompanyDetail | null>(null);
+  const [mode, setMode] = useState<"list" | "add">("list");
+  /** The past company awaiting an "are you sure?" — null when nothing is pending. */
+  const [pendingDelete, setPendingDelete] = useState<{ id: string; company: string } | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+
+  /** The "current" company comes from employment, not the questionnaire. */
+  const hasPast = history.companies.some((c) => !c.current);
+
+  async function confirmDelete() {
+    if (!pendingDelete) return;
+    setDeleting(true);
+    setDeleteError(null);
+    try {
+      await deleteCareerCompanyAction(pendingDelete.id);
+      setPendingDelete(null);
+      // The list comes from the server component, so re-run it rather than
+      // splicing the row out here and letting the two drift apart.
+      router.refresh();
+    } catch (e) {
+      setDeleteError(e instanceof Error ? e.message : COPY.career.deleteError);
+    } finally {
+      setDeleting(false);
+    }
+  }
 
   useEffect(() => {
     if (openId) getCompanyDetailAction(openId).then(setDetail);
@@ -25,6 +61,21 @@ export function CareerView({ history }: { history: CareerHistory }) {
 
   if (openId && detail) {
     return <CompanyDetailView detail={detail} onBack={() => setOpenId(null)} />;
+  }
+
+  // The questionnaire is a focused full-screen flow — no bottom nav, like the
+  // weekly check-in. router.refresh() re-runs the server page so the new company
+  // is in the list by the time we return to it.
+  if (mode === "add") {
+    return (
+      <AddCompanyFlow
+        onDone={() => {
+          setMode("list");
+          router.refresh();
+        }}
+        onCancel={() => setMode("list")}
+      />
+    );
   }
 
   return (
@@ -52,42 +103,141 @@ export function CareerView({ history }: { history: CareerHistory }) {
         <p className="mt-2 text-sm font-bold text-brand-light">{fill(COPY.career.acrossSummary, { tenure: history.tenure, count: history.companies.length })}</p>
       </div>
 
-      {/* Company list */}
+      {/* Company list. The remove button is a SIBLING of the card, not inside
+          it — a button can't be nested in a button, and sitting it beside the
+          card keeps it clear of the company name. Only past companies get one:
+          the current company comes from employment, so there's nothing to
+          remove. */}
       <div className="space-y-2">
         {history.companies.map((c) => (
-          <button
-            key={c.id}
-            type="button"
-            onClick={() => setOpenId(c.id)}
-            className="flex w-full items-center justify-between rounded-card bg-white p-4 text-left shadow-card transition active:scale-[0.99]"
-          >
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2">
-                <p className="font-display text-base font-black text-ink">{c.company}</p>
-                {c.current && (
-                  <span className="rounded-full bg-lav-soft px-2 py-0.5 text-[10px] font-bold text-brand">{COPY.career.currentChip}</span>
-                )}
+          <div key={c.id} className="flex items-stretch gap-2">
+            <button
+              type="button"
+              onClick={() => setOpenId(c.id)}
+              className="flex min-w-0 flex-1 items-center justify-between rounded-card bg-white p-4 text-left shadow-card transition active:scale-[0.99]"
+            >
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2">
+                  <p className="font-display text-base font-black text-ink">{c.company}</p>
+                  {c.current && (
+                    <span className="rounded-full bg-lav-soft px-2 py-0.5 text-[10px] font-bold text-brand">{COPY.career.currentChip}</span>
+                  )}
+                </div>
+                <p className="mt-0.5 text-xs text-ink-3">{c.role}</p>
+                <p className="text-[11px] text-ink-4">{c.period} · {c.tenure}</p>
               </div>
-              <p className="mt-0.5 text-xs text-ink-3">{c.role}</p>
-              <p className="text-[11px] text-ink-4">{c.period} · {c.tenure}</p>
-            </div>
-            <div className="flex items-center gap-2 pl-2">
-              <span className={`font-display text-xl font-black ${scoreColor(c.overallScore)}`}>
-                {c.overallScore.toFixed(1)}
-              </span>
-              <span className="text-xl text-ink-4">›</span>
-            </div>
-          </button>
+              <div className="flex items-center gap-2 pl-2">
+                <span className={`font-display text-xl font-black ${scoreColor(c.overallScore)}`}>
+                  {c.overallScore.toFixed(1)}
+                </span>
+                <span className="text-xl text-ink-4">›</span>
+              </div>
+            </button>
+
+            {!c.current && (
+              <button
+                type="button"
+                onClick={() => setPendingDelete({ id: c.id, company: c.company })}
+                aria-label={fill(COPY.career.deleteAria, { company: c.company })}
+                className="flex w-11 flex-shrink-0 items-center justify-center rounded-card bg-white text-lg text-ink-4 shadow-card transition active:scale-95"
+              >
+                ✕
+              </button>
+            )}
+          </div>
         ))}
       </div>
+
+      {/* Questionnaire prompt — loud when there's no past company yet, quiet
+          once the list has some. */}
+      {hasPast ? (
+        <button
+          type="button"
+          onClick={() => setMode("add")}
+          className="w-full rounded-card border border-dashed border-lav-mid bg-white/60 p-4 text-sm font-bold text-brand transition active:scale-[0.99]"
+        >
+          + {COPY.career.addPromptButton}
+        </button>
+      ) : (
+        <Card>
+          <p className="font-display text-base font-black text-brand">{COPY.career.addPromptTitle}</p>
+          <p className="mt-1 text-xs leading-relaxed text-ink-3">{COPY.career.addPromptBody}</p>
+          <button
+            type="button"
+            onClick={() => setMode("add")}
+            className="mt-4 w-full rounded-2xl bg-brand py-3 font-display text-sm font-black text-white transition active:scale-[0.98]"
+          >
+            {COPY.career.addPromptButton}
+          </button>
+        </Card>
+      )}
+
+      {/* Confirm before removing — the answers can't be recovered, only re-entered.
+          Rendered through a portal into <body>: ScreenShell's <main> runs the
+          screen-enter animation, which makes it a stacking context, so an
+          overlay left inside it can't rise above the bottom nav however high its
+          z-index goes. Escaping to the body is what puts it over the nav. */}
+      {pendingDelete && createPortal(
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-ink/40 px-4 pb-6 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-card bg-white p-5 shadow-card">
+            <p className="font-display text-lg font-black text-ink">
+              {fill(COPY.career.deleteConfirmTitle, { company: pendingDelete.company })}
+            </p>
+            <p className="mt-2 text-sm leading-relaxed text-ink-3">
+              {COPY.career.deleteConfirmBody}
+            </p>
+
+            {deleteError && (
+              <p className="mt-3 text-sm font-semibold text-red-600">{deleteError}</p>
+            )}
+
+            <div className="mt-5 flex gap-2.5">
+              <button
+                type="button"
+                onClick={() => {
+                  setPendingDelete(null);
+                  setDeleteError(null);
+                }}
+                disabled={deleting}
+                className="flex-1 rounded-2xl bg-lav-soft py-3 font-display text-sm font-black text-brand transition active:scale-[0.98] disabled:opacity-40"
+              >
+                {COPY.career.deleteCancelButton}
+              </button>
+              <button
+                type="button"
+                onClick={confirmDelete}
+                disabled={deleting}
+                className="flex-1 rounded-2xl bg-red-600 py-3 font-display text-sm font-black text-white transition active:scale-[0.98] disabled:opacity-40"
+              >
+                {COPY.career.deleteConfirmButton}
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body,
+      )}
     </ScreenShell>
   );
 }
 
-// ── Company detail (2.8b) — frozen snapshot, read-only ───────────────────────
+// ── Company detail (2.8b) ────────────────────────────────────────────────────
+/**
+ * One company, on the SAME dashboard design as the employee insights screen —
+ * gradient header, bright spot / watch out, big score + the 4-across pillar row,
+ * the strengths/concerns accordion, trend chart last.
+ *
+ * How much of it renders depends on where the data came from. The current
+ * company aggregates real weekly check-ins, so every block appears. A past
+ * company is one pass of the career questionnaire: no deltas, no percentiles,
+ * no response breakdowns and no series, so those blocks are omitted rather than
+ * drawn empty.
+ */
 function CompanyDetailView({ detail, onBack }: { detail: CompanyDetail; onBack: () => void }) {
   const [tab, setTab] = useState<"strengths" | "concerns">("concerns");
+  const [openId, setOpenId] = useState<string | null>(null);
   const rows = tab === "strengths" ? detail.strengths : detail.concerns;
+
+  const up = (detail.delta ?? 0) >= 0;
 
   return (
     <ScreenShell active="profile">
@@ -95,71 +245,89 @@ function CompanyDetailView({ detail, onBack }: { detail: CompanyDetail; onBack: 
         {COPY.career.backToCareer}
       </button>
 
-      {/* Header */}
-      <div className="rounded-card px-5 py-6" style={{ background: "linear-gradient(135deg, #7C6FFF 0%, #9B8FFF 100%)" }}>
-        <p className="text-xs text-white/70">{detail.role}</p>
-        <div className="mt-1 flex items-end justify-between">
-          <h1 className="font-display text-2xl font-black leading-tight text-white">{detail.company}</h1>
-          <span className="font-display text-[44px] font-black leading-none text-white">{detail.overallScore.toFixed(1)}</span>
-        </div>
-        <p className="mt-1 text-[11px] text-white/70">{detail.period}</p>
-        <span className="mt-3 inline-block rounded-full bg-white/20 px-3 py-1 text-[11px] font-semibold text-white">
+      {/* Header — same lavender gradient card as the insights dashboard, with the
+          company standing in for the greeting. */}
+      <div
+        className="rounded-card px-5 py-6"
+        style={{ background: "linear-gradient(135deg, #EDE7FF 0%, #C9B4FF 100%)" }}
+      >
+        <p className="text-xs font-semibold text-brand/70">{detail.role}</p>
+        <h1 className="mt-1 font-display text-[34px] font-black leading-tight text-brand">
+          {detail.company}
+        </h1>
+        <p className="mt-1 text-[11px] text-brand/70">{detail.period}</p>
+        <span className="mt-3 inline-block rounded-full bg-white/50 px-3 py-1 text-[11px] font-semibold text-brand">
           {detail.current ? COPY.career.liveDataChip : fill(COPY.career.snapshotChip, { date: detail.frozenAt ?? "" })}
         </span>
       </div>
 
-      {/* Pillar 2×2 */}
+      {/* Big score + the single-row pillar grid — identical to the dashboard. */}
       <Card>
-        <p className="mb-3 text-sm font-bold text-brand">{COPY.career.pillarsTitle}</p>
-        <div className="grid grid-cols-2 gap-2">
+        <div className="mb-4">
+          <BigScore
+            score={detail.overallScore}
+            caption={COPY.career.scoreCaption}
+            trailing={
+              detail.delta !== null ? (
+                <div
+                  className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold"
+                  style={{ background: up ? "#E8FBF0" : "#FDECEC", color: up ? "#059669" : "#DC2626" }}
+                >
+                  {up ? "↑" : "↓"} {Math.abs(detail.delta).toFixed(1)}
+                  <span className="text-[10px] font-medium text-ink-3">{COPY.career.vsLast}</span>
+                </div>
+              ) : undefined
+            }
+          />
+        </div>
+
+        <div className="-mx-1.5 grid grid-cols-4 gap-2">
           {detail.pillars.map((p) => (
-            <div key={p.pillarId} className="rounded-card bg-lav-soft p-3">
-              <p className="text-[11px] font-semibold text-ink-3">{p.label}</p>
-              <p className={`mt-1 font-display text-2xl font-black leading-none ${scoreColor(p.score)}`}>
-                {p.score.toFixed(1)}
-              </p>
-            </div>
+            <PillarCard key={p.pillarId} data={p} />
           ))}
         </div>
       </Card>
 
-      {/* Strengths / concerns */}
-      <Card>
-        <p className="mb-3 text-sm font-bold text-brand">{COPY.career.insightsTitle}</p>
-        <div className="mb-4 flex gap-1.5 rounded-xl bg-lav-soft p-1">
-          {([
-            { key: "strengths", label: COPY.career.strengthsTab },
-            { key: "concerns", label: COPY.career.concernsTab },
-          ] as const).map((o) => (
-            <button
-              key={o.key}
-              type="button"
-              onClick={() => setTab(o.key)}
-              className={`flex-1 rounded-lg py-2 text-xs font-bold transition ${
-                tab === o.key ? "bg-white text-brand shadow-card" : "text-ink-4"
-              }`}
-            >
-              {o.label}
-            </button>
-          ))}
-        </div>
-        <div className="space-y-3">
+      {/* ✨ How this company compares with the rest of their career. */}
+      <AIInsight text={detail.insight ?? undefined} />
+
+      {/* Strengths / concerns — the dashboard's accordion. Questionnaire rows
+          have no breakdown, so InsightBarRow renders them as static bars. */}
+      {rows.length > 0 && (
+        <Card>
+          <p className="mb-3 text-sm font-bold text-brand">{COPY.career.insightsTitle}</p>
+          <div className="mb-4">
+            <SegmentedToggle
+              value={tab}
+              onChange={(v) => {
+                setTab(v);
+                setOpenId(null);
+              }}
+              options={[
+                { value: "strengths", label: COPY.career.strengthsTab },
+                { value: "concerns", label: COPY.career.concernsTab },
+              ]}
+            />
+          </div>
           {rows.map((q) => (
-            <div key={q.text}>
-              <div className="mb-1 flex items-start justify-between gap-3">
-                <p className="text-[13px] leading-snug text-ink">{q.text}</p>
-                <span className={`font-display text-base font-black ${scoreColor(q.score)}`}>{q.score.toFixed(1)}</span>
-              </div>
-              <div className="h-1.5 overflow-hidden rounded-full bg-lav-soft">
-                <div className="h-full rounded-full bg-brand" style={{ width: `${q.score * 10}%` }} />
-              </div>
-            </div>
+            <InsightBarRow
+              key={q.id}
+              q={q}
+              isStrength={tab === "strengths"}
+              open={openId === q.id}
+              onToggle={() => setOpenId((cur) => (cur === q.id ? null : q.id))}
+            />
           ))}
-        </div>
-      </Card>
+        </Card>
+      )}
+
+      {/* Trend last, as on every dashboard — current company only. */}
+      {detail.trend.length > 0 && <TrendChart data={detail.trend} />}
 
       <p className="pb-2 text-center text-[11px] text-ink-4">
-        {detail.current ? COPY.career.liveFootnote : fill(COPY.career.frozenFootnote, { date: detail.frozenAt ?? "" })}
+        {detail.current
+          ? COPY.career.liveFootnote
+          : `${fill(COPY.career.frozenFootnote, { date: detail.frozenAt ?? "" })} · ${COPY.career.questionnaireNote}`}
       </p>
     </ScreenShell>
   );

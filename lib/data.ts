@@ -577,30 +577,31 @@ export interface CareerHistory {
   companies: CareerCompanySummary[];
 }
 
-const CAREER: CareerCompanySummary[] = [
-  { id: "kissflow", company: "Kissflow", role: "Product Designer", period: "Jan 2024 – Present", tenure: "2 yrs 3 mos", overallScore: 7.2, current: true },
-  { id: "google", company: "Google", role: "UX Researcher", period: "Jun 2022 – Dec 2023", tenure: "1 yr 6 mos", overallScore: 8.5, current: false },
-  { id: "razorpay", company: "Razorpay", role: "UI Designer", period: "Aug 2021 – May 2022", tenure: "9 mos", overallScore: 6.2, current: false },
-];
+// Career reads live in lib/career.ts (server-only, real D1). Only the shared
+// types stay here — the sample data and its getters have been removed so the
+// career screen can never render anything but the user's own answers.
 
-// NOTE: getCareerHistory / getCompanyDetail are superseded by the real D1
-// implementations in lib/career.ts (server-only). These sample copies are unused.
-export async function getCareerHistory(session: SessionUser, userId: string): Promise<CareerHistory> {
-  assertOwner(session, userId);
-  return { overall: 7.4, tenure: "4 yrs 6 mos", companies: CAREER };
-}
-
-export interface CompanyPillarScore {
-  pillarId: PillarId;
-  label: string;
-  score: number;
-}
-
+/**
+ * The shape stored in the `questionnaire` JSON column — score only, no response
+ * breakdown. `id` and `pillarId` are optional because the column predates them.
+ */
 export interface CompanyQuestionScore {
+  id?: string;
+  pillarId?: PillarId;
   text: string;
   score: number;
 }
 
+/**
+ * One company on the career screen, rendered with the same dashboard design as
+ * the employee insights screen.
+ *
+ * Two sources fill this, with different completeness — see `getCompanyDetail`:
+ * the CURRENT company aggregates real weekly check-ins, so every field is
+ * populated; a PAST company is one pass of the 7-question career questionnaire,
+ * which cannot produce a delta, a percentile, a response breakdown or a series.
+ * Those arrive as null/empty and their blocks are omitted, never zero-filled.
+ */
 export interface CompanyDetail {
   id: string;
   company: string;
@@ -610,66 +611,19 @@ export interface CompanyDetail {
   overallScore: number;
   frozenAt: string;
   participationPct: number;
-  pillars: CompanyPillarScore[];
-  strengths: CompanyQuestionScore[];
-  concerns: CompanyQuestionScore[];
-}
-
-const pillarRow = (id: PillarId, score: number): CompanyPillarScore => ({ pillarId: id, label: PILLARS[id].label, score });
-
-const COMPANY_DETAILS: Record<string, CompanyDetail> = {
-  kissflow: {
-    id: "kissflow", company: "Kissflow", role: "Product Designer", period: "Jan 2024 – Present", current: true,
-    overallScore: 7.2, frozenAt: "Live data", participationPct: 91,
-    pillars: [pillarRow("meaningful_work", 8.4), pillarRow("growth", 6.9), pillarRow("culture", 7.5), pillarRow("compensation", 6.8)],
-    strengths: [
-      { text: "Do you get opportunities to tackle complex problems?", score: 9.0 },
-      { text: "Does your work have a clear purpose?", score: 8.4 },
-      { text: "Does your team celebrate wins together?", score: 7.6 },
-    ],
-    concerns: [
-      { text: "Do you know how your pay compares to the market?", score: 5.8 },
-      { text: "Do you have a clear path to grow here?", score: 6.2 },
-      { text: "Do you feel recognised for good work?", score: 6.6 },
-    ],
-  },
-  google: {
-    id: "google", company: "Google", role: "UX Researcher", period: "Jun 2022 – Dec 2023", current: false,
-    overallScore: 8.5, frozenAt: "Dec 2023", participationPct: 94,
-    pillars: [pillarRow("meaningful_work", 9.1), pillarRow("growth", 8.9), pillarRow("culture", 8.3), pillarRow("compensation", 8.0)],
-    strengths: [
-      { text: "Do you feel a strong sense of belonging on your team?", score: 9.2 },
-      { text: "Does your manager support your development?", score: 9.0 },
-      { text: "Do you feel fairly compensated for your work?", score: 8.8 },
-    ],
-    concerns: [
-      { text: "Do you maintain a healthy work-life balance?", score: 6.0 },
-      { text: "Do you feel your workload is manageable?", score: 6.2 },
-    ],
-  },
-  razorpay: {
-    id: "razorpay", company: "Razorpay", role: "UI Designer", period: "Aug 2021 – May 2022", current: false,
-    overallScore: 6.2, frozenAt: "May 2022", participationPct: 78,
-    pillars: [pillarRow("meaningful_work", 6.5), pillarRow("growth", 6.3), pillarRow("culture", 5.8), pillarRow("compensation", 5.4)],
-    strengths: [
-      { text: "Are you learning new skills in your role?", score: 7.8 },
-      { text: "Does your role expose you to new challenges?", score: 7.2 },
-    ],
-    concerns: [
-      { text: "Do you feel heard in group discussions?", score: 5.0 },
-      { text: "Does your team communicate openly?", score: 5.2 },
-      { text: "Do you feel fairly compensated?", score: 5.5 },
-    ],
-  },
-};
-
-export async function getCompanyDetail(
-  session: SessionUser,
-  userId: string,
-  companyId: string,
-): Promise<CompanyDetail | null> {
-  assertOwner(session, userId);
-  return COMPANY_DETAILS[companyId] ?? null;
+  /** null for a questionnaire company — a single snapshot has no "vs last". */
+  delta: number | null;
+  pillars: PillarScore[];
+  strengths: QuestionInsight[];
+  concerns: QuestionInsight[];
+  /** Empty for a questionnaire company — one snapshot is not a series. */
+  trend: TrendPoint[];
+  /**
+   * The ✨ AI line comparing this company with the rest of the user's career.
+   * null with only one company on record, no API key, or a failed call — the
+   * box then shows its fallback line.
+   */
+  insight: string | null;
 }
 
 /** Re-export so screens can build ScoreResult-shaped deltas without a second import. */
