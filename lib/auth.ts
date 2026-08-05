@@ -2,6 +2,7 @@ import { betterAuth } from "better-auth";
 import { Resend } from "resend";
 import { Kysely } from "kysely";
 import { D1Dialect } from "kysely-d1";
+import { hashPassword, verifyPassword } from "./auth-password";
 
 /**
  * Which origins are allowed to sign in (better-auth's CSRF protection).
@@ -43,6 +44,10 @@ export function createAuth(db: D1Database) {
     emailAndPassword: {
       enabled: true,
       requireEmailVerification: false,
+      // Native WebCrypto PBKDF2 instead of better-auth's default pure-JS scrypt,
+      // which is too CPU-heavy for the Cloudflare Workers free-tier limit and
+      // makes sign-in/sign-up 503. See lib/auth-password.ts.
+      password: { hash: hashPassword, verify: verifyPassword },
       sendResetPassword: async ({ user, url }) => {
         const resend = new Resend(process.env.RESEND_API_KEY);
         await resend.emails.send({
