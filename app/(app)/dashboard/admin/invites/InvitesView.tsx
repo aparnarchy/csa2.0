@@ -32,7 +32,12 @@ export function InvitesView({
   const [error, setError] = useState<string | null>(null);
   const [summary, setSummary] = useState<CsvImportResult | null>(null);
   const [pending, startTransition] = useTransition();
+  const [filter, setFilter] = useState<"all" | "pending" | "accepted">("all");
   const fileRef = useRef<HTMLInputElement>(null);
+
+  const shown = invites.filter((iv) => filter === "all" || iv.status === filter);
+  const countPending = invites.filter((iv) => iv.status === "pending").length;
+  const countAccepted = invites.filter((iv) => iv.status === "accepted").length;
 
   const teamName = (id: string | null) =>
     (id && teams.find((t) => t.id === id)?.name) || null;
@@ -68,7 +73,7 @@ export function InvitesView({
   }
 
   return (
-    <ScreenShell wide>
+    <ScreenShell wide noNav>
       {isPlay ? (
         <div className="rounded-card bg-lav-bg px-5 py-5">
           <BackBtn onClick={() => router.push("/dashboard/admin")} />
@@ -169,48 +174,89 @@ export function InvitesView({
         </Card>
       )}
 
-      {/* Invite list */}
-      <div className="space-y-2">
-        {invites.length === 0 && <Empty>No invites yet.</Empty>}
-        {invites.map((iv) => (
-          <Card key={iv.id}>
-            <div className="flex items-center justify-between gap-2">
-              <div className="min-w-0">
-                <p className="truncate font-display text-base font-black text-ink">{iv.email}</p>
-                <p className="mt-0.5 text-[11px] text-ink-3">
-                  {iv.role === "manager" ? "Manager" : "Individual"}
-                  {teamName(iv.teamId) ? ` · ${teamName(iv.teamId)}` : ""}
-                  {" · "}
-                  {String(iv.createdAt).slice(0, 10)}
-                </p>
-              </div>
-              <div className="flex flex-shrink-0 items-center gap-2">
-                <StatusBadge status={iv.status} />
-                {iv.status === "pending" && (
-                  <button
-                    type="button"
-                    onClick={() => run(() => resendInviteAction(iv.id))}
-                    disabled={pending}
-                    className="rounded-xl bg-lav-mid px-3 py-1.5 text-xs font-bold text-brand active:scale-[0.98] disabled:opacity-50"
-                  >
-                    Resend
-                  </button>
-                )}
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (confirm(`Cancel the invite for ${iv.email}?`))
-                      run(() => cancelInviteAction(iv.id));
-                  }}
-                  disabled={pending}
-                  className="rounded-xl bg-red-50 px-3 py-1.5 text-xs font-bold text-red-600 active:scale-[0.98] disabled:opacity-50"
-                >
-                  Cancel
-                </button>
-              </div>
-            </div>
-          </Card>
+      {/* Filter toggle */}
+      <div className="flex gap-1.5 rounded-2xl bg-white/70 p-1 shadow-card">
+        {([
+          { key: "all", label: `All · ${invites.length}` },
+          { key: "pending", label: `Pending · ${countPending}` },
+          { key: "accepted", label: `Accepted · ${countAccepted}` },
+        ] as const).map((t) => (
+          <button
+            key={t.key}
+            type="button"
+            onClick={() => setFilter(t.key)}
+            className={`flex-1 rounded-xl py-2 text-xs font-bold transition ${
+              filter === t.key ? "bg-brand text-white shadow-sm" : "text-ink-4"
+            }`}
+          >
+            {t.label}
+          </button>
         ))}
+      </div>
+
+      {/* Invite table (scrolls horizontally on narrow screens) */}
+      <div className="overflow-x-auto rounded-card border border-lav-mid bg-white shadow-card">
+        <table className="w-full min-w-[720px] border-collapse text-left text-xs">
+          <thead>
+            <tr className="border-b border-lav-mid text-[10px] uppercase tracking-wide text-ink-3">
+              <Th className="min-w-[200px]">Email</Th>
+              <Th>Role</Th>
+              <Th>Team</Th>
+              <Th>Status</Th>
+              <Th>Date invited</Th>
+              <Th>Actions</Th>
+            </tr>
+          </thead>
+          <tbody>
+            {shown.length === 0 && (
+              <tr>
+                <td colSpan={6} className="px-3 py-6 text-center text-[11px] text-ink-4">
+                  No {filter === "all" ? "" : `${filter} `}invites yet.
+                </td>
+              </tr>
+            )}
+            {shown.map((iv) => (
+              <tr key={iv.id} className="border-b border-lav-light/70 last:border-0">
+                <td className="px-3 py-2.5 font-semibold text-ink">{iv.email}</td>
+                <td className="px-3 py-2.5 text-ink-2">
+                  {iv.role === "manager" ? "Manager" : "Individual"}
+                </td>
+                <td className="px-3 py-2.5 text-ink-2">{teamName(iv.teamId) ?? "—"}</td>
+                <td className="px-3 py-2.5">
+                  <StatusBadge status={iv.status} />
+                </td>
+                <td className="px-3 py-2.5 whitespace-nowrap text-ink-2">
+                  {String(iv.createdAt).slice(0, 10)}
+                </td>
+                <td className="px-3 py-2.5">
+                  <div className="flex gap-2">
+                    {iv.status === "pending" && (
+                      <button
+                        type="button"
+                        onClick={() => run(() => resendInviteAction(iv.id))}
+                        disabled={pending}
+                        className="rounded-xl bg-lav-mid px-3 py-1.5 text-[11px] font-bold text-brand active:scale-[0.98] disabled:opacity-50"
+                      >
+                        Resend
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (confirm(`Cancel the invite for ${iv.email}?`))
+                          run(() => cancelInviteAction(iv.id));
+                      }}
+                      disabled={pending}
+                      className="rounded-xl bg-red-50 px-3 py-1.5 text-[11px] font-bold text-red-600 active:scale-[0.98] disabled:opacity-50"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
 
       <p className="pb-2 text-center text-[11px] text-ink-4">
@@ -294,8 +340,8 @@ function StatusBadge({ status }: { status: "pending" | "accepted" }) {
   );
 }
 
-function Empty({ children }: { children: React.ReactNode }) {
-  return <p className="px-1 text-[11px] text-ink-4">{children}</p>;
+function Th({ children, className = "" }: { children: React.ReactNode; className?: string }) {
+  return <th className={`px-3 py-2 font-bold ${className}`}>{children}</th>;
 }
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {

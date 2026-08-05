@@ -61,7 +61,7 @@ export function OrgStructureView({
   }
 
   return (
-    <ScreenShell wide>
+    <ScreenShell wide noNav>
       {isPlay ? (
         <div className="rounded-card bg-lav-bg px-5 py-5">
           <BackBtn onClick={() => router.push("/dashboard/admin")} />
@@ -140,7 +140,12 @@ export function OrgStructureView({
               <div className="min-w-0">
                 <p className="truncate font-display text-base font-black text-ink">{t.name}</p>
                 <p className="text-[11px] text-ink-3">
-                  {deptName(t.departmentId)} · {mgrName(t.managerId)}
+                  {deptName(t.departmentId)} ·{" "}
+                  {t.managerId ? (
+                    mgrName(t.managerId)
+                  ) : (
+                    <span className="font-bold text-warn">⚠️ No manager</span>
+                  )}
                 </p>
               </div>
               <RowButtons

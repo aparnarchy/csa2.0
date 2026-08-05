@@ -108,7 +108,7 @@ export function QuestionBankView({
   }
 
   return (
-    <ScreenShell wide>
+    <ScreenShell wide noNav>
       {/* Header — mode-aware, with a back link to the admin hub. */}
       {isPlay ? (
         <div className="rounded-card bg-lav-bg px-5 py-5">

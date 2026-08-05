@@ -45,7 +45,7 @@ export function AdminHubView({ session }: { session: SessionUser }) {
   const firstName = (session.name || "there").trim().split(/\s+/)[0];
 
   return (
-    <ScreenShell wide>
+    <ScreenShell wide noNav>
       {/* Header — Play: lavender + mascot; Professional: gradient, no mascot. */}
       {isPlay ? (
         <GradientHeader
