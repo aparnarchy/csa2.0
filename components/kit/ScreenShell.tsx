@@ -5,7 +5,9 @@ type NavKey = "inbox" | "insights" | "wisdom" | "profile";
 
 const NAV: { key: NavKey; label: string; href: string; icon: string }[] = [
   { key: "profile",  label: "Profile",  href: "/profile",            icon: "👤" },
-  { key: "insights", label: "Insights", href: "/dashboard/employee", icon: "📊" },
+  // Route through the role-router (same as login) so managers land on the
+  // manager dashboard, CEO/HR on theirs, etc. — not always the employee one.
+  { key: "insights", label: "Insights", href: "/dashboard",          icon: "📊" },
   { key: "wisdom",   label: "Wisdom",   href: "/wisdom",             icon: "📚" },
   { key: "inbox",    label: "Inbox",    href: "/inbox",              icon: "📥" },
 ];
