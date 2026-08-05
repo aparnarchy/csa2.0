@@ -171,14 +171,17 @@ export function QuestionBankView({
 
       {/* Table (scrolls horizontally on narrow screens) */}
       <div className="overflow-x-auto rounded-card border border-lav-mid bg-white shadow-card">
-        <table className="w-full min-w-[760px] border-collapse text-left text-xs">
+        <table className="w-full min-w-[900px] border-collapse text-left text-xs">
           <thead>
             <tr className="border-b border-lav-mid text-[10px] uppercase tracking-wide text-ink-3">
               <Th className="min-w-[220px]">Question</Th>
               <Th>Pillar</Th>
-              <Th className="min-w-[130px]">A</Th>
-              <Th className="min-w-[130px]">B</Th>
-              <Th className="min-w-[130px]">C</Th>
+              <Th className="min-w-[150px]">Option A</Th>
+              <Th className="text-center">Pts</Th>
+              <Th className="min-w-[150px]">Option B</Th>
+              <Th className="text-center">Pts</Th>
+              <Th className="min-w-[150px]">Option C</Th>
+              <Th className="text-center">Pts</Th>
               <Th>Status</Th>
               <Th>Actions</Th>
             </tr>
@@ -186,7 +189,7 @@ export function QuestionBankView({
           <tbody>
             {filtered.length === 0 && (
               <tr>
-                <td colSpan={7} className="px-3 py-6 text-center text-[11px] text-ink-4">
+                <td colSpan={10} className="px-3 py-6 text-center text-[11px] text-ink-4">
                   No questions match.
                 </td>
               </tr>
@@ -204,9 +207,9 @@ export function QuestionBankView({
                     {PILLARS[q.pillarId].label}
                   </span>
                 </td>
-                <OptionCell text={q.optionA_text} score={q.optionA_score} />
-                <OptionCell text={q.optionB_text} score={q.optionB_score} />
-                <OptionCell text={q.optionC_text} score={q.optionC_score} />
+                <OptionCells text={q.optionA_text} score={q.optionA_score} />
+                <OptionCells text={q.optionB_text} score={q.optionB_score} />
+                <OptionCells text={q.optionC_text} score={q.optionC_score} />
                 <td className="px-3 py-2.5">
                   <button
                     type="button"
@@ -264,14 +267,17 @@ function Th({ children, className = "" }: { children: React.ReactNode; className
   return <th className={`px-3 py-2 font-bold ${className}`}>{children}</th>;
 }
 
-function OptionCell({ text, score }: { text: string; score: number }) {
+/** An option's text cell plus its own dedicated score (Pts) cell. */
+function OptionCells({ text, score }: { text: string; score: number }) {
   return (
-    <td className="px-3 py-2.5">
-      <div className="flex items-start gap-1.5">
+    <>
+      <td className="px-3 py-2.5">
         <span className="text-ink-2">{text}</span>
-        <span className="flex-shrink-0 font-display font-black text-brand">{score}</span>
-      </div>
-    </td>
+      </td>
+      <td className="px-3 py-2.5 text-center">
+        <span className="font-display font-black text-brand">{score}</span>
+      </td>
+    </>
   );
 }
 
