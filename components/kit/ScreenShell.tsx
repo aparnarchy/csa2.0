@@ -21,15 +21,19 @@ export function ScreenShell({
   title,
   active,
   headerRight,
+  wide = false,
   children,
 }: {
   title?: string;
   active?: NavKey;
   headerRight?: ReactNode;
+  /** Widen the column on laptops (admin console). Phones are unchanged. */
+  wide?: boolean;
   children: ReactNode;
 }) {
+  const widthCls = wide ? "max-w-md md:max-w-4xl lg:max-w-6xl" : "max-w-md";
   return (
-    <div className="mx-auto flex min-h-screen w-full max-w-md flex-col bg-lav-bg">
+    <div className={`mx-auto flex min-h-screen w-full ${widthCls} flex-col bg-lav-bg`}>
       {title && (
         <header className="sticky top-0 z-10 flex items-center justify-between border-b border-white/40 bg-lav-bg/90 px-5 py-4 backdrop-blur">
           <h1 className="font-display text-xl font-black text-ink">{title}</h1>
@@ -37,7 +41,7 @@ export function ScreenShell({
         </header>
       )}
 
-      <main className="screen-enter flex-1 space-y-3.5 px-4 py-4 pb-24">{children}</main>
+      <main className={`screen-enter flex-1 space-y-3.5 py-4 pb-24 ${wide ? "px-4 md:px-8" : "px-4"}`}>{children}</main>
 
       <nav className="fixed inset-x-0 bottom-0 z-10 mx-auto flex max-w-md items-center justify-around border-t border-white/50 bg-white/95 px-2 py-2 backdrop-blur">
         {NAV.map((item) => {

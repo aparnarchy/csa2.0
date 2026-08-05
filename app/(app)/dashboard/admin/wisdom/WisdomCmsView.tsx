@@ -78,7 +78,7 @@ export function WisdomCmsView({
   const byLevel = LEVELS.map((lvl) => ({ lvl, items: modules.filter((m) => m.level === lvl) }));
 
   return (
-    <ScreenShell>
+    <ScreenShell wide>
       {isPlay ? (
         <div className="rounded-card bg-lav-bg px-5 py-5">
           <BackBtn onClick={() => router.push("/dashboard/admin")} />

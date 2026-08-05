@@ -61,7 +61,7 @@ export function OrgStructureView({
   }
 
   return (
-    <ScreenShell>
+    <ScreenShell wide>
       {isPlay ? (
         <div className="rounded-card bg-lav-bg px-5 py-5">
           <BackBtn onClick={() => router.push("/dashboard/admin")} />
