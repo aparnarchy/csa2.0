@@ -2,7 +2,7 @@ export const runtime = "edge";
 
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth-session";
-import { getDueCheckIns, getOpenRecommendation, getUnansweredCheckIns } from "@/lib/checkins";
+import { getDueCheckIns, getReturnCheckIn, getUnansweredCheckIns } from "@/lib/checkins";
 import { CheckInSession } from "./CheckInSession";
 
 export default async function CheckInPage() {
@@ -11,7 +11,7 @@ export default async function CheckInPage() {
 
   const [unanswered, openRec, due] = await Promise.all([
     getUnansweredCheckIns(session.user, session.user.id),
-    getOpenRecommendation(session.user, session.user.id),
+    getReturnCheckIn(session.user, session.user.id),
     getDueCheckIns(session.user, session.user.id),
   ]);
 

@@ -14,7 +14,7 @@ import { getDB } from "./db";
 import { assertOwner } from "./access-control";
 import { getSampleRecommendation } from "./data";
 import { ensureUserAssignments, ensureActiveWeek } from "./scheduler";
-import type { CheckInQuestion, LatestCheckIn, OpenRecommendation } from "./data";
+import type { CheckInQuestion, LatestCheckIn, OpenRecommendation, Reflection } from "./data";
 import type { FollowUpStatus, PillarId, SessionUser } from "./types";
 
 /** A question row joined to its assignment (assignmentId, weekId, startDate). */
@@ -319,6 +319,80 @@ export async function getOpenRecommendation(
   };
 }
 
+/** Days between return check-ins — it should feel like a gentle nudge, not a nag. */
+const RETURN_CHECKIN_COOLDOWN_DAYS = 2;
+
+/**
+ * The return check-in to show right now — the open recommendation from
+ * getOpenRecommendation, but only if the user hasn't answered a return check-in
+ * within the last couple of days (so it appears at most once every
+ * RETURN_CHECKIN_COOLDOWN_DAYS rather than on every app open). Own data only.
+ */
+export async function getReturnCheckIn(
+  session: SessionUser,
+  userId: string,
+): Promise<OpenRecommendation | null> {
+  assertOwner(session, userId);
+  const db = getDB();
+  const recent = await db
+    .prepare(
+      `SELECT 1 AS x FROM checkIns
+        WHERE userId = ? AND followUpAt IS NOT NULL
+          AND followUpAt > datetime('now', ?)
+        LIMIT 1`,
+    )
+    .bind(userId, `-${RETURN_CHECKIN_COOLDOWN_DAYS} days`)
+    .first<{ x: number }>();
+  if (recent) return null; // answered one within the cooldown window — hold off
+  return getOpenRecommendation(session, userId);
+}
+
+/**
+ * The user's own follow-up reflections (the "what did you do" notes saved from a
+ * return check-in), newest first, for the Inbox. Author-only — journal entries
+ * are never shown to anyone else. Own data only.
+ */
+export async function getReflections(
+  session: SessionUser,
+  userId: string,
+): Promise<Reflection[]> {
+  assertOwner(session, userId);
+  const db = getDB();
+  const { results } = await db
+    .prepare(
+      `SELECT j.id AS id, j.text AS text, j.submittedAt AS submittedAt,
+              q.text AS questionText, q.pillarId AS pillarId
+         FROM journalEntries j
+         LEFT JOIN questions q ON q.id = j.questionId
+        WHERE j.userId = ? AND j.type = 'follow_up'
+        ORDER BY j.submittedAt DESC
+        LIMIT 20`,
+    )
+    .bind(userId)
+    .all<{
+      id: string;
+      text: string;
+      submittedAt: string;
+      questionText: string | null;
+      pillarId: PillarId | null;
+    }>();
+  return results.map((r) => ({
+    id: r.id,
+    text: r.text,
+    dateLabel: dayLabel(r.submittedAt),
+    pillarId: r.pillarId,
+    questionText: r.questionText,
+  }));
+}
+
+/** "2026-08-06 10:12:00" → "6 Aug 2026" for a reflection's date line. */
+function dayLabel(ts: string): string {
+  const datePart = (ts || "").slice(0, 10);
+  const [y, m, d] = datePart.split("-");
+  const mi = Number(m) - 1;
+  return MONTHS[mi] ? `${Number(d)} ${MONTHS[mi].slice(0, 3)} ${y}` : datePart;
+}
+
 /**
  * Record whether the user acted on a past recommendation. Sets followUpStatus on
  * the matching low-score check-in; "acted" with a note also saves a private
@@ -342,7 +416,7 @@ export async function submitFollowUp(
   if (!target) return;
 
   await db
-    .prepare("UPDATE checkIns SET followUpStatus = ? WHERE id = ?")
+    .prepare("UPDATE checkIns SET followUpStatus = ?, followUpAt = datetime('now') WHERE id = ?")
     .bind(input.status, target.id)
     .run();
 

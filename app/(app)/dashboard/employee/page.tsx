@@ -3,7 +3,7 @@ export const runtime = "edge";
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth-session";
 import { getEmployeeScores } from "@/lib/scores";
-import { getDueCheckIns, getUnansweredCheckIns, getOpenRecommendation } from "@/lib/checkins";
+import { getDueCheckIns, getUnansweredCheckIns, getReturnCheckIn } from "@/lib/checkins";
 import { AnalysisView } from "./AnalysisView";
 
 export default async function EmployeeDashboard() {
@@ -18,12 +18,12 @@ export default async function EmployeeDashboard() {
   // return check-in appears even in a week the user has already answered, rather
   // than being skipped straight to the dashboard). getDueCheckIns also self-heals
   // the week + assignments. Nothing to do → straight to the dashboard below.
-  const [due, unanswered, openRec] = await Promise.all([
+  const [due, unanswered, returnCheckIn] = await Promise.all([
     getDueCheckIns(session.user, session.user.id),
     getUnansweredCheckIns(session.user, session.user.id),
-    getOpenRecommendation(session.user, session.user.id),
+    getReturnCheckIn(session.user, session.user.id),
   ]);
-  if (due.length > 0 || unanswered.length > 0 || openRec) redirect("/check-in");
+  if (due.length > 0 || unanswered.length > 0 || returnCheckIn) redirect("/check-in");
 
   // Nothing due — show the dashboard. (Access-control guards run in the layer.)
   const initial = await getEmployeeScores(session.user, session.user.id, "3M");

@@ -354,6 +354,15 @@ export interface CheckInQuestion {
   weekLabel?: string; // for catch-up questions, e.g. "June 2026"
 }
 
+/** One saved follow-up reflection (the "what did you do" note), for the Inbox. */
+export interface Reflection {
+  id: string;
+  text: string;
+  dateLabel: string;
+  pillarId: PillarId | null;
+  questionText: string | null;
+}
+
 // NOTE: getDueCheckIns, getUnansweredCheckIns, submitCheckIn, skipCheckIn and
 // getLatestCheckIn now have REAL D1 implementations in lib/checkins.ts
 // (server-only). The types (CheckInQuestion, LatestCheckIn, …) stay here so

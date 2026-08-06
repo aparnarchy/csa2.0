@@ -10,6 +10,7 @@ import {
   type CheckInQuestion,
   type FeedbackAction,
   type LatestCheckIn,
+  type Reflection,
 } from "@/lib/data";
 import type { SessionUser } from "@/lib/types";
 import { COPY, fill } from "@/lib/copy";
@@ -28,12 +29,14 @@ export function InboxView({
   unanswered,
   actions,
   history,
+  reflections,
 }: {
   session: SessionUser;
   latest: LatestCheckIn | null;
   unanswered: CheckInQuestion[];
   actions: FeedbackAction[];
   history: ActionHistoryItem[];
+  reflections: Reflection[];
 }) {
   const [showHistory, setShowHistory] = useState(false);
   const isPlay = session.themeMode === "play";
@@ -78,6 +81,8 @@ export function InboxView({
       <UnansweredCard questions={unanswered} />
 
       <FeedbackActionsCard actions={actions} />
+
+      {reflections.length > 0 && <ReflectionsCard reflections={reflections} />}
 
       {history.length > 0 && (
         <button
@@ -262,6 +267,35 @@ function UnansweredCard({ questions }: { questions: CheckInQuestion[] }) {
           {COPY.inbox.allAnsweredNote}
         </p>
       )}
+    </Card>
+  );
+}
+
+// ── Your reflections (private follow-up notes) ───────────────────────────────
+function ReflectionsCard({ reflections }: { reflections: Reflection[] }) {
+  return (
+    <Card>
+      <p className="text-[11px] font-bold uppercase tracking-wide text-brand">Your reflections</p>
+      <p className="mt-1 text-[11px] text-ink-4">
+        Private notes from your return check-ins — only you can see these.
+      </p>
+      <div className="mt-3 space-y-3">
+        {reflections.map((r) => (
+          <div key={r.id} className="rounded-2xl border border-gray-200 bg-white p-3.5">
+            <div className="flex items-center justify-between gap-2">
+              {r.questionText ? (
+                <p className="min-w-0 flex-1 truncate text-[11px] font-semibold text-ink-3">
+                  {r.questionText}
+                </p>
+              ) : (
+                <span />
+              )}
+              <span className="flex-shrink-0 text-[11px] text-ink-4">{r.dateLabel}</span>
+            </div>
+            <p className="mt-1.5 text-[13px] leading-relaxed text-ink-2">&ldquo;{r.text}&rdquo;</p>
+          </div>
+        ))}
+      </div>
     </Card>
   );
 }
