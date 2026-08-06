@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Card, GradientHeader, Mascot, ScreenShell } from "@/components/kit";
 import { HEADER_MASCOT_SIZE } from "@/lib/mascot";
 import {
@@ -583,6 +583,14 @@ function HistoryView({
   onBack: () => void;
 }) {
   const isEmpty = history.length === 0 && recommendationHistory.length === 0;
+
+  // Swapping to this screen doesn't navigate (no new page/URL), so the browser
+  // keeps whatever scroll position the Inbox was at — reset to the top so the
+  // history screen always opens from its own header, not mid-scroll.
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   return (
     <ScreenShell title={COPY.inbox.historyTitle} active="inbox">
       <button type="button" onClick={onBack} className="px-1 text-sm font-bold text-brand active:scale-[0.99]">
