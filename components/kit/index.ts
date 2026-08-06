@@ -16,5 +16,7 @@ export { InsightBarRow } from "./InsightBarRow";
 export { RecommendationCard } from "./RecommendationCard";
 export { NotEnoughData } from "./NotEnoughData";
 export { OptionCard } from "./OptionCard";
+export { MonthYearField } from "./MonthYearField";
+export { SwipeToDelete } from "./SwipeToDelete";
 export { AIInsight } from "./AIInsight";
 export { Modal } from "./Modal";

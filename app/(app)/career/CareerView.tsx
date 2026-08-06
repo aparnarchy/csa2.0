@@ -11,6 +11,7 @@ import {
   PillarCard,
   ScreenShell,
   SegmentedToggle,
+  SwipeToDelete,
   TrendChart,
 } from "@/components/kit";
 import { COPY, fill } from "@/lib/copy";
@@ -103,18 +104,16 @@ export function CareerView({ history }: { history: CareerHistory }) {
         <p className="mt-2 text-sm font-bold text-brand-light">{fill(COPY.career.acrossSummary, { tenure: history.tenure, count: history.companies.length })}</p>
       </div>
 
-      {/* Company list. The remove button is a SIBLING of the card, not inside
-          it — a button can't be nested in a button, and sitting it beside the
-          card keeps it clear of the company name. Only past companies get one:
-          the current company comes from employment, so there's nothing to
-          remove. */}
+      {/* Company list. Past companies: swipe left (or long-press) to reveal
+          Delete — the current company comes from employment, so there's
+          nothing to remove and it's rendered plainly, no swipe. */}
       <div className="space-y-2">
-        {history.companies.map((c) => (
-          <div key={c.id} className="flex items-stretch gap-2">
+        {history.companies.map((c) => {
+          const row = (
             <button
               type="button"
               onClick={() => setOpenId(c.id)}
-              className="flex min-w-0 flex-1 items-center justify-between rounded-card bg-white p-4 text-left shadow-card transition active:scale-[0.99]"
+              className="flex w-full min-w-0 items-center justify-between rounded-card bg-white p-4 text-left shadow-card transition active:scale-[0.99]"
             >
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
@@ -133,19 +132,19 @@ export function CareerView({ history }: { history: CareerHistory }) {
                 <span className="text-xl text-ink-4">›</span>
               </div>
             </button>
+          );
 
-            {!c.current && (
-              <button
-                type="button"
-                onClick={() => setPendingDelete({ id: c.id, company: c.company })}
-                aria-label={fill(COPY.career.deleteAria, { company: c.company })}
-                className="flex w-11 flex-shrink-0 items-center justify-center rounded-card bg-white text-lg text-ink-4 shadow-card transition active:scale-95"
-              >
-                ✕
-              </button>
-            )}
-          </div>
-        ))}
+          if (c.current) return <div key={c.id}>{row}</div>;
+          return (
+            <SwipeToDelete
+              key={c.id}
+              deleteLabel="Delete"
+              onDelete={() => setPendingDelete({ id: c.id, company: c.company })}
+            >
+              {row}
+            </SwipeToDelete>
+          );
+        })}
       </div>
 
       {/* Questionnaire prompt — loud when there's no past company yet, quiet

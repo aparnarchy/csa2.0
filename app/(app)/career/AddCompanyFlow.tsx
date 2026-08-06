@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Mascot, OptionCard } from "@/components/kit";
+import { Mascot, MonthYearField, OptionCard } from "@/components/kit";
 import { COPY, fill } from "@/lib/copy";
 import type { CareerQuestion } from "@/lib/career";
 import { addCareerCompanyAction, getCareerQuestionsAction } from "./actions";
@@ -117,25 +117,19 @@ export function AddCompanyFlow({ onDone, onCancel }: { onDone: () => void; onCan
               value={details.role}
               onChange={(e) => setDetails({ ...details, role: e.target.value })}
             />
-            <div className="flex gap-3">
-              <label className="flex-1">
-                <span className="mb-1 block text-xs font-semibold text-ink-3">{t.startLabel}</span>
-                <input
-                  type="month"
-                  className={INPUT}
-                  value={details.startDate.slice(0, 7)}
-                  onChange={(e) => setDetails({ ...details, startDate: `${e.target.value}-01` })}
-                />
-              </label>
-              <label className="flex-1">
-                <span className="mb-1 block text-xs font-semibold text-ink-3">{t.endLabel}</span>
-                <input
-                  type="month"
-                  className={INPUT}
-                  value={details.endDate.slice(0, 7)}
-                  onChange={(e) => setDetails({ ...details, endDate: `${e.target.value}-01` })}
-                />
-              </label>
+            <div className="grid grid-cols-2 gap-3">
+              <MonthYearField
+                label={t.startLabel}
+                placeholder="Select"
+                value={details.startDate}
+                onChange={(v) => setDetails({ ...details, startDate: v })}
+              />
+              <MonthYearField
+                label={t.endLabel}
+                placeholder="Select"
+                value={details.endDate}
+                onChange={(v) => setDetails({ ...details, endDate: v })}
+              />
             </div>
           </div>
 
