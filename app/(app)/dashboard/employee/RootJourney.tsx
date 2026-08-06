@@ -97,8 +97,8 @@ export function RootJourney({
     <div
       onClick={go}
       onWheel={onWheel}
-      className="fixed inset-x-0 top-0 z-[60] h-[100dvh] select-none overflow-hidden text-white"
-      style={{ background: "linear-gradient(180deg, #211746 0%, #130C32 55%, #090619 100%)" }}
+      className="fixed inset-x-0 top-0 z-[60] h-[100dvh] select-none overflow-hidden text-ink"
+      style={{ background: "linear-gradient(180deg, #f4f2ff 0%, #eae8ff 55%, #e1ddff 100%)" }}
     >
       <button
         type="button"
@@ -106,7 +106,7 @@ export function RootJourney({
           e.stopPropagation();
           onClose();
         }}
-        className="absolute right-4 z-30 flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-lg text-white/80 active:scale-90"
+        className="absolute right-4 z-30 flex h-9 w-9 items-center justify-center rounded-full bg-white text-lg text-ink-3 shadow-card active:scale-90"
         style={{ top: "calc(env(safe-area-inset-top) + 0.75rem)" }}
         aria-label="Close"
       >
@@ -122,7 +122,7 @@ export function RootJourney({
           <path
             d={nodes.map((_, i) => `${i ? "L" : "M"} ${pos(i).x} ${pos(i).y}`).join(" ")}
             fill="none"
-            stroke="rgba(179,136,255,0.4)"
+            stroke="rgba(124,111,255,0.35)"
             strokeWidth={3}
             strokeDasharray="2 13"
             strokeLinecap="round"
@@ -137,14 +137,14 @@ export function RootJourney({
             style={{ left: pos(i).x, top: pos(i).y }}
           >
             {i === lastIndex - 1 && (
-              <span className="siren mx-auto mb-6 block h-3 w-3 rounded-full bg-red-400/90" />
+              <span className="siren mx-auto mb-6 block h-3 w-3 rounded-full bg-bad" />
             )}
-            <p className="mb-3 text-[11px] font-bold uppercase tracking-[0.2em] text-white/45">
+            <p className="mb-3 text-[11px] font-bold uppercase tracking-[0.2em] text-ink-3">
               {n.depthLabel} · {i + 1}/{nodes.length}
             </p>
-            <h2 className="font-display text-[30px] font-black leading-tight">{n.title}</h2>
-            <p className="mt-4 text-base leading-relaxed text-white/80">{n.body}</p>
-            {n.evidence && <p className="mt-4 text-xs italic leading-relaxed text-white/45">{n.evidence}</p>}
+            <h2 className="font-display text-[30px] font-black leading-tight text-ink">{n.title}</h2>
+            <p className="mt-4 text-base leading-relaxed text-ink-2">{n.body}</p>
+            {n.evidence && <p className="mt-4 text-xs italic leading-relaxed text-ink-3">{n.evidence}</p>}
           </div>
         ))}
 
@@ -155,12 +155,12 @@ export function RootJourney({
           style={{ left: pos(lastIndex).x, top: pos(lastIndex).y }}
         >
           <p className="text-5xl">🌱</p>
-          <h2 className="mt-2 font-display text-[26px] font-black leading-tight">We found the root!</h2>
+          <h2 className="mt-2 font-display text-[26px] font-black leading-tight text-brand">We found the root!</h2>
         </div>
       </div>
 
       {level < lastIndex && (
-        <div className="mascot-float pointer-events-none absolute bottom-10 left-0 right-0 text-center text-sm font-semibold text-white/55">
+        <div className="mascot-float pointer-events-none absolute bottom-10 left-0 right-0 text-center text-sm font-semibold text-ink-3">
           {level >= lastIndex - 1 ? "tap to reveal the root ↓" : "tap to travel deeper ↓"}
         </div>
       )}
@@ -171,35 +171,35 @@ export function RootJourney({
         <div
           onClick={(e) => e.stopPropagation()}
           onWheel={(e) => e.stopPropagation()}
-          className="screen-enter absolute inset-0 z-[62] overflow-y-auto"
-          style={{ background: "linear-gradient(180deg, #211746 0%, #130C32 60%, #090619 100%)" }}
+          className="screen-enter absolute inset-0 z-[62] overflow-y-auto text-ink"
+          style={{ background: "linear-gradient(180deg, #f4f2ff 0%, #eae8ff 60%, #e1ddff 100%)" }}
         >
           <div
             className="mx-auto w-full max-w-md px-6 pb-10"
             style={{ paddingTop: "calc(env(safe-area-inset-top) + 32px)" }}
           >
             <p className="text-center text-5xl">🌱</p>
-            <h2 className="mt-3 text-center font-display text-[26px] font-black leading-tight">
+            <h2 className="mt-3 text-center font-display text-[26px] font-black leading-tight text-brand">
               We found the root!
             </h2>
-            <p className="mt-3 text-center text-sm leading-relaxed text-white/85">{root.body}</p>
+            <p className="mt-3 text-center text-sm leading-relaxed text-ink-2">{root.body}</p>
             {root.evidence && (
-              <p className="mt-2 text-center text-xs italic leading-relaxed text-white/45">{root.evidence}</p>
+              <p className="mt-2 text-center text-xs italic leading-relaxed text-ink-3">{root.evidence}</p>
             )}
 
-            <p className="mt-6 text-xs font-bold uppercase tracking-wide text-[#B388FF]">💡 Do this today</p>
+            <p className="mt-6 text-xs font-bold uppercase tracking-wide text-brand">💡 Do this today</p>
             <div className="mt-2 space-y-2">
               {analysis.actions.map((a, i) => (
-                <div key={i} className="flex gap-3 rounded-2xl bg-white/10 p-3.5">
-                  <span className="font-display text-sm font-black text-[#B388FF]">{i + 1}</span>
-                  <p className="text-sm leading-relaxed text-white/90">{a}</p>
+                <div key={i} className="flex gap-3 rounded-2xl bg-white p-3.5 shadow-card">
+                  <span className="font-display text-sm font-black text-brand">{i + 1}</span>
+                  <p className="text-sm leading-relaxed text-ink-2">{a}</p>
                 </div>
               ))}
             </div>
 
-            <div className="mt-4 rounded-2xl bg-white/5 p-4">
-              <p className="mb-1 text-[10px] font-bold uppercase tracking-wide text-white/45">Why it&apos;s worth it</p>
-              <p className="text-sm leading-relaxed text-white/80">{analysis.payoff}</p>
+            <div className="mt-4 rounded-2xl bg-lav-soft p-4">
+              <p className="mb-1 text-[10px] font-bold uppercase tracking-wide text-ink-3">Why it&apos;s worth it</p>
+              <p className="text-sm leading-relaxed text-ink-2">{analysis.payoff}</p>
             </div>
 
             <button
@@ -208,7 +208,7 @@ export function RootJourney({
                 e.stopPropagation();
                 onClose();
               }}
-              className="mt-6 w-full rounded-2xl bg-white py-3.5 font-display text-sm font-black text-brand active:scale-[0.98]"
+              className="mt-6 w-full rounded-2xl bg-brand py-3.5 font-display text-sm font-black text-white active:scale-[0.98]"
             >
               Back to my dashboard
             </button>

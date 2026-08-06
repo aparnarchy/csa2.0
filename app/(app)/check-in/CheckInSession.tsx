@@ -63,11 +63,31 @@ export function CheckInSession({
     return <ReturnCheckIn rec={openRec} onDone={() => setPhase("done")} />;
   }
 
-  // Done — a short confirmation, then the dashboard.
+  // Done — a short confirmation (reached automatically after the last answer),
+  // then the dashboard. A back arrow returns to the previous step if the user
+  // wants to change an answer.
   const first = (session.name || "there").trim().split(/\s+/)[0];
   const didAnything = due.length > 0 || unanswered.length > 0;
+  const prevPhase: Phase | null = openRec
+    ? "followup"
+    : unanswered.length
+      ? "catchup"
+      : due.length
+        ? "fresh"
+        : null;
+
   return (
-    <div className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col items-center justify-center gap-5 bg-lav-bg px-8 text-center">
+    <div className="screen-enter relative mx-auto flex min-h-[100dvh] w-full max-w-md flex-col items-center justify-center gap-5 bg-lav-bg px-8 text-center">
+      {prevPhase && (
+        <button
+          type="button"
+          onClick={() => setPhase(prevPhase)}
+          aria-label="Back"
+          className="absolute left-4 top-5 flex h-9 w-9 items-center justify-center rounded-full text-2xl leading-none text-ink-4 transition active:scale-90"
+        >
+          ‹
+        </button>
+      )}
       <Mascot state="happy" size={150} />
       <div>
         <h1 className="font-display text-2xl font-black text-brand">

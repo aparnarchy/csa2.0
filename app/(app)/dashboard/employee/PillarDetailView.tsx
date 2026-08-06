@@ -28,7 +28,7 @@ export function PillarDetailView({
 }) {
   const meta = PILLARS[pillarId];
   const [window, setWindow] = useState<Window>("3M");
-  const [tab, setTab] = useState<"strengths" | "concerns">("concerns");
+  const [tab, setTab] = useState<"strengths" | "concerns">("strengths");
   const [detail, setDetail] = useState<Detail | null>(null);
   /** Accordion: at most one question row is expanded at a time. */
   const [openId, setOpenId] = useState<string | null>(null);

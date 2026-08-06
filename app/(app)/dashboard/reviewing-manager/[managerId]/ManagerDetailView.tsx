@@ -33,7 +33,7 @@ export function ManagerDetailView({
   const [window, setWindow] = useState<Window>("3M");
   const [data, setData] = useState<ManagerDetail>(initial);
   const [aiText, setAiText] = useState<string | null>(initialInsight);
-  const [highLow, setHighLow] = useState<HighLow>("low");
+  const [highLow, setHighLow] = useState<HighLow>("high");
 
   useEffect(() => {
     getReviewingManagerDetailAction(initial.managerId, window).then(setData);

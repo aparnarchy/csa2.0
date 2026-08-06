@@ -38,7 +38,7 @@ export function AnalysisView({
   const router = useRouter();
   const [window, setWindow] = useState<Window>("3M");
   const [data, setData] = useState<EmployeeScores>(initial);
-  const [tab, setTab] = useState<Tab>("concerns");
+  const [tab, setTab] = useState<Tab>("strengths");
   const [selectedPillar, setSelectedPillar] = useState<PillarId | null>(null);
   const [showRoot, setShowRoot] = useState(false);
   /** Accordion: at most one question row is expanded at a time. */

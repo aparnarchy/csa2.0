@@ -1,19 +1,21 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { getSampleRecommendation, type CheckInQuestion } from "@/lib/data";
 import { COPY } from "@/lib/copy";
 import { skipCheckInAction, submitCheckInAction } from "./actions";
 
 const t = COPY.catchup;
 
+const LEAVE_MS = 280; // matches the .q-leave animation
+const HIGHLIGHT_MS = 200;
+
 /**
  * Catch-up on questions missed in earlier weeks — presented as a CAROUSEL (dots +
  * ‹ › arrows) so it reads clearly differently from this week's full-screen check-in
  * and never feels like the same questions again. Tapping an answer records it
- * (retrospective — excluded from the streak) and auto-advances; "Skip" retires it
- * from the list. "Done" (or answering/skipping the last one) hands back to the
- * session, which continues to the dashboard.
+ * (retrospective — excluded from the streak) and glides to the next; "Skip"
+ * retires it. "Done" (or the final card) hands back to the session → dashboard.
  */
 export function CatchUpFlow({
   questions,
@@ -24,7 +26,9 @@ export function CatchUpFlow({
 }) {
   const [idx, setIdx] = useState(0);
   const [answers, setAnswers] = useState<Record<string, { key: string; score: number }>>({});
-  const timer = useRef<number | null>(null);
+  const [leaving, setLeaving] = useState(false);
+  const beat = useRef<number | null>(null);
+  const leave = useRef<number | null>(null);
 
   const total = questions.length;
   const q = questions[idx];
@@ -32,29 +36,40 @@ export function CatchUpFlow({
   const answeredCount = Object.keys(answers).length;
   const allDone = answeredCount >= total;
 
-  function clearTimer() {
-    if (timer.current) {
-      window.clearTimeout(timer.current);
-      timer.current = null;
-    }
+  function clearTimers() {
+    if (beat.current) window.clearTimeout(beat.current);
+    if (leave.current) window.clearTimeout(leave.current);
+    beat.current = leave.current = null;
   }
+  useEffect(() => () => clearTimers(), []);
 
-  function step() {
-    clearTimer();
-    if (idx + 1 < total) setIdx(idx + 1);
+  function transitionTo(step: () => void) {
+    clearTimers();
+    setLeaving(true);
+    leave.current = window.setTimeout(() => {
+      setLeaving(false);
+      step();
+    }, LEAVE_MS);
   }
 
   function pick(key: string, score: number) {
+    if (leaving) return;
     setAnswers((a) => ({ ...a, [q.assignmentId]: { key, score } }));
     void submitCheckInAction(q.assignmentId, score); // retrospective (derived server-side)
-    clearTimer();
-    timer.current = window.setTimeout(step, 300);
+    // glide to the next unanswered one; on the last card, stay (Done finishes).
+    if (idx + 1 < total) {
+      clearTimers();
+      beat.current = window.setTimeout(() => transitionTo(() => setIdx(idx + 1)), HIGHLIGHT_MS);
+    }
   }
 
   function skip() {
-    void skipCheckInAction(q.assignmentId);
-    if (idx + 1 < total) setIdx(idx + 1);
-    else onDone();
+    if (leaving) return;
+    void skipCheckInAction(q.assignmentId); // retire it from the pending list
+    transitionTo(() => {
+      if (idx + 1 < total) setIdx(idx + 1);
+      else onDone();
+    });
   }
 
   return (
@@ -84,11 +99,11 @@ export function CatchUpFlow({
         ))}
       </div>
 
-      {/* the card */}
+      {/* the card — glides in/out on change */}
       <div className="mt-4 flex flex-1 flex-col justify-center">
         <div
           key={idx}
-          className={`screen-enter rounded-card border p-4 shadow-card transition ${
+          className={`${leaving ? "q-leave" : "q-enter"} rounded-card border p-4 shadow-card ${
             selected ? "border-good bg-good/5" : "border-transparent bg-white"
           }`}
         >
@@ -149,19 +164,16 @@ export function CatchUpFlow({
         <div className="mt-4 flex items-center justify-between">
           <NavArrow
             dir="prev"
-            disabled={idx === 0}
-            onClick={() => {
-              clearTimer();
-              if (idx > 0) setIdx(idx - 1);
-            }}
+            disabled={idx === 0 || leaving}
+            onClick={() => transitionTo(() => setIdx(idx - 1))}
           />
           <span className="text-xs font-semibold text-ink-3">
             {idx + 1} of {total}
           </span>
           <NavArrow
             dir="next"
-            disabled={idx + 1 >= total}
-            onClick={step}
+            disabled={idx + 1 >= total || leaving}
+            onClick={() => transitionTo(() => setIdx(idx + 1))}
           />
         </div>
       </div>

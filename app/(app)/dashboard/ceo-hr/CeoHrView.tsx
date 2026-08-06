@@ -41,7 +41,7 @@ export function CeoHrView({
   const [scope, setScope] = useState<string>(initial.scope);
   const [data, setData] = useState<CeoDashboard>(initial);
   const [aiText, setAiText] = useState<string | null>(initialInsight);
-  const [highLow, setHighLow] = useState<HighLow>("low");
+  const [highLow, setHighLow] = useState<HighLow>("high");
 
   // Scope or time-window change recomputes the whole aggregate via a server action
   // (real D1). Privacy + the anonymisation floor live server-side.
