@@ -97,8 +97,8 @@ export function ManagerDetailView({
                   value={highLow}
                   onChange={setHighLow}
                   options={[
-                    { value: "low", label: "Watch-outs" },
                     { value: "high", label: "Strengths" },
+                    { value: "low", label: "Watch-outs" },
                   ]}
                 />
               </div>

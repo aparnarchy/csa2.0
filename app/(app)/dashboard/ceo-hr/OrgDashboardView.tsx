@@ -77,23 +77,29 @@ export function OrgDashboardView({
         </div>
       )}
 
-      {/* Overall company happiness score */}
+      {/* Overall company happiness score — BigScore already carries its own
+          "Overall Happiness" caption, so no separate label above it (that was
+          the duplicate). */}
       <Card>
-        <div className="flex items-center justify-between gap-2">
-          <p className="min-w-0 flex-1 text-[11px] font-medium uppercase tracking-wider text-brand">
-            Overall happiness
-          </p>
-          <CustomDropdown value={window} onChange={(v) => setWindow(v as Window)} options={TIME_OPTS} align="right" />
+        <div className="flex items-start justify-between gap-2">
+          <div className="min-w-0 flex-1">
+            {!org.enoughData || org.score === null ? (
+              <p className="text-xs text-ink-3">{org.reason}</p>
+            ) : (
+              <BigScore score={org.score} />
+            )}
+          </div>
+          <div className="flex flex-shrink-0 flex-col items-end gap-2">
+            <CustomDropdown value={window} onChange={(v) => setWindow(v as Window)} options={TIME_OPTS} align="right" />
+            {isPlay && org.enoughData && org.score !== null && (
+              <Mascot state={mascotForScore(org.score, true)} size={72} float={false} sparkle={false} />
+            )}
+          </div>
         </div>
-        {!org.enoughData || org.score === null ? (
-          <p className="mt-2 text-xs text-ink-3">{org.reason}</p>
-        ) : (
-          <>
-            <BigScore score={org.score} />
-            <p className="mt-1 text-xs text-ink-3">
-              {org.peopleCount} people · {org.percentile}th percentile
-            </p>
-          </>
+        {org.enoughData && org.score !== null && (
+          <p className="mt-1 text-xs text-ink-3">
+            {org.peopleCount} people · {org.percentile}th percentile
+          </p>
         )}
       </Card>
 

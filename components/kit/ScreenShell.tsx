@@ -51,7 +51,7 @@ export function ScreenShell({
   children: ReactNode;
 }) {
   const nav = navItems ?? NAV;
-  const widthCls = wide ? "max-w-md md:max-w-4xl lg:max-w-6xl" : "max-w-md";
+  const widthCls = wide ? "max-w-md md:max-w-4xl lg:max-w-6xl xl:max-w-[1400px]" : "max-w-md";
   return (
     <div className={`mx-auto flex min-h-screen w-full ${widthCls} flex-col bg-lav-bg`}>
       {title && (

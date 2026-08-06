@@ -89,7 +89,7 @@ export function ManagerInboxView({ session, initial }: { session: SessionUser; i
   }
 
   return (
-    <ScreenShell active="insights">
+    <ScreenShell active="inbox">
       <button
         type="button"
         onClick={() => router.push("/dashboard/manager")}

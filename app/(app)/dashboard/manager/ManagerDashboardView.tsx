@@ -168,28 +168,10 @@ export function ManagerDashboardView({
           </Card>
 
           {/* AI insight (team) — LLM summary of the aggregates, cached in D1.
-              Play adds the mascot alongside it, matching the employee
-              dashboard's insight-box treatment. */}
-          {isPlay ? (
-            <div className="rounded-card border-2 border-brand/20 bg-white p-4 shadow-[0_8px_24px_-8px_rgba(124,111,255,0.45)]">
-              <div className="flex items-start gap-3.5">
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <span className="text-lg" aria-hidden>✨</span>
-                    <span className="text-[11px] font-bold uppercase tracking-wide text-brand">
-                      {COPY.shared.aiInsightTitle}
-                    </span>
-                  </div>
-                  <p className="mt-2 font-display text-[17px] font-black leading-snug text-brand">
-                    {aiText ?? COPY.shared.aiInsightFallback}
-                  </p>
-                </div>
-                <Mascot state={mascotForScore(data.teamScore, true)} size={101} sparkle={false} float={false} />
-              </div>
-            </div>
-          ) : (
-            <AIInsight text={aiText ?? undefined} />
-          )}
+              The mascot next to it was a mismatch (its mood is score-based
+              and often didn't match the insight's actual content) — dropped,
+              same shared box as every other dashboard now. */}
+          <AIInsight text={aiText ?? undefined} />
 
           {/* Recommendations — one per low pillar, weakest first */}
           {lowPillars.length > 0 && (
@@ -209,7 +191,7 @@ export function ManagerDashboardView({
               </div>
               <button
                 type="button"
-                onClick={() => router.push("/dashboard/manager/inbox")}
+                onClick={() => router.push("/inbox")}
                 className="mt-4 w-full rounded-2xl bg-brand py-3 font-display text-sm font-black text-white transition active:scale-[0.98]"
               >
                 {COPY.managerDashboard.openActionInbox}
