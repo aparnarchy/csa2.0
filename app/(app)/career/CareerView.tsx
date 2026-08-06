@@ -232,7 +232,7 @@ export function CareerView({ history }: { history: CareerHistory }) {
  * drawn empty.
  */
 function CompanyDetailView({ detail, onBack }: { detail: CompanyDetail; onBack: () => void }) {
-  const [tab, setTab] = useState<"strengths" | "concerns">("concerns");
+  const [tab, setTab] = useState<"strengths" | "concerns">("strengths");
   const [openId, setOpenId] = useState<string | null>(null);
   const rows = tab === "strengths" ? detail.strengths : detail.concerns;
 

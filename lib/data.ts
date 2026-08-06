@@ -382,6 +382,22 @@ export interface OpenRecommendation {
   weekLabel: string; // e.g. "Apr 2026"
 }
 
+/** One row in the Inbox's "recommendations to act on" list (same shape as
+    OpenRecommendation — a distinct alias since the Inbox lists ALL open ones,
+    not just the single oldest used to gate the return check-in). */
+export type OpenRecommendationItem = OpenRecommendation;
+
+/** A recommendation the user has already responded to, for the Inbox history. */
+export interface RecommendationHistoryItem {
+  questionId: string;
+  pillarId: PillarId;
+  questionText: string;
+  recommendation: string;
+  status: FollowUpStatus;
+  weekLabel: string;
+  respondedAtLabel: string; // e.g. "6 Aug 2026"
+}
+
 /**
  * The single oldest unacted low-score recommendation for this user, or null if
  * there's nothing to follow up on. Own data only. Sample for now; the real D1

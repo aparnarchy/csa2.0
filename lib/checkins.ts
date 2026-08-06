@@ -14,7 +14,14 @@ import { getDB } from "./db";
 import { assertOwner } from "./access-control";
 import { getSampleRecommendation } from "./data";
 import { ensureUserAssignments, ensureActiveWeek } from "./scheduler";
-import type { CheckInQuestion, LatestCheckIn, OpenRecommendation, Reflection } from "./data";
+import type {
+  CheckInQuestion,
+  LatestCheckIn,
+  OpenRecommendation,
+  OpenRecommendationItem,
+  Reflection,
+  RecommendationHistoryItem,
+} from "./data";
 import type { FollowUpStatus, PillarId, SessionUser } from "./types";
 
 /** A question row joined to its assignment (assignmentId, weekId, startDate). */
@@ -345,6 +352,92 @@ export async function getReturnCheckIn(
     .first<{ x: number }>();
   if (recent) return null; // answered one within the cooldown window — hold off
   return getOpenRecommendation(session, userId);
+}
+
+/**
+ * ALL of the user's open (un-actioned) low-score recommendations — unlike
+ * getOpenRecommendation (singular, oldest-first, used to gate the return
+ * check-in), this is the full list for the Inbox so every pending recommendation
+ * can be acted on there, not just one at a time. Deduped to the most recent open
+ * check-in per question (the same row submitFollowUp would resolve to for that
+ * question), newest first. Own data only.
+ */
+export async function getOpenRecommendations(
+  session: SessionUser,
+  userId: string,
+): Promise<OpenRecommendationItem[]> {
+  assertOwner(session, userId);
+  const db = getDB();
+  const { results } = await db
+    .prepare(
+      `SELECT c.questionId AS questionId, c.pillarId AS pillarId, c.weekId AS weekId, q.text AS questionText
+         FROM checkIns c JOIN questions q ON q.id = c.questionId
+        WHERE c.userId = ? AND c.score < 7 AND c.followUpStatus IS NULL
+          AND c.id = (
+            SELECT c2.id FROM checkIns c2
+             WHERE c2.userId = c.userId AND c2.questionId = c.questionId
+               AND c2.score < 7 AND c2.followUpStatus IS NULL
+             ORDER BY c2.timestamp DESC, c2.weekId DESC LIMIT 1
+          )
+        ORDER BY c.timestamp DESC, c.weekId DESC`,
+    )
+    .bind(userId)
+    .all<{ questionId: string; pillarId: PillarId; weekId: string; questionText: string }>();
+  const out: OpenRecommendationItem[] = [];
+  for (const r of results) {
+    out.push({
+      questionId: r.questionId,
+      pillarId: r.pillarId,
+      questionText: r.questionText,
+      recommendation: getSampleRecommendation(r.pillarId).text,
+      weekLabel: await weekLabel(db, r.weekId),
+    });
+  }
+  return out;
+}
+
+/**
+ * The user's own recommendation history — every low-score recommendation
+ * they've already responded to (acted or not_acted), newest response first, for
+ * the Inbox history space. Own data only.
+ */
+export async function getRecommendationHistory(
+  session: SessionUser,
+  userId: string,
+): Promise<RecommendationHistoryItem[]> {
+  assertOwner(session, userId);
+  const db = getDB();
+  const { results } = await db
+    .prepare(
+      `SELECT c.questionId AS questionId, c.pillarId AS pillarId, c.weekId AS weekId,
+              c.followUpStatus AS status, c.followUpAt AS followUpAt, q.text AS questionText
+         FROM checkIns c JOIN questions q ON q.id = c.questionId
+        WHERE c.userId = ? AND c.score < 7 AND c.followUpStatus IS NOT NULL
+        ORDER BY COALESCE(c.followUpAt, c.timestamp) DESC
+        LIMIT 20`,
+    )
+    .bind(userId)
+    .all<{
+      questionId: string;
+      pillarId: PillarId;
+      weekId: string;
+      status: FollowUpStatus;
+      followUpAt: string | null;
+      questionText: string;
+    }>();
+  const out: RecommendationHistoryItem[] = [];
+  for (const r of results) {
+    out.push({
+      questionId: r.questionId,
+      pillarId: r.pillarId,
+      questionText: r.questionText,
+      recommendation: getSampleRecommendation(r.pillarId).text,
+      status: r.status,
+      weekLabel: await weekLabel(db, r.weekId),
+      respondedAtLabel: dayLabel(r.followUpAt ?? ""),
+    });
+  }
+  return out;
 }
 
 /**

@@ -10,11 +10,13 @@ import {
   type CheckInQuestion,
   type FeedbackAction,
   type LatestCheckIn,
+  type OpenRecommendationItem,
   type Reflection,
+  type RecommendationHistoryItem,
 } from "@/lib/data";
 import type { SessionUser } from "@/lib/types";
 import { COPY, fill } from "@/lib/copy";
-import { submitCheckInAction } from "../check-in/actions";
+import { submitCheckInAction, submitFollowUpAction } from "../check-in/actions";
 import { submitActionResponseAction } from "./actions";
 
 const RESPONSE_META: Record<ActionResponseValue, { label: string; prompt: string | null }> = {
@@ -30,6 +32,8 @@ export function InboxView({
   actions,
   history,
   reflections,
+  openRecommendations,
+  recommendationHistory,
 }: {
   session: SessionUser;
   latest: LatestCheckIn | null;
@@ -37,13 +41,24 @@ export function InboxView({
   actions: FeedbackAction[];
   history: ActionHistoryItem[];
   reflections: Reflection[];
+  openRecommendations: OpenRecommendationItem[];
+  recommendationHistory: RecommendationHistoryItem[];
 }) {
   const [showHistory, setShowHistory] = useState(false);
   const isPlay = session.themeMode === "play";
   const firstName = (session.name || "there").trim().split(/\s+/)[0];
 
+  const [resolvedRecs, setResolvedRecs] = useState<Set<string>>(new Set());
+  const visibleOpenRecs = openRecommendations.filter((r) => !resolvedRecs.has(r.questionId));
+
   if (showHistory) {
-    return <HistoryView history={history} onBack={() => setShowHistory(false)} />;
+    return (
+      <HistoryView
+        history={history}
+        recommendationHistory={recommendationHistory}
+        onBack={() => setShowHistory(false)}
+      />
+    );
   }
 
   return (
@@ -76,7 +91,20 @@ export function InboxView({
         </div>
       )}
 
+      {/* Latest recommendation (from the most recent check-in) */}
       {latest && <LatestCheckInCard latest={latest} />}
+
+      {/* Un-actioned recommendations — every open low-score recommendation,
+          not just the most recent one. Acting here removes it from the list;
+          it then shows up in the history space below. */}
+      {visibleOpenRecs.length > 0 && (
+        <OpenRecommendationsCard
+          items={visibleOpenRecs}
+          onResolved={(questionId) =>
+            setResolvedRecs((s) => new Set(s).add(questionId))
+          }
+        />
+      )}
 
       <UnansweredCard questions={unanswered} />
 
@@ -84,7 +112,7 @@ export function InboxView({
 
       {reflections.length > 0 && <ReflectionsCard reflections={reflections} />}
 
-      {history.length > 0 && (
+      {(history.length > 0 || recommendationHistory.length > 0) && (
         <button
           type="button"
           onClick={() => setShowHistory(true)}
@@ -271,6 +299,120 @@ function UnansweredCard({ questions }: { questions: CheckInQuestion[] }) {
   );
 }
 
+// ── Un-actioned recommendations (every open one, not just the latest) ────────
+function OpenRecommendationsCard({
+  items,
+  onResolved,
+}: {
+  items: OpenRecommendationItem[];
+  onResolved: (questionId: string) => void;
+}) {
+  return (
+    <Card>
+      <p className="text-[11px] font-bold uppercase tracking-wide text-brand">
+        {COPY.inbox.recommendationLabel} · {items.length} to act on
+      </p>
+      <div className="mt-3 space-y-3">
+        {items.map((r) => (
+          <RecommendationRow key={r.questionId} item={r} onResolved={() => onResolved(r.questionId)} />
+        ))}
+      </div>
+    </Card>
+  );
+}
+
+function RecommendationRow({
+  item,
+  onResolved,
+}: {
+  item: OpenRecommendationItem;
+  onResolved: () => void;
+}) {
+  const [answer, setAnswer] = useState<"yes" | "not_yet" | null>(null);
+  const [note, setNote] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  async function saveActed() {
+    setSaving(true);
+    await submitFollowUpAction({
+      questionId: item.questionId,
+      pillarId: item.pillarId,
+      status: "acted",
+      journalText: note.trim() || undefined,
+    });
+    onResolved();
+  }
+
+  async function saveNotActed() {
+    setSaving(true);
+    await submitFollowUpAction({
+      questionId: item.questionId,
+      pillarId: item.pillarId,
+      status: "not_acted",
+    });
+    onResolved();
+  }
+
+  return (
+    <div className="rounded-2xl border border-gray-200 bg-white p-3.5">
+      <span className="text-[11px] font-semibold text-ink-4">{item.weekLabel}</span>
+      <p className="mt-1 text-sm font-semibold leading-snug text-ink">&ldquo;{item.questionText}&rdquo;</p>
+      <div className="mt-2 rounded-xl bg-lav-soft p-3">
+        <p className="text-[12px] leading-relaxed text-ink-2">{item.recommendation}</p>
+      </div>
+
+      <p className="mt-3 text-xs font-semibold text-ink-3">Were you able to act on it?</p>
+      <div className="mt-2 flex gap-2">
+        {[
+          { key: "yes" as const, label: "Yes" },
+          { key: "not_yet" as const, label: "Not yet" },
+        ].map((o) => (
+          <button
+            key={o.key}
+            type="button"
+            disabled={saving}
+            onClick={() => setAnswer(o.key)}
+            className={`flex-1 rounded-xl py-2 text-xs font-bold transition disabled:opacity-40 ${
+              answer === o.key ? "bg-brand text-white" : "bg-lav-soft text-brand"
+            }`}
+          >
+            {o.label}
+          </button>
+        ))}
+      </div>
+
+      {answer === "yes" && (
+        <div className="screen-enter mt-3">
+          <textarea
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            placeholder="What did you do? (optional)"
+            className="h-16 w-full resize-none rounded-xl border border-gray-300 bg-white p-3 text-sm text-ink placeholder-ink-4 focus:outline-none focus:ring-2 focus:ring-brand"
+          />
+          <button
+            type="button"
+            disabled={saving}
+            onClick={saveActed}
+            className="mt-2 w-full rounded-xl bg-brand py-2.5 text-sm font-bold text-white transition active:scale-[0.98] disabled:opacity-40"
+          >
+            Save
+          </button>
+        </div>
+      )}
+      {answer === "not_yet" && (
+        <button
+          type="button"
+          disabled={saving}
+          onClick={saveNotActed}
+          className="mt-3 w-full rounded-xl bg-lav-soft py-2.5 text-sm font-bold text-brand transition active:scale-[0.98] disabled:opacity-40"
+        >
+          Confirm
+        </button>
+      )}
+    </div>
+  );
+}
+
 // ── Your reflections (private follow-up notes) ───────────────────────────────
 function ReflectionsCard({ reflections }: { reflections: Reflection[] }) {
   return (
@@ -426,31 +568,75 @@ function ActionRow({ action }: { action: FeedbackAction }) {
 }
 
 // ── History (2.6b) — read-only ───────────────────────────────────────────────
-function HistoryView({ history, onBack }: { history: ActionHistoryItem[]; onBack: () => void }) {
+const REC_STATUS_LABEL: Record<"acted" | "not_acted", string> = {
+  acted: "You acted on this",
+  not_acted: "Not acted on yet",
+};
+
+function HistoryView({
+  history,
+  recommendationHistory,
+  onBack,
+}: {
+  history: ActionHistoryItem[];
+  recommendationHistory: RecommendationHistoryItem[];
+  onBack: () => void;
+}) {
+  const isEmpty = history.length === 0 && recommendationHistory.length === 0;
   return (
     <ScreenShell title={COPY.inbox.historyTitle} active="inbox">
       <button type="button" onClick={onBack} className="px-1 text-sm font-bold text-brand active:scale-[0.99]">
         {COPY.inbox.backToInbox}
       </button>
 
-      {history.length === 0 ? (
+      {isEmpty && (
         <Card>
           <p className="text-sm text-ink-3">{COPY.inbox.noPastResponses}</p>
         </Card>
-      ) : (
-        history.map((h) => (
-          <Card key={h.id}>
-            <div className="flex items-center justify-between">
-              <p className="text-[11px] font-bold uppercase tracking-wide text-brand">{h.pillarLabel}</p>
-              <span className="text-[11px] text-ink-4">{h.respondedAtLabel}</span>
-            </div>
-            <p className="mt-2 text-[13px] leading-relaxed text-ink-2">{h.actionNote}</p>
-            <p className="mt-2 text-xs font-bold text-ink">
-              {COPY.inbox.yourResponse} <span className="text-brand">{RESPONSE_META[h.response].label}</span>
-            </p>
-            {h.note && <p className="mt-1 text-[12px] italic leading-relaxed text-ink-3">&ldquo;{h.note}&rdquo;</p>}
-          </Card>
-        ))
+      )}
+
+      {recommendationHistory.length > 0 && (
+        <>
+          <p className="px-1 pt-2 text-[11px] font-bold uppercase tracking-wide text-ink-3">
+            Your recommendations
+          </p>
+          {recommendationHistory.map((r) => (
+            <Card key={r.questionId}>
+              <div className="flex items-center justify-between">
+                <p className="text-[11px] font-bold uppercase tracking-wide text-brand">{r.weekLabel}</p>
+                <span className="text-[11px] text-ink-4">{r.respondedAtLabel}</span>
+              </div>
+              <p className="mt-2 text-[13px] font-semibold leading-relaxed text-ink">&ldquo;{r.questionText}&rdquo;</p>
+              <p className="mt-1 text-[12px] italic leading-relaxed text-ink-3">{r.recommendation}</p>
+              <p className="mt-2 text-xs font-bold text-ink">
+                <span className={r.status === "acted" ? "text-good" : "text-ink-3"}>
+                  {REC_STATUS_LABEL[r.status]}
+                </span>
+              </p>
+            </Card>
+          ))}
+        </>
+      )}
+
+      {history.length > 0 && (
+        <>
+          <p className="px-1 pt-2 text-[11px] font-bold uppercase tracking-wide text-ink-3">
+            Manager actions
+          </p>
+          {history.map((h) => (
+            <Card key={h.id}>
+              <div className="flex items-center justify-between">
+                <p className="text-[11px] font-bold uppercase tracking-wide text-brand">{h.pillarLabel}</p>
+                <span className="text-[11px] text-ink-4">{h.respondedAtLabel}</span>
+              </div>
+              <p className="mt-2 text-[13px] leading-relaxed text-ink-2">{h.actionNote}</p>
+              <p className="mt-2 text-xs font-bold text-ink">
+                {COPY.inbox.yourResponse} <span className="text-brand">{RESPONSE_META[h.response].label}</span>
+              </p>
+              {h.note && <p className="mt-1 text-[12px] italic leading-relaxed text-ink-3">&ldquo;{h.note}&rdquo;</p>}
+            </Card>
+          ))}
+        </>
       )}
     </ScreenShell>
   );
