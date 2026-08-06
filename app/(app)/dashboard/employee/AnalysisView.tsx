@@ -31,15 +31,9 @@ type Tab = "strengths" | "concerns";
 export function AnalysisView({
   session,
   initial,
-  dueCount = 0,
-  pendingCount = 0,
 }: {
   session: SessionUser;
   initial: EmployeeScores;
-  /** This week's released questions still to answer (drives the check-in prompt). */
-  dueCount?: number;
-  /** Questions still pending from earlier weeks (shown as a catch-up hint). */
-  pendingCount?: number;
 }) {
   const router = useRouter();
   const [window, setWindow] = useState<Window>("3M");
@@ -81,11 +75,6 @@ export function AnalysisView({
 
   return (
     <ScreenShell active="insights">
-      <CheckInPrompt
-        dueCount={dueCount}
-        pendingCount={pendingCount}
-        onStart={() => router.push("/check-in")}
-      />
       {/* Header — Play: lavender card + mascot + persona voice. Professional:
           a smaller card with a richer purple gradient and bigger, mascot-free
           welcome text (all in lilac to match the theme). */}
@@ -302,57 +291,5 @@ export function AnalysisView({
         <RootJourney analysis={rca} onClose={() => setShowRoot(false)} />
       )}
     </ScreenShell>
-  );
-}
-
-/**
- * The weekly check-in nudge on the dashboard — how a logged-in employee "receives"
- * their 2 questions. Shows this week's released-but-unanswered count first; if
- * there's nothing new but older questions are still pending, it offers catch-up.
- * Renders nothing when the user is all caught up.
- */
-function CheckInPrompt({
-  dueCount,
-  pendingCount,
-  onStart,
-}: {
-  dueCount: number;
-  pendingCount: number;
-  onStart: () => void;
-}) {
-  if (dueCount <= 0 && pendingCount <= 0) return null;
-
-  const isDue = dueCount > 0;
-  const count = isDue ? dueCount : pendingCount;
-  const title = isDue
-    ? `You have ${count} new check-in ${count === 1 ? "question" : "questions"} this week`
-    : `${count} ${count === 1 ? "question is" : "questions are"} waiting from earlier`;
-  const sub = isDue
-    ? "Takes about a minute — your answers stay private."
-    : "Catch up whenever you have a moment.";
-  const cta = isDue ? "Answer now" : "Catch up";
-
-  return (
-    <button
-      type="button"
-      onClick={onStart}
-      className="flex w-full items-center gap-3 rounded-card bg-brand px-4 py-4 text-left shadow-card transition active:scale-[0.99]"
-    >
-      <span
-        className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-2xl bg-white/20 text-xl"
-        aria-hidden
-      >
-        📝
-      </span>
-      <span className="min-w-0 flex-1">
-        <span className="block font-display text-[15px] font-black leading-tight text-white">
-          {title}
-        </span>
-        <span className="mt-0.5 block text-[12px] leading-snug text-white/80">{sub}</span>
-      </span>
-      <span className="flex-shrink-0 rounded-full bg-white px-3.5 py-1.5 font-display text-xs font-black text-brand">
-        {cta}
-      </span>
-    </button>
   );
 }
