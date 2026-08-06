@@ -38,9 +38,10 @@ A 55-screen React + Vite prototype exists (mock data only, inline styles, single
 | ----- | ----- |
 | Employee | Own check-in flow, personal insights, career history, inbox, wisdom, profile |
 | Manager | Team dashboard, recommendations inbox, wisdom, profile |
-| Reviewing Manager | All managers under them, drill into each manager's team data |
-| CEO / HR | Org-wide happiness data, drill into any team |
+| CEO / HR | Org-wide happiness data; org dashboard (department drill-down) + Insights tab (department scores, top/bottom managers with a full ranked list, scoped pillar ranking) |
 | Admin | Admin panel only — manages org structure, question bank, wisdom content |
+
+**Reviewing Manager role removed (6 Aug 2026)** — see decision log. Its job (every manager's team, ranked) now lives inside CEO/HR's Insights tab, not a separate role.
 
 A user can have multiple roles. If they are both an employee and a manager, they see a dashboard toggle in their profile to switch between views. A person who self-signs-up (not via an invite) starts as an **Employee with no team**; an admin or manager can connect them to the org structure later.
 
@@ -59,7 +60,7 @@ users
   createdAt
 
 user_roles            -- a user can hold several roles
-  userId (FK), role ("employee"|"manager"|"reviewing_manager"|"ceo_hr"|"admin")
+  userId (FK), role ("employee"|"manager"|"ceo_hr"|"admin")
 
 teams
   id, name, managerId (FK users.id), departmentId (FK)
@@ -269,20 +270,18 @@ Same structure as employee wisdom; content filtered to audience = manager (and "
 
 ---
 
-## Screen list — Reviewing Manager
-
-### 13. Manager list view
-"My Managers" + count + ranked by team happiness; org avg reference; each card = name, team score, percentile, resolution score %, colour bar. **No participation rate next to names.** Tap → detail (13b).
-
-### 13b. Manager detail view
-Manager name + back; team score + trend + percentile + resolution score (**no per-name participation**); 2×2 pillar grid; trend chart; High/Low scoring toggle.
-
----
-
 ## Screen list — CEO / HR
 
-### 14. CEO / HR dashboard
-Manager-dashboard shape at org-wide scope; dropdown to drill into any department/team; org score, pillar breakdown, AI insight, trend chart, high/low insights, action-impact summary. **No per-name participation in any listing.**
+Nav: Profile / Dashboard / Insights (no Wisdom or Inbox tabs).
+
+### 14. Org dashboard (CEO/HR "Dashboard" tab)
+Overall company happiness score, then one tappable panel per department (score + trend, ranked) — tap through to that department's head view.
+
+### 14b. Department head view
+Reached by tapping a department panel. Manager-dashboard shape at that department's scope: score, pillar breakdown (clickable → pillar detail), AI insight, trend chart, action-impact summary. **No per-name participation in any listing.**
+
+### 14c. Insights tab
+Department scores as a bar chart; top/bottom managers ranked by team score with a "See all" click-through to the full ranked list (tap a manager → their team detail, same shape as 14b but team-scoped — this is what the Reviewing Manager role used to show); a scoped (org/dept/team) pillar ranking (High/Low toggle, clickable pillars → pillar detail).
 
 ---
 
@@ -357,6 +356,7 @@ Manager signs up + onboards → enters reportee emails → `invites` rows + emai
 | **11 Jun 2026** | **AI insights = Anthropic Claude API (Gemini dropped — org-blocked Google Cloud project creation).** |
 | 15 Jun 2026 | Added a "Find the Root" oracle journey on the employee dashboard: an immersive, full-screen root-cause dive (symptom → pillar → root → today's actions). Deterministic engine + research-informed copy now; AI-personalised in Phase 5 (same shape). |
 | **14 Jul 2026** | **AI insights = Groq API (`llama-3.3-70b-versatile`, plain fetch, no SDK) — owner supplied a Groq key; supersedes the 11 Jun Claude-API decision. Cached in D1, regenerated only when scores change.** |
+| **6 Aug 2026** | **Reviewing Manager role removed entirely.** Its job — every manager's team, ranked — folds into CEO/HR's new Insights tab (top/bottom managers + a "see all" ranked list) instead of a separate role/screens. CEO/HR's dashboard was split into a Dashboard tab (org score + department panels, drill into a department) and an Insights tab (department bar chart, manager rankings, scoped pillar ranking) — see the CEO/HR screen list above. |
 
 ---
 

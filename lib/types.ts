@@ -1,5 +1,5 @@
 export type PillarId = 'meaningful_work' | 'growth' | 'culture' | 'compensation';
-export type Role = 'employee' | 'manager' | 'reviewing_manager' | 'ceo_hr' | 'admin';
+export type Role = 'employee' | 'manager' | 'ceo_hr' | 'admin';
 export type OnboardingPath = 'admin_upload' | 'manager_invite' | 'individual_invite' | 'self_signup';
 export type WisdomLevel = 'beginner' | 'advanced' | 'expert';
 export type WisdomAudience = 'employee' | 'manager' | 'both';

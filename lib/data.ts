@@ -283,7 +283,7 @@ export async function getTeamAggregate(
   teamId: string,
   window: Window = "3M"
 ): Promise<TeamAggregate> {
-  assertRole(session, "manager", "reviewing_manager", "ceo_hr");
+  assertRole(session, "manager", "ceo_hr");
 
   // Sample: this team has 6 reportees with responses above the floor.
   const reporteeCount = 6;
@@ -1099,7 +1099,7 @@ export async function getManagerInbox(
   session: SessionUser,
   teamId: string,
 ): Promise<ManagerInbox> {
-  assertRole(session, "manager", "reviewing_manager", "ceo_hr");
+  assertRole(session, "manager", "ceo_hr");
 
   const reporteeCount = 6; // sample team size
   if (reporteeCount < ANONYMISATION_FLOOR) {
@@ -1188,7 +1188,7 @@ export async function submitManagerAction(
   session: SessionUser,
   input: { itemId: string; decision: ManagerActionDecision; note?: string },
 ): Promise<void> {
-  assertRole(session, "manager", "reviewing_manager", "ceo_hr");
+  assertRole(session, "manager", "ceo_hr");
   void input;
 }
 
@@ -1259,7 +1259,7 @@ export async function getReviewingManagerList(
   session: SessionUser,
   window: Window = "3M",
 ): Promise<ReviewingManagerList> {
-  assertRole(session, "reviewing_manager", "ceo_hr");
+  assertRole(session, "ceo_hr");
 
   const points = Math.min(weeksIn(window), RECENT_WEEKS.length);
   const managers: ManagerSummary[] = SAMPLE_MANAGERS.map((m) => {
@@ -1309,7 +1309,7 @@ export async function getReviewingManagerDetail(
   managerId: string,
   window: Window = "3M",
 ): Promise<ManagerDetail> {
-  assertRole(session, "reviewing_manager", "ceo_hr");
+  assertRole(session, "ceo_hr");
 
   const m = SAMPLE_MANAGERS.find((x) => x.id === managerId) ?? SAMPLE_MANAGERS[0];
 

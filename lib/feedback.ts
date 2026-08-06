@@ -79,8 +79,7 @@ async function resolveManagedTeam(
   session: SessionUser,
   teamId: string,
 ): Promise<string | null> {
-  const elevated =
-    session.roles.includes("reviewing_manager") || session.roles.includes("ceo_hr");
+  const elevated = session.roles.includes("ceo_hr");
   if (teamId !== "my-team" && elevated) return teamId;
   const t = await db
     .prepare("SELECT id FROM teams WHERE managerId = ? LIMIT 1")
@@ -111,7 +110,7 @@ export async function getManagerInbox(
   session: SessionUser,
   teamId: string,
 ): Promise<ManagerInbox> {
-  assertRole(session, "manager", "reviewing_manager", "ceo_hr");
+  assertRole(session, "manager", "ceo_hr");
   const db = getDB();
 
   const resolved0: ManagerInbox = {
@@ -244,7 +243,7 @@ export async function submitManagerAction(
   session: SessionUser,
   input: { itemId: string; decision: ManagerActionDecision; note?: string },
 ): Promise<void> {
-  assertRole(session, "manager", "reviewing_manager", "ceo_hr");
+  assertRole(session, "manager", "ceo_hr");
   const db = getDB();
   const team = await resolveManagedTeam(db, session, "my-team");
   if (!team) throw new Error("You don't manage a team.");

@@ -40,7 +40,7 @@ export async function getTeamAggregate(
   teamId: string,
   window: Window = "3M",
 ): Promise<TeamAggregate> {
-  assertRole(session, "manager", "reviewing_manager", "ceo_hr");
+  assertRole(session, "manager", "ceo_hr");
   const db = getDB();
 
   const floorReason = `Need at least ${ANONYMISATION_FLOOR} reportees with responses to show team data.`;
@@ -56,9 +56,8 @@ export async function getTeamAggregate(
   };
 
   // A plain manager is always scoped to the team they manage, whatever teamId
-  // was passed. Only reviewing-managers / CEO-HR may target another team.
-  const elevated =
-    session.roles.includes("reviewing_manager") || session.roles.includes("ceo_hr");
+  // was passed. Only CEO/HR may target another team.
+  const elevated = session.roles.includes("ceo_hr");
   let resolvedTeamId: string | null = teamId;
   if (teamId === "my-team" || !elevated) {
     const t = await db
@@ -209,7 +208,7 @@ export async function getTeamPillarDetail(
   pillarId: PillarId,
   window: Window = "3M",
 ): Promise<TeamPillarDetail> {
-  assertRole(session, "manager", "reviewing_manager", "ceo_hr");
+  assertRole(session, "manager", "ceo_hr");
   const agg = await getTeamAggregate(session, teamId, window);
   const p = agg.pillars.find((x) => x.pillarId === pillarId);
   const empty: TeamPillarDetail = {
@@ -224,7 +223,7 @@ export async function getTeamPillarDetail(
   if (!agg.enoughData || p?.score == null) return empty;
 
   const db = getDB();
-  const elevated = session.roles.includes("reviewing_manager") || session.roles.includes("ceo_hr");
+  const elevated = session.roles.includes("ceo_hr");
   let resolvedTeamId: string | null = teamId;
   if (teamId === "my-team" || !elevated) {
     const t = await db

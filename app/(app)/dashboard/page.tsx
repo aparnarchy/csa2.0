@@ -6,13 +6,12 @@ import type { Role } from "@/lib/types";
 const ROLE_ROUTES: Record<Role, string> = {
   admin: "/dashboard/admin",
   ceo_hr: "/dashboard/ceo-hr",
-  reviewing_manager: "/dashboard/reviewing-manager",
   manager: "/dashboard/manager",
   employee: "/dashboard/employee",
 };
 
 // Priority order — if a user has multiple roles, pick the highest-privilege one
-const ROLE_PRIORITY: Role[] = ["admin", "ceo_hr", "reviewing_manager", "manager", "employee"];
+const ROLE_PRIORITY: Role[] = ["admin", "ceo_hr", "manager", "employee"];
 
 export default async function DashboardPage() {
   const session = await getSession();

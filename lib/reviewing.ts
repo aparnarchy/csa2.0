@@ -1,11 +1,14 @@
 /**
- * Real reviewing-manager views (mock→D1 slice 5). SERVER-ONLY (calls getDB).
+ * Manager rankings for CEO/HR (mock→D1 slice 5). SERVER-ONLY (calls getDB).
  *
- * A reviewing-manager oversees managers/teams. There is no reviewer→manager
- * hierarchy table yet, so for the pilot they see every team that has a manager.
- * Each team's numbers come from getTeamAggregate (lib/team), which already
- * enforces the privacy rules: aggregates only, employment-scoped, ≥3 floor.
- * Below-floor teams surface with no score (never an individual).
+ * Originally built for the reviewing-manager role; that role was removed
+ * (2026-08-06) and its job — surfacing every manager's team, ranked — folded
+ * into CEO/HR's Insights tab (top/bottom managers + the "all managers" list)
+ * instead of a separate role. There is no reviewer→manager hierarchy table, so
+ * this sees every team that has a manager. Each team's numbers come from
+ * getTeamAggregate (lib/team), which already enforces the privacy rules:
+ * aggregates only, employment-scoped, ≥3 floor. Below-floor teams surface with
+ * no score (never an individual).
  */
 
 import { getDB } from "./db";
@@ -44,7 +47,7 @@ export async function getReviewingManagerList(
   session: SessionUser,
   window: Window = "3M",
 ): Promise<ReviewingManagerList> {
-  assertRole(session, "reviewing_manager", "ceo_hr");
+  assertRole(session, "ceo_hr");
   const db = getDB();
 
   const { results: teams } = await db
@@ -99,7 +102,7 @@ export async function getReviewingManagerDetail(
   managerId: string,
   window: Window = "3M",
 ): Promise<ManagerDetail> {
-  assertRole(session, "reviewing_manager", "ceo_hr");
+  assertRole(session, "ceo_hr");
   const db = getDB();
 
   const team = await db

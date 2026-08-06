@@ -6,7 +6,6 @@
  * Seeded users (password: "password123" for all):
  *   employee@test.com    → Employee role, on Engineering team
  *   manager@test.com     → Manager role, manages Engineering team
- *   reviewing@test.com   → Reviewing Manager role
  *   ceo@test.com         → CEO/HR role
  *   admin@test.com       → Admin role
  *   employee2@test.com   → Employee (anonymisation floor testing)
@@ -21,13 +20,12 @@ import { NextResponse } from "next/server";
 export const runtime = "edge";
 
 const SEED_USERS = [
-  { email: "employee@test.com",  name: "Alice Employee",  role: "employee"          as const },
-  { email: "manager@test.com",   name: "Bob Manager",     role: "manager"           as const },
-  { email: "reviewing@test.com", name: "Carol Reviewing", role: "reviewing_manager" as const },
-  { email: "ceo@test.com",       name: "Dave CEO",        role: "ceo_hr"            as const },
-  { email: "admin@test.com",     name: "Eve Admin",       role: "admin"             as const },
-  { email: "employee2@test.com", name: "Frank Employee",  role: "employee"          as const },
-  { email: "employee3@test.com", name: "Grace Employee",  role: "employee"          as const },
+  { email: "employee@test.com",  name: "Alice Employee",  role: "employee" as const },
+  { email: "manager@test.com",   name: "Bob Manager",     role: "manager"  as const },
+  { email: "ceo@test.com",       name: "Dave CEO",        role: "ceo_hr"   as const },
+  { email: "admin@test.com",     name: "Eve Admin",       role: "admin"    as const },
+  { email: "employee2@test.com", name: "Frank Employee",  role: "employee" as const },
+  { email: "employee3@test.com", name: "Grace Employee",  role: "employee" as const },
 ];
 
 const PASSWORD = "password123";
@@ -426,7 +424,7 @@ export async function POST(request: Request) {
       .bind(teamId, deptId, managerId, "Kissflow", "Product Owner", oid)
       .run();
 
-    for (const role of ["employee", "manager", "reviewing_manager", "ceo_hr", "admin"]) {
+    for (const role of ["employee", "manager", "ceo_hr", "admin"]) {
       await db.prepare("INSERT OR IGNORE INTO user_roles (userId, role) VALUES (?, ?)").bind(oid, role).run();
     }
 
