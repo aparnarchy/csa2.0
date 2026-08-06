@@ -1,0 +1,25 @@
+# Tiny standalone Worker whose only job is to wake the app's weekly check-in
+# rollover on a schedule. Cloudflare Pages can't own a cron trigger, so this
+# separate Worker holds it and simply calls POST /api/cron/weekly on the app.
+#
+# It is OPTIONAL: the app self-heals on read, so questions still get assigned the
+# moment a user visits. This just guarantees the whole org's week is prepared up
+# front every Monday, even for people who don't log in.
+#
+# Deploy (owner step, one time):
+#   1. cd cron-worker
+#   2. npx wrangler deploy
+#   3. npx wrangler secret put CRON_SECRET   (paste the SAME value set on the app)
+# The APP_URL var below must point at the deployed app.
+
+name = "csa2-cron"
+main = "src/index.ts"
+compatibility_date = "2024-09-23"
+
+# Every Monday at 07:00 UTC.
+[triggers]
+crons = ["0 7 * * 1"]
+
+[vars]
+APP_URL = "https://csa2.pages.dev"
+# CRON_SECRET is set with `wrangler secret put CRON_SECRET`, never committed.

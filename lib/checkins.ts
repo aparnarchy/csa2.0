@@ -13,10 +13,15 @@
 import { getDB } from "./db";
 import { assertOwner } from "./access-control";
 import { getSampleRecommendation } from "./data";
+import { ensureUserAssignments, ensureActiveWeek } from "./scheduler";
 import type { CheckInQuestion, LatestCheckIn, OpenRecommendation } from "./data";
 import type { FollowUpStatus, PillarId, SessionUser } from "./types";
 
-interface QuestionRow {
+/** A question row joined to its assignment (assignmentId, weekId, startDate). */
+interface AssignedQuestionRow {
+  assignmentId: string;
+  weekId: string;
+  startDate: string | null;
   id: string;
   text: string;
   pillarId: PillarId;
@@ -28,8 +33,16 @@ interface QuestionRow {
   optionC_score: number;
 }
 
-function toCheckInQuestion(q: QuestionRow): CheckInQuestion {
+/** The columns every assigned-question query selects, so the shape stays in sync. */
+const ASSIGNED_QUESTION_COLS = `
+  a.id AS assignmentId, a.weekId AS weekId, w.startDate AS startDate,
+  q.id AS id, q.text AS text, q.pillarId AS pillarId,
+  q.optionA_text, q.optionA_score, q.optionB_text, q.optionB_score, q.optionC_text, q.optionC_score`;
+
+function toCheckInQuestion(q: AssignedQuestionRow, withLabel: boolean): CheckInQuestion {
   return {
+    assignmentId: q.assignmentId,
+    weekId: q.weekId,
     id: q.id,
     text: q.text,
     pillarId: q.pillarId,
@@ -38,7 +51,16 @@ function toCheckInQuestion(q: QuestionRow): CheckInQuestion {
       { key: "B", text: q.optionB_text, score: q.optionB_score },
       { key: "C", text: q.optionC_text, score: q.optionC_score },
     ],
+    weekLabel: withLabel ? monthLabel(q.startDate) : undefined,
   };
+}
+
+/** "2026-06-01" → "June 2026" for the catch-up chip. */
+function monthLabel(startDate: string | null): string | undefined {
+  if (!startDate) return undefined;
+  const [y, m] = startDate.split("-");
+  const mi = Number(m) - 1;
+  return MONTHS[mi] ? `${MONTHS[mi]} ${y}` : undefined;
 }
 
 type DB = ReturnType<typeof getDB>;
@@ -79,76 +101,131 @@ async function weekLabel(db: DB, weekId: string): Promise<string> {
   return MONTHS[mi] ? `${MONTHS[mi]} ${y}` : weekId;
 }
 
-/** Active questions this user hasn't answered in the current window. Own data only. */
+/**
+ * This week's questions that have been released (releaseAt has passed) and are
+ * still pending — at most the 2 assigned for the week. Self-heals first: makes
+ * sure the active week is current and this user has their 2 assignments, so a
+ * logged-in user always has something to answer without any external cron.
+ * Own data only.
+ */
 export async function getDueCheckIns(
   session: SessionUser,
   userId: string,
 ): Promise<CheckInQuestion[]> {
   assertOwner(session, userId);
   const db = getDB();
+  await ensureUserAssignments(db, userId);
   const week = await getActiveWeekId(db);
   if (!week) return [];
   const { results } = await db
     .prepare(
-      `SELECT id, text, pillarId,
-              optionA_text, optionA_score, optionB_text, optionB_score, optionC_text, optionC_score
-         FROM questions
-        WHERE isActive = 1
-          AND id NOT IN (SELECT questionId FROM checkIns WHERE userId = ? AND weekId = ?)
-        ORDER BY id`,
+      `SELECT ${ASSIGNED_QUESTION_COLS}
+         FROM checkInAssignments a
+         JOIN questions q ON q.id = a.questionId
+         JOIN weeklyWindows w ON w.weekId = a.weekId
+        WHERE a.userId = ? AND a.weekId = ? AND a.status = 'pending'
+          AND a.releaseAt <= datetime('now')
+        ORDER BY a.releaseAt ASC`,
     )
     .bind(userId, week)
-    .all<QuestionRow>();
-  return results.map(toCheckInQuestion);
+    .all<AssignedQuestionRow>();
+  return results.map((r) => toCheckInQuestion(r, false));
 }
 
 /**
- * Questions missed in previous weeks. There is no skipped-question tracking yet,
- * so there is nothing to catch up on — returns []. (Real roll-over lands with the
- * skip feature.) Own data only.
+ * Questions released in *earlier* weeks that are still pending — the catch-up /
+ * Inbox "unanswered" list, oldest first. Self-heals the active week first so a
+ * long-absent user's stale week rolls forward before we decide what's overdue.
+ * Own data only.
  */
 export async function getUnansweredCheckIns(
   session: SessionUser,
   userId: string,
 ): Promise<CheckInQuestion[]> {
   assertOwner(session, userId);
-  return [];
+  const db = getDB();
+  const week = await ensureActiveWeek(db);
+  const { results } = await db
+    .prepare(
+      `SELECT ${ASSIGNED_QUESTION_COLS}
+         FROM checkInAssignments a
+         JOIN questions q ON q.id = a.questionId
+         JOIN weeklyWindows w ON w.weekId = a.weekId
+        WHERE a.userId = ? AND a.weekId <> ? AND a.status = 'pending'
+          AND a.releaseAt <= datetime('now')
+        ORDER BY a.releaseAt ASC`,
+    )
+    .bind(userId, week.weekId)
+    .all<AssignedQuestionRow>();
+  return results.map((r) => toCheckInQuestion(r, true));
 }
 
 /**
- * Record one answer for the current window. Idempotent: the row id is derived
- * from (week, question, user), so re-answering updates the score rather than
- * duplicating. Unknown/inactive questions are ignored (no FK crash). A fresh
- * (non-retrospective) answer advances the weekly streak. Own data only.
+ * Record the answer for one assignment and mark it answered. The check-in is
+ * stored against the assignment's own week (so a late catch-up lands in the week
+ * it was for, not today), and counts as retrospective when that isn't the active
+ * week — retrospective answers don't advance the streak. Idempotent: the check-in
+ * id is derived from (week, question, user). Own data only.
  */
 export async function submitCheckIn(
   session: SessionUser,
   userId: string,
-  questionId: string,
+  assignmentId: string,
   score: number,
-  isRetrospective = false,
 ): Promise<void> {
   assertOwner(session, userId);
   const db = getDB();
+  const a = await db
+    .prepare(
+      "SELECT questionId, weekId FROM checkInAssignments WHERE id = ? AND userId = ?",
+    )
+    .bind(assignmentId, userId)
+    .first<{ questionId: string; weekId: string }>();
+  if (!a) return; // not this user's assignment (or unknown) — ignore, don't fail the flow
   const q = await db
     .prepare("SELECT pillarId FROM questions WHERE id = ? AND isActive = 1")
-    .bind(questionId)
+    .bind(a.questionId)
     .first<{ pillarId: PillarId }>();
-  if (!q) return; // unknown/inactive question — ignore rather than fail the flow
-  const week = await getActiveWeekId(db);
-  if (!week) return;
+  if (!q) return;
+
+  const activeWeek = await getActiveWeekId(db);
+  const isRetrospective = a.weekId !== activeWeek;
   const employmentId = await getActiveEmploymentId(db, userId);
-  const id = `ci-${week}-${questionId}-${userId}`;
+  const id = `ci-${a.weekId}-${a.questionId}-${userId}`;
   await db
     .prepare(
       `INSERT OR REPLACE INTO checkIns
          (id, userId, questionId, pillarId, weekId, score, isRetrospective, employmentId)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
     )
-    .bind(id, userId, questionId, q.pillarId, week, score, isRetrospective ? 1 : 0, employmentId)
+    .bind(id, userId, a.questionId, q.pillarId, a.weekId, score, isRetrospective ? 1 : 0, employmentId)
+    .run();
+  await db
+    .prepare("UPDATE checkInAssignments SET status = 'answered' WHERE id = ?")
+    .bind(assignmentId)
     .run();
 
-  if (!isRetrospective) await bumpStreak(db, userId, week);
+  if (!isRetrospective) await bumpStreak(db, userId, a.weekId);
+}
+
+/**
+ * "Skip this for now" on a catch-up question: mark the assignment skipped so it
+ * drops off the pending list without recording a score. Only the owner's own
+ * still-pending assignments can be skipped. Own data only.
+ */
+export async function skipCheckIn(
+  session: SessionUser,
+  userId: string,
+  assignmentId: string,
+): Promise<void> {
+  assertOwner(session, userId);
+  const db = getDB();
+  await db
+    .prepare(
+      "UPDATE checkInAssignments SET status = 'skipped' WHERE id = ? AND userId = ? AND status = 'pending'",
+    )
+    .bind(assignmentId, userId)
+    .run();
 }
 
 /**

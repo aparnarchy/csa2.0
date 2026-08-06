@@ -7,17 +7,22 @@
  */
 
 import { getSession } from "@/lib/auth-session";
-import { submitCheckIn, submitFollowUp } from "@/lib/checkins";
+import { skipCheckIn, submitCheckIn, submitFollowUp } from "@/lib/checkins";
 import type { FollowUpStatus, PillarId } from "@/lib/types";
 
-export async function submitCheckInAction(
-  questionId: string,
-  score: number,
-  isRetrospective = false,
-): Promise<void> {
+/** Answer one delivered question. Whether it counts as retrospective (and so is
+ *  excluded from the streak) is derived server-side from the assignment's week. */
+export async function submitCheckInAction(assignmentId: string, score: number): Promise<void> {
   const session = await getSession();
   if (!session) throw new Error("Not signed in.");
-  await submitCheckIn(session.user, session.user.id, questionId, score, isRetrospective);
+  await submitCheckIn(session.user, session.user.id, assignmentId, score);
+}
+
+/** "Skip this for now" on a catch-up question — drops it off the pending list. */
+export async function skipCheckInAction(assignmentId: string): Promise<void> {
+  const session = await getSession();
+  if (!session) throw new Error("Not signed in.");
+  await skipCheckIn(session.user, session.user.id, assignmentId);
 }
 
 export async function submitFollowUpAction(input: {

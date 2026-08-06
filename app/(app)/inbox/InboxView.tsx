@@ -162,7 +162,7 @@ function UnansweredCard({ questions }: { questions: CheckInQuestion[] }) {
 
   function pick(key: string, score: number) {
     setAnswers((a) => ({ ...a, [q.id]: { key, score } }));
-    void submitCheckInAction(q.id, score, true); // retrospective
+    void submitCheckInAction(q.assignmentId, score); // retrospective (derived server-side)
   }
 
   return (

@@ -33,7 +33,6 @@ export function CheckInSession({
   if (phase === "catchup") {
     return (
       <CatchUpFlow
-        session={session}
         questions={unanswered}
         onDone={() => setPhase(openRec ? "followup" : "fresh")}
       />

@@ -14,6 +14,7 @@
  */
 
 import { createAuth } from "@/lib/auth";
+import { runWeeklyRollover } from "@/lib/scheduler";
 import { getRequestContext } from "@cloudflare/next-on-pages";
 import { NextResponse } from "next/server";
 
@@ -58,6 +59,7 @@ export async function POST(request: Request) {
   }
   await db.prepare("DELETE FROM checkIns WHERE id LIKE 'ci-%'").run();
   await db.prepare("DELETE FROM employment WHERE id LIKE 'emp-%'").run();
+  await db.prepare("DELETE FROM checkInAssignments WHERE id LIKE 'asg-%'").run();
   await db.prepare("DELETE FROM weeklyWindows WHERE weekId LIKE '2026-W%'").run();
   await db.prepare("DELETE FROM questions WHERE id LIKE 'q%'").run();
   await db.prepare("DELETE FROM teams WHERE id = 'team-engineering'").run();
@@ -277,6 +279,50 @@ export async function POST(request: Request) {
     }
   }
   results.push("Streaks seeded");
+
+  // ── Check-in assignments (the real 2-per-week delivery) ──────────────────────
+  //    Roll the active week forward to *today* and give every active employee
+  //    their 2 questions for it, exactly as the weekly cron would. This is what
+  //    makes questions actually appear on login.
+  const rollover = await runWeeklyRollover(db, new Date());
+  results.push(
+    `Assignments: rolled to ${rollover.weekId}, ${rollover.assignmentsCreated} created for ${rollover.users} employees`,
+  );
+
+  //    Plus a couple of PENDING questions from earlier weeks for the primary demo
+  //    employee, so the Inbox "unanswered" list and the catch-up flow have
+  //    something to show immediately. The matching seeded check-ins are removed
+  //    first so these are genuinely unanswered rather than contradicting history.
+  const startByWeek = new Map(windows.map((w) => [w.weekId, w.startDate]));
+  const primaryEmployee = createdUsers.find((u) => u.email === "employee@test.com");
+  if (primaryEmployee) {
+    const demoPending = [
+      { weekId: "2026-W22", questionId: "q4" },
+      { weekId: "2026-W23", questionId: "q9" },
+    ];
+    for (const d of demoPending) {
+      const start = startByWeek.get(d.weekId);
+      if (!start) continue;
+      await db
+        .prepare("DELETE FROM checkIns WHERE userId = ? AND questionId = ? AND weekId = ?")
+        .bind(primaryEmployee.id, d.questionId, d.weekId)
+        .run();
+      await db
+        .prepare(
+          `INSERT OR IGNORE INTO checkInAssignments (id, userId, questionId, weekId, releaseAt, status)
+           VALUES (?, ?, ?, ?, ?, 'pending')`,
+        )
+        .bind(
+          `asg-${d.weekId}-${primaryEmployee.id}-${d.questionId}`,
+          primaryEmployee.id,
+          d.questionId,
+          d.weekId,
+          `${start} 10:00:00`,
+        )
+        .run();
+    }
+    results.push("Demo catch-up (2 pending from earlier weeks) seeded for employee@test.com");
+  }
 
   // ── Wisdom CMS content (so the admin Wisdom tab is populated) ────────────────
   await db.prepare("DELETE FROM wisdomContent WHERE id LIKE 'wc-%'").run();

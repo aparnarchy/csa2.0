@@ -343,30 +343,22 @@ export interface CheckInOption {
 
 /** A single check-in question with its A/B/C options. */
 export interface CheckInQuestion {
+  /** The assignment this question was delivered through — mutations key off it. */
+  assignmentId: string;
+  /** The week the question was assigned in (for streak/retrospective logic). */
+  weekId: string;
   id: string;
   text: string;
   pillarId: PillarId;
   options: CheckInOption[];
-  weekLabel?: string; // for catch-up questions, e.g. "Last week"
+  weekLabel?: string; // for catch-up questions, e.g. "June 2026"
 }
 
-// NOTE: getDueCheckIns, getUnansweredCheckIns, submitCheckIn and getLatestCheckIn
-// now have REAL D1 implementations in lib/checkins.ts (server-only). The types
-// (CheckInQuestion, LatestCheckIn, …) stay here so client components can import
-// them. skipCheckIn / getOpenRecommendation / submitFollowUp remain sample for now.
-
-/**
- * Skip a question for now. Sample no-op; server-side, 3 consecutive skips of the
- * same question permanently retire it (real logic lands with D1).
- */
-export async function skipCheckIn(
-  session: SessionUser,
-  userId: string,
-  questionId: string,
-): Promise<void> {
-  assertOwner(session, userId);
-  void questionId;
-}
+// NOTE: getDueCheckIns, getUnansweredCheckIns, submitCheckIn, skipCheckIn and
+// getLatestCheckIn now have REAL D1 implementations in lib/checkins.ts
+// (server-only). The types (CheckInQuestion, LatestCheckIn, …) stay here so
+// client components can import them. getOpenRecommendation / submitFollowUp
+// remain sample for now.
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Return check-in / follow-up (did you act on your last recommendation?)

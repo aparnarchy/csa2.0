@@ -60,7 +60,7 @@ export function CheckInFlow({
   async function next() {
     const c = q.options.find((o) => o.key === selected);
     if (!c) return;
-    await submitCheckInAction(q.id, c.score);
+    await submitCheckInAction(q.assignmentId, c.score);
     setSelected(null);
     if (index + 1 < total) setIndex(index + 1);
     else setDone(true);

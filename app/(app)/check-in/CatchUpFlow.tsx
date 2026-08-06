@@ -3,9 +3,8 @@
 import { useState } from "react";
 import { Mascot, OptionCard, RecommendationCard } from "@/components/kit";
 import { COPY } from "@/lib/copy";
-import { getSampleRecommendation, skipCheckIn, type CheckInQuestion } from "@/lib/data";
-import type { SessionUser } from "@/lib/types";
-import { submitCheckInAction } from "./actions";
+import { getSampleRecommendation, type CheckInQuestion } from "@/lib/data";
+import { skipCheckInAction, submitCheckInAction } from "./actions";
 
 const t = COPY.catchup;
 
@@ -15,11 +14,9 @@ const t = COPY.catchup;
  * moves on. A low answer (<7) shows an inline tip first.
  */
 export function CatchUpFlow({
-  session,
   questions,
   onDone,
 }: {
-  session: SessionUser;
   questions: CheckInQuestion[];
   onDone: () => void;
 }) {
@@ -40,12 +37,12 @@ export function CatchUpFlow({
   async function save() {
     const c = q.options.find((o) => o.key === selected);
     if (!c) return;
-    await submitCheckInAction(q.id, c.score, true); // retrospective
+    await submitCheckInAction(q.assignmentId, c.score); // retrospective (derived server-side)
     advance();
   }
 
   async function skip() {
-    await skipCheckIn(session, session.id, q.id);
+    await skipCheckInAction(q.assignmentId);
     advance();
   }
 
