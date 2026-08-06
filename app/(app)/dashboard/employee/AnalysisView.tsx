@@ -11,11 +11,11 @@ import {
   Mascot,
   NotEnoughData,
   PillarCard,
+  ScoreCircles,
   ScreenShell,
   SegmentedToggle,
   TrendChart,
 } from "@/components/kit";
-import { ScoreCircles } from "./ScoreCircles";
 import { type EmployeeScores, type Window } from "@/lib/data";
 import { getEmployeeScoresAction } from "./actions";
 import { HEADER_MASCOT_SIZE, mascotForScore } from "@/lib/mascot";

@@ -14,7 +14,8 @@
 
 import { getDB } from "./db";
 import { assertRole } from "./access-control";
-import type { PillarScore, TeamAggregate, TrendPoint, Window } from "./data";
+import { getSampleRecommendation } from "./data";
+import type { PillarScore, QuestionInsight, TeamAggregate, TrendPoint, Window } from "./data";
 import { PILLAR_ORDER } from "./pillars";
 import { ANONYMISATION_FLOOR, scoreBand } from "./scoring";
 import type { PillarId, SessionUser } from "./types";
@@ -154,4 +155,119 @@ export async function getTeamAggregate(
   const participation = Math.min(100, Math.round((rangeResponders / reporteeCount) * 100));
 
   return { enoughData: true, teamScore, delta, participation, reporteeCount, pillars, trend };
+}
+
+interface TeamQuestionRow {
+  id: string;
+  text: string;
+  pillarId: PillarId;
+  optionA_text: string;
+  optionA_score: number;
+  optionB_text: string;
+  optionB_score: number;
+  optionC_text: string;
+  optionC_score: number;
+}
+
+/** Real A/B/C split for a question from the team's answers (score → option). */
+function distribution(scores: number[], q: TeamQuestionRow): QuestionInsight["responses"] {
+  const opts = [
+    { key: "A" as const, text: q.optionA_text, score: q.optionA_score },
+    { key: "B" as const, text: q.optionB_text, score: q.optionB_score },
+    { key: "C" as const, text: q.optionC_text, score: q.optionC_score },
+  ];
+  const total = scores.length || 1;
+  return opts.map((o) => ({
+    key: o.key,
+    text: o.text,
+    pct: Math.round((scores.filter((s) => s === o.score).length / total) * 100),
+  }));
+}
+
+export interface TeamPillarDetail {
+  pillarId: PillarId;
+  score: number;
+  delta: number;
+  percentile: number;
+  band: ReturnType<typeof scoreBand>;
+  trend: TrendPoint[];
+  questions: QuestionInsight[];
+}
+
+/**
+ * Team-level detail for one pillar (the pillar-detail screen, reached by tapping
+ * a pillar card on the manager dashboard — same shape as the employee's, but
+ * aggregated). Reuses getTeamAggregate for the score/trend, then re-derives
+ * per-question team distributions. Anonymised per-question too: a question is
+ * only included if at least ANONYMISATION_FLOOR distinct people answered it —
+ * the overall pillar can clear the team floor while one specific question in it
+ * doesn't.
+ */
+export async function getTeamPillarDetail(
+  session: SessionUser,
+  teamId: string,
+  pillarId: PillarId,
+  window: Window = "3M",
+): Promise<TeamPillarDetail> {
+  assertRole(session, "manager", "reviewing_manager", "ceo_hr");
+  const agg = await getTeamAggregate(session, teamId, window);
+  const p = agg.pillars.find((x) => x.pillarId === pillarId);
+  const empty: TeamPillarDetail = {
+    pillarId,
+    score: p?.score ?? 0,
+    delta: p?.delta ?? 0,
+    percentile: p?.percentile ?? 0,
+    band: p?.band ?? scoreBand(0),
+    trend: agg.trend,
+    questions: [],
+  };
+  if (!agg.enoughData || p?.score == null) return empty;
+
+  const db = getDB();
+  const elevated = session.roles.includes("reviewing_manager") || session.roles.includes("ceo_hr");
+  let resolvedTeamId: string | null = teamId;
+  if (teamId === "my-team" || !elevated) {
+    const t = await db
+      .prepare("SELECT id FROM teams WHERE managerId = ? LIMIT 1")
+      .bind(session.id)
+      .first<{ id: string }>();
+    resolvedTeamId = t?.id ?? null;
+  }
+  if (!resolvedTeamId) return empty;
+
+  const [{ results: qRows }, { results: ciRows }] = await Promise.all([
+    db.prepare("SELECT * FROM questions WHERE isActive = 1 AND pillarId = ?").bind(pillarId).all<TeamQuestionRow>(),
+    db
+      .prepare(
+        `SELECT c.questionId AS questionId, c.score AS score, e.userId AS userId
+           FROM checkIns c JOIN employment e ON e.id = c.employmentId
+          WHERE e.teamId = ? AND e.status = 'active' AND c.pillarId = ?`,
+      )
+      .bind(resolvedTeamId, pillarId)
+      .all<{ questionId: string; score: number; userId: string }>(),
+  ]);
+
+  const byQ = new Map<string, number[]>();
+  const respondersByQ = new Map<string, Set<string>>();
+  for (const r of ciRows) {
+    (byQ.get(r.questionId) ?? byQ.set(r.questionId, []).get(r.questionId)!).push(r.score);
+    (respondersByQ.get(r.questionId) ?? respondersByQ.set(r.questionId, new Set()).get(r.questionId)!).add(r.userId);
+  }
+
+  const questions: QuestionInsight[] = qRows
+    .filter((q) => (respondersByQ.get(q.id)?.size ?? 0) >= ANONYMISATION_FLOOR)
+    .map((q) => {
+      const scores = byQ.get(q.id)!;
+      const score = round1(avg(scores));
+      return {
+        id: q.id,
+        text: q.text,
+        pillarId: q.pillarId,
+        score,
+        responses: distribution(scores, q),
+        recommendation: getSampleRecommendation(q.pillarId).text,
+      };
+    });
+
+  return { ...empty, questions };
 }

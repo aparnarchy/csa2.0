@@ -11,6 +11,7 @@ import {
   NotEnoughData,
   PillarCard,
   RecommendationCard,
+  ScoreCircles,
   ScreenShell,
   TrendChart,
 } from "@/components/kit";
@@ -19,7 +20,8 @@ import { COPY, fill } from "@/lib/copy";
 import { getTeamAggregateAction, getTeamInsightAction } from "./actions";
 import { HEADER_MASCOT_SIZE, mascotForScore } from "@/lib/mascot";
 import { PILLARS } from "@/lib/pillars";
-import type { SessionUser } from "@/lib/types";
+import type { PillarId, SessionUser } from "@/lib/types";
+import { TeamPillarDetailView } from "./TeamPillarDetailView";
 
 export function ManagerDashboardView({
   session,
@@ -34,6 +36,7 @@ export function ManagerDashboardView({
   const [window, setWindow] = useState<Window>("3M");
   const [data, setData] = useState<TeamAggregate>(initial);
   const [aiText, setAiText] = useState<string | null>(initialInsight);
+  const [selectedPillar, setSelectedPillar] = useState<PillarId | null>(null);
 
   // Time filter recomputes the whole aggregate via a server action (real D1,
   // privacy-enforced). The team is resolved server-side to the signed-in manager.
@@ -50,6 +53,24 @@ export function ManagerDashboardView({
   const lowPillars = data.pillars
     .filter((p) => p.score !== null && p.score < 7)
     .sort((a, b) => (a.score ?? 0) - (b.score ?? 0));
+
+  // Team-level Bright Spot / Watch Out — same pattern as the employee dashboard,
+  // just computed from the team's pillar averages instead of one person's.
+  const scoredPillars = data.pillars.filter((p) => p.score !== null);
+  const brightPillar = scoredPillars.length
+    ? [...scoredPillars].sort((a, b) => (b.score ?? 0) - (a.score ?? 0))[0]
+    : null;
+  const watchPillar = scoredPillars.length
+    ? [...scoredPillars].sort((a, b) => (a.score ?? 0) - (b.score ?? 0))[0]
+    : null;
+
+  if (selectedPillar) {
+    return (
+      <ScreenShell active="insights">
+        <TeamPillarDetailView pillarId={selectedPillar} onBack={() => setSelectedPillar(null)} />
+      </ScreenShell>
+    );
+  }
 
   return (
     <ScreenShell active="insights">
@@ -92,6 +113,28 @@ export function ManagerDashboardView({
         <NotEnoughData message={data.reason} />
       ) : (
         <>
+          {/* Bright Spot / Watch Out — Play: the same animated wavy blobs as the
+              employee dashboard, at team level (top/bottom scoring pillar).
+              Professional: no equivalent here (matches employee, which also
+              only shows this in Play). */}
+          {isPlay && brightPillar && watchPillar && (
+            <div className="mb-7 pt-4">
+              <ScoreCircles
+                bright={{
+                  score: brightPillar.score!,
+                  pillar: PILLARS[brightPillar.pillarId].label,
+                  pillarId: brightPillar.pillarId,
+                }}
+                watch={{
+                  score: watchPillar.score!,
+                  pillar: PILLARS[watchPillar.pillarId].label,
+                  pillarId: watchPillar.pillarId,
+                }}
+                onSelect={setSelectedPillar}
+              />
+            </div>
+          )}
+
           {/* Team score + delta + participation */}
           <Card>
             <div className="mb-4 flex items-start justify-between">
@@ -110,16 +153,43 @@ export function ManagerDashboardView({
               )}
             </div>
 
-            {/* Pillar cards — aggregates only, no drill into individuals. */}
+            {/* Pillar cards — aggregates only, no drill into individuals. Tap
+                through to the team-level pillar detail (same shape as the
+                employee dashboard's). Pillars with no data yet aren't clickable. */}
             <div className="-mx-1.5 grid grid-cols-4 gap-2">
               {data.pillars.map((p) => (
-                <PillarCard key={p.pillarId} data={p} />
+                <PillarCard
+                  key={p.pillarId}
+                  data={p}
+                  onClick={p.score !== null ? () => setSelectedPillar(p.pillarId) : undefined}
+                />
               ))}
             </div>
           </Card>
 
-          {/* AI insight (team) — LLM summary of the aggregates, cached in D1 */}
-          <AIInsight text={aiText ?? undefined} />
+          {/* AI insight (team) — LLM summary of the aggregates, cached in D1.
+              Play adds the mascot alongside it, matching the employee
+              dashboard's insight-box treatment. */}
+          {isPlay ? (
+            <div className="rounded-card border-2 border-brand/20 bg-white p-4 shadow-[0_8px_24px_-8px_rgba(124,111,255,0.45)]">
+              <div className="flex items-start gap-3.5">
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <span className="text-lg" aria-hidden>✨</span>
+                    <span className="text-[11px] font-bold uppercase tracking-wide text-brand">
+                      {COPY.shared.aiInsightTitle}
+                    </span>
+                  </div>
+                  <p className="mt-2 font-display text-[17px] font-black leading-snug text-brand">
+                    {aiText ?? COPY.shared.aiInsightFallback}
+                  </p>
+                </div>
+                <Mascot state={mascotForScore(data.teamScore, true)} size={101} sparkle={false} float={false} />
+              </div>
+            </div>
+          ) : (
+            <AIInsight text={aiText ?? undefined} />
+          )}
 
           {/* Recommendations — one per low pillar, weakest first */}
           {lowPillars.length > 0 && (
