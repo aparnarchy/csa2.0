@@ -12,6 +12,7 @@ export function GradientHeader({
   avatar,
   back,
   children,
+  below,
   className = "",
 }: {
   eyebrow?: string;
@@ -20,6 +21,9 @@ export function GradientHeader({
   avatar?: ReactNode;
   back?: { label: string; onClick: () => void };
   children?: ReactNode;
+  /** Full-width content rendered BELOW the title+mascot row (e.g. a stats row
+      that would be squished if placed in the narrow left column). */
+  below?: ReactNode;
   className?: string;
 }) {
   return (
@@ -49,6 +53,8 @@ export function GradientHeader({
 
         {avatar && <div className="flex-shrink-0">{avatar}</div>}
       </div>
+
+      {below && <div className="mt-4">{below}</div>}
     </div>
   );
 }

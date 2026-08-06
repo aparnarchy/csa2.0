@@ -209,7 +209,8 @@ export function AnalysisView({
             )
           )}
 
-          {/* ── Everything below is unchanged ───────────────────────────────── */}
+          {/* Happiness score + pillars first (unchanged), then Strengths/Concerns,
+              then the trend chart (owner: only these two swapped places). */}
           <Card>
             {/* Delta rides beside the numeral (via BigScore's `trailing` slot)
                 so score, badge and message read as one block. */}

@@ -31,9 +31,8 @@ export function ProfileView({ session, stats }: { session: SessionUser; stats: P
           eyebrow={roleCompany || undefined}
           title={session.name}
           avatar={<Mascot state="happy" size={HEADER_MASCOT_SIZE} float={false} sparkle={false} />}
-        >
-          <HeaderStats stats={stats} />
-        </GradientHeader>
+          below={<HeaderStats stats={stats} />}
+        />
       ) : (
         <div
           className="rounded-card px-5 py-6"
