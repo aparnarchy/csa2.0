@@ -19,5 +19,6 @@ export { OptionCard } from "./OptionCard";
 export { MonthYearField } from "./MonthYearField";
 export { SwipeToDelete } from "./SwipeToDelete";
 export { ScoreCircles } from "./ScoreCircles";
+export { MobileGestures } from "./MobileGestures";
 export { AIInsight } from "./AIInsight";
 export { Modal } from "./Modal";
