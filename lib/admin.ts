@@ -160,6 +160,128 @@ export async function deleteQuestion(session: SessionUser, id: string): Promise<
   await db.prepare("DELETE FROM questions WHERE id = ?").bind(id).run();
 }
 
+/** Summary returned after a bulk delete — some questions may be protected. */
+export interface BulkDeleteResult {
+  deleted: number;
+  /** Already answered (checkIns) or currently assigned (checkInAssignments) —
+      hard-deleting would silently drop that history from every report, so these
+      are deactivated instead (same effect on the check-in pool, no data loss). */
+  deactivated: number;
+}
+
+/**
+ * Delete many questions at once. A question that already has real answers or
+ * live assignments is never hard-deleted (that would orphan historical
+ * check-ins and silently vanish from past reports) — it's deactivated instead,
+ * same as the single-row status toggle. Admin only.
+ */
+export async function bulkDeleteQuestions(
+  session: SessionUser,
+  ids: string[],
+): Promise<BulkDeleteResult> {
+  assertRole(session, "admin");
+  const db = getDB();
+  let deleted = 0;
+  let deactivated = 0;
+  for (const id of ids) {
+    const used = await db
+      .prepare(
+        `SELECT
+           (SELECT COUNT(*) FROM checkIns WHERE questionId = ?) +
+           (SELECT COUNT(*) FROM checkInAssignments WHERE questionId = ?) AS n`,
+      )
+      .bind(id, id)
+      .first<{ n: number }>();
+    if ((used?.n ?? 0) > 0) {
+      await db.prepare("UPDATE questions SET isActive = 0 WHERE id = ?").bind(id).run();
+      deactivated++;
+    } else {
+      await db.prepare("DELETE FROM questions WHERE id = ?").bind(id).run();
+      deleted++;
+    }
+  }
+  return { deleted, deactivated };
+}
+
+const PILLAR_IDS: readonly PillarId[] = ["meaningful_work", "growth", "culture", "compensation"];
+
+/**
+ * Bulk-import questions from raw CSV text — the SAME column shape the question
+ * bank table displays and QuestionInput uses, so an admin can export, edit in a
+ * spreadsheet, and re-import: `text,pillarId,optionA_text,optionA_score,
+ * optionB_text,optionB_score,optionC_text,optionC_score,isActive`. `isActive` is
+ * optional (defaults to true: "true"/"1"/"yes", case-insensitive, are truthy).
+ * A header row is auto-detected. Malformed rows are skipped with a message; the
+ * valid rows still import. Admin only.
+ */
+export async function importQuestionsCsv(
+  session: SessionUser,
+  text: string,
+): Promise<CsvImportResult> {
+  assertRole(session, "admin");
+  const result: CsvImportResult = { created: 0, updated: 0, skipped: 0, errors: [] };
+
+  const lines = text.split(/\r?\n/).filter((l) => l.trim().length > 0);
+  if (lines.length === 0) {
+    result.errors.push("The file is empty.");
+    return result;
+  }
+
+  const REQUIRED = [
+    "text", "pillarid", "optiona_text", "optiona_score",
+    "optionb_text", "optionb_score", "optionc_text", "optionc_score",
+  ];
+  let cols: Record<string, number> = {
+    text: 0, pillarid: 1, optiona_text: 2, optiona_score: 3,
+    optionb_text: 4, optionb_score: 5, optionc_text: 6, optionc_score: 7, isactive: 8,
+  };
+  let start = 0;
+  const firstCells = splitCsvLine(lines[0]).map((c) => c.trim().toLowerCase());
+  if (REQUIRED.every((k) => firstCells.includes(k))) {
+    start = 1;
+    cols = Object.fromEntries(firstCells.map((c, i) => [c, i]));
+  }
+
+  for (let i = start; i < lines.length; i++) {
+    const rowNo = i + 1;
+    const cells = splitCsvLine(lines[i]);
+    const cell = (key: string) => (cols[key] >= 0 ? (cells[cols[key]] ?? "").trim() : "");
+
+    const pillarRaw = cell("pillarid").toLowerCase().replace(/\s+/g, "_");
+    if (!PILLAR_IDS.includes(pillarRaw as PillarId)) {
+      result.skipped++;
+      result.errors.push(`Row ${rowNo}: pillar "${cell("pillarid")}" isn't one of ${PILLAR_IDS.join(", ")} — skipped.`);
+      continue;
+    }
+    const aScore = Number(cell("optiona_score"));
+    const bScore = Number(cell("optionb_score"));
+    const cScore = Number(cell("optionc_score"));
+    const isActiveRaw = cell("isactive").toLowerCase();
+    const input: QuestionInput = {
+      text: cell("text"),
+      pillarId: pillarRaw as PillarId,
+      optionA_text: cell("optiona_text"),
+      optionA_score: Math.round(aScore),
+      optionB_text: cell("optionb_text"),
+      optionB_score: Math.round(bScore),
+      optionC_text: cell("optionc_text"),
+      optionC_score: Math.round(cScore),
+      isActive: isActiveRaw === "" ? true : ["true", "1", "yes"].includes(isActiveRaw),
+    };
+    try {
+      validate(input);
+    } catch (e) {
+      result.skipped++;
+      result.errors.push(`Row ${rowNo}: ${e instanceof Error ? e.message : "invalid row"} — skipped.`);
+      continue;
+    }
+    await createQuestion(session, input);
+    result.created++;
+  }
+
+  return result;
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Org structure: departments, teams, and assignments (Phase 4.4)
 // ─────────────────────────────────────────────────────────────────────────────

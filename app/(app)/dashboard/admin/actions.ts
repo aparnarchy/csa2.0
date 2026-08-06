@@ -10,6 +10,7 @@
 
 import { getSession } from "@/lib/auth-session";
 import {
+  bulkDeleteQuestions,
   createDepartment,
   createQuestion,
   createTeam,
@@ -17,6 +18,7 @@ import {
   deleteQuestion,
   deleteTeam,
   getOrgStructure,
+  importQuestionsCsv,
   listQuestions,
   updateDepartment,
   updateQuestion,
@@ -33,6 +35,7 @@ import {
   getInvites,
   importInvitesCsv,
   resendInvite,
+  type BulkDeleteResult,
   type CsvImportResult,
   type InviteInput,
   type InviteWithMeta,
@@ -72,6 +75,22 @@ export async function deleteQuestionAction(id: string): Promise<Question[]> {
   const user = await requireAdmin();
   await deleteQuestion(user, id);
   return listQuestions(user);
+}
+
+export async function bulkDeleteQuestionsAction(
+  ids: string[],
+): Promise<{ result: BulkDeleteResult; questions: Question[] }> {
+  const user = await requireAdmin();
+  const result = await bulkDeleteQuestions(user, ids);
+  return { result, questions: await listQuestions(user) };
+}
+
+export async function importQuestionsCsvAction(
+  text: string,
+): Promise<{ result: CsvImportResult; questions: Question[] }> {
+  const user = await requireAdmin();
+  const result = await importQuestionsCsv(user, text);
+  return { result, questions: await listQuestions(user) };
 }
 
 // ── Org structure ─────────────────────────────────────────────────────────────

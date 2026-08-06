@@ -1,12 +1,17 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useMemo, useState, useTransition } from "react";
+import { useMemo, useRef, useState, useTransition } from "react";
 import { Modal, ScreenShell } from "@/components/kit";
 import { PILLARS, PILLAR_ORDER } from "@/lib/pillars";
 import type { PillarId, Question, SessionUser } from "@/lib/types";
-import type { QuestionInput } from "@/lib/admin";
-import { createQuestionAction, updateQuestionAction } from "../actions";
+import type { BulkDeleteResult, CsvImportResult, QuestionInput } from "@/lib/admin";
+import {
+  bulkDeleteQuestionsAction,
+  createQuestionAction,
+  importQuestionsCsvAction,
+  updateQuestionAction,
+} from "../actions";
 
 /** A fresh question: default scores A=4, B=10, C=7; everything editable. */
 const BLANK: QuestionInput = {
@@ -53,6 +58,12 @@ export function QuestionBankView({
   // Filters
   const [pillarFilter, setPillarFilter] = useState<PillarId | "all">("all");
   const [search, setSearch] = useState("");
+
+  // Bulk select + CSV import
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [csvSummary, setCsvSummary] = useState<CsvImportResult | null>(null);
+  const [bulkSummary, setBulkSummary] = useState<BulkDeleteResult | null>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -103,6 +114,56 @@ export function QuestionBankView({
         setQuestions(next);
       } catch (e) {
         setError(e instanceof Error ? e.message : "Could not update status. Please try again.");
+      }
+    });
+  }
+
+  function toggleOne(id: string) {
+    setSelected((s) => {
+      const next = new Set(s);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function toggleAllFiltered() {
+    const filteredIds = filtered.map((q) => q.id);
+    const allSelected = filteredIds.length > 0 && filteredIds.every((id) => selected.has(id));
+    setSelected(allSelected ? new Set() : new Set(filteredIds));
+  }
+
+  function deleteSelected() {
+    if (selected.size === 0) return;
+    if (!confirm(`Delete ${selected.size} question${selected.size === 1 ? "" : "s"}?`)) return;
+    setError(null);
+    setBulkSummary(null);
+    startTransition(async () => {
+      try {
+        const { result, questions: fresh } = await bulkDeleteQuestionsAction([...selected]);
+        setQuestions(fresh);
+        setSelected(new Set());
+        setBulkSummary(result);
+      } catch (e) {
+        setError(e instanceof Error ? e.message : "Could not delete. Please try again.");
+      }
+    });
+  }
+
+  function onPickCsv(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (fileRef.current) fileRef.current.value = ""; // allow re-picking the same file
+    if (!file) return;
+    setError(null);
+    setBulkSummary(null);
+    startTransition(async () => {
+      try {
+        const text = await file.text();
+        const { result, questions: fresh } = await importQuestionsCsvAction(text);
+        setQuestions(fresh);
+        setCsvSummary(result);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Could not read that file.");
       }
     });
   }
@@ -159,9 +220,19 @@ export function QuestionBankView({
           >
             + Add question
           </button>
+          <button
+            type="button"
+            onClick={() => fileRef.current?.click()}
+            disabled={pending}
+            className="flex-shrink-0 rounded-full bg-lav-mid px-3.5 py-2 font-display text-xs font-black text-brand active:scale-[0.97] disabled:opacity-50"
+          >
+            {pending ? "Working…" : "Upload CSV"}
+          </button>
+          <input ref={fileRef} type="file" accept=".csv,text/csv" onChange={onPickCsv} className="hidden" />
         </div>
         <p className="px-1 text-[11px] text-ink-4">
-          {filtered.length} of {questions.length} questions
+          {filtered.length} of {questions.length} questions · CSV columns: text, pillarId, optionA_text,
+          optionA_score, optionB_text, optionB_score, optionC_text, optionC_score, isActive
         </p>
       </div>
 
@@ -169,11 +240,86 @@ export function QuestionBankView({
         <p className="rounded-xl bg-red-50 px-3 py-2 text-xs font-semibold text-red-600">{error}</p>
       )}
 
+      {csvSummary && (
+        <div className="rounded-xl bg-lav-soft px-3 py-2 text-[11px] text-ink-2">
+          <button
+            type="button"
+            onClick={() => setCsvSummary(null)}
+            className="float-right text-ink-4"
+            aria-label="Dismiss"
+          >
+            ✕
+          </button>
+          <p className="font-bold text-brand">
+            CSV import: {csvSummary.created} added, {csvSummary.skipped} skipped.
+          </p>
+          {csvSummary.errors.length > 0 && (
+            <ul className="mt-1 list-disc space-y-0.5 pl-4">
+              {csvSummary.errors.map((e, i) => (
+                <li key={i}>{e}</li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
+
+      {bulkSummary && (
+        <div className="rounded-xl bg-lav-soft px-3 py-2 text-[11px] text-ink-2">
+          <button
+            type="button"
+            onClick={() => setBulkSummary(null)}
+            className="float-right text-ink-4"
+            aria-label="Dismiss"
+          >
+            ✕
+          </button>
+          <p className="font-bold text-brand">
+            Deleted {bulkSummary.deleted}
+            {bulkSummary.deactivated > 0 &&
+              ` · ${bulkSummary.deactivated} already answered — deactivated instead of deleted, to keep past reports intact`}
+            .
+          </p>
+        </div>
+      )}
+
+      {/* Bulk action bar — appears once at least one row is checked */}
+      {selected.size > 0 && (
+        <div className="flex items-center justify-between rounded-xl bg-ink px-3 py-2 text-white">
+          <span className="text-xs font-bold">{selected.size} selected</span>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => setSelected(new Set())}
+              className="rounded-lg px-2.5 py-1 text-[11px] font-bold text-white/70"
+            >
+              Clear
+            </button>
+            <button
+              type="button"
+              onClick={deleteSelected}
+              disabled={pending}
+              className="rounded-lg bg-red-500 px-3 py-1.5 text-[11px] font-bold text-white active:scale-[0.97] disabled:opacity-50"
+            >
+              Delete selected
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Table (scrolls horizontally on narrow screens) */}
       <div className="overflow-x-auto rounded-card border border-lav-mid bg-white shadow-card">
-        <table className="w-full min-w-[900px] border-collapse text-left text-xs">
+        <table className="w-full min-w-[940px] border-collapse text-left text-xs">
           <thead>
             <tr className="border-b border-lav-mid text-[10px] uppercase tracking-wide text-ink-3">
+              <Th className="w-8">
+                <input
+                  type="checkbox"
+                  checked={filtered.length > 0 && filtered.every((q) => selected.has(q.id))}
+                  onChange={toggleAllFiltered}
+                  className="h-3.5 w-3.5 accent-brand"
+                  aria-label="Select all"
+                />
+              </Th>
               <Th className="min-w-[220px]">Question</Th>
               <Th>Pillar</Th>
               <Th className="min-w-[150px]">Option A</Th>
@@ -189,13 +335,27 @@ export function QuestionBankView({
           <tbody>
             {filtered.length === 0 && (
               <tr>
-                <td colSpan={10} className="px-3 py-6 text-center text-[11px] text-ink-4">
+                <td colSpan={11} className="px-3 py-6 text-center text-[11px] text-ink-4">
                   No questions match.
                 </td>
               </tr>
             )}
             {filtered.map((q) => (
-              <tr key={q.id} className="border-b border-lav-light/70 align-top last:border-0">
+              <tr
+                key={q.id}
+                className={`border-b border-lav-light/70 align-top last:border-0 ${
+                  selected.has(q.id) ? "bg-lav-soft/60" : ""
+                }`}
+              >
+                <td className="px-3 py-2.5">
+                  <input
+                    type="checkbox"
+                    checked={selected.has(q.id)}
+                    onChange={() => toggleOne(q.id)}
+                    className="h-3.5 w-3.5 accent-brand"
+                    aria-label={`Select ${q.text}`}
+                  />
+                </td>
                 <td className="px-3 py-2.5">
                   <p className="font-semibold leading-snug text-ink">{q.text}</p>
                 </td>
