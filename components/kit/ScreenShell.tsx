@@ -1,15 +1,28 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 
-type NavKey = "inbox" | "insights" | "wisdom" | "profile";
+export interface NavItem {
+  key: string;
+  label: string;
+  href: string;
+  icon: string;
+}
 
-const NAV: { key: NavKey; label: string; href: string; icon: string }[] = [
+const NAV: NavItem[] = [
   { key: "profile",  label: "Profile",  href: "/profile",            icon: "👤" },
   // Route through the role-router (same as login) so managers land on the
   // manager dashboard, CEO/HR on theirs, etc. — not always the employee one.
   { key: "insights", label: "Insights", href: "/dashboard",          icon: "📊" },
   { key: "wisdom",   label: "Wisdom",   href: "/wisdom",             icon: "📚" },
   { key: "inbox",    label: "Inbox",    href: "/inbox",              icon: "📥" },
+];
+
+/** CEO/HR's nav — no Wisdom/Inbox; "Dashboard" and "Insights" are separate
+    tabs (org overview vs. the analysis screen), not the shared role-router. */
+export const CEO_NAV: NavItem[] = [
+  { key: "profile",   label: "Profile",   href: "/profile",              icon: "👤" },
+  { key: "dashboard", label: "Dashboard", href: "/dashboard/ceo-hr",     icon: "🏢" },
+  { key: "insights",  label: "Insights",  href: "/dashboard/ceo-hr/insights", icon: "📊" },
 ];
 
 /**
@@ -23,17 +36,21 @@ export function ScreenShell({
   headerRight,
   wide = false,
   noNav = false,
+  navItems,
   children,
 }: {
   title?: string;
-  active?: NavKey;
+  active?: string;
   headerRight?: ReactNode;
   /** Widen the column on laptops (admin console). Phones are unchanged. */
   wide?: boolean;
   /** Hide the bottom nav entirely (admin console navigates via its back links). */
   noNav?: boolean;
+  /** Override which tabs show (e.g. CEO_NAV). Defaults to the standard 4. */
+  navItems?: NavItem[];
   children: ReactNode;
 }) {
+  const nav = navItems ?? NAV;
   const widthCls = wide ? "max-w-md md:max-w-4xl lg:max-w-6xl" : "max-w-md";
   return (
     <div className={`mx-auto flex min-h-screen w-full ${widthCls} flex-col bg-lav-bg`}>
@@ -54,7 +71,7 @@ export function ScreenShell({
 
       {!noNav && (
         <nav className="fixed inset-x-0 bottom-0 z-10 mx-auto flex max-w-md items-center justify-around border-t border-white/50 bg-white/95 px-2 py-2 backdrop-blur">
-          {NAV.map((item) => {
+          {nav.map((item) => {
             const isActive = item.key === active;
             return (
               <Link

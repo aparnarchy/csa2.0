@@ -2,19 +2,20 @@ export const runtime = "edge";
 
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth-session";
-import { getCeoDashboard } from "@/lib/ceo";
-import { getCeoInsight } from "@/lib/ai";
-import { CeoHrView } from "./CeoHrView";
+import { getCeoDashboard, getDepartmentScores } from "@/lib/ceo";
+import { OrgDashboardView } from "./OrgDashboardView";
 
-/** CEO / HR dashboard — org-wide aggregates with dept/team drill-down (Phase 4.3). */
+/** CEO / HR org dashboard — overall happiness + one panel per department. */
 export default async function CeoHrPage() {
   const session = await getSession();
   if (!session) redirect("/login");
   if (!session.user.onboardingComplete) redirect("/onboarding");
   if (!session.user.roles.includes("ceo_hr")) redirect("/dashboard");
 
-  const data = await getCeoDashboard(session.user, "org", "3M");
-  const insight = await getCeoInsight("3M", data);
+  const [org, depts] = await Promise.all([
+    getCeoDashboard(session.user, "org", "3M"),
+    getDepartmentScores(session.user, "3M"),
+  ]);
 
-  return <CeoHrView session={session.user} initial={data} initialInsight={insight} />;
+  return <OrgDashboardView session={session.user} initialOrg={org} initialDepts={depts} />;
 }

@@ -9,11 +9,13 @@
 
 import { getDB } from "./db";
 import { assertRole } from "./access-control";
+import { getSampleRecommendation } from "./data";
 import type {
   ActionImpact,
   CeoDashboard,
   CeoScopeOption,
   PillarScore,
+  QuestionInsight,
   TrendPoint,
   Window,
 } from "./data";
@@ -234,4 +236,166 @@ async function computeImpact(
     resolutionPct: Math.round((resolved / submitted) * 100),
     pillarsImproved: r?.pillarsImproved ?? 0,
   };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Org dashboard: overall score + department panels
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface DepartmentScore {
+  deptId: string;
+  name: string;
+  score: number | null;
+  delta: number | null;
+  band: ReturnType<typeof scoreBand> | null;
+  enoughData: boolean;
+}
+
+/**
+ * Every department with its own score — the org dashboard's tappable panels,
+ * and the same list feeds the Insights tab's department bar chart. Reuses
+ * getCeoDashboard per department (already trusted for the floor/aggregation
+ * logic) rather than duplicating it.
+ */
+export async function getDepartmentScores(
+  session: SessionUser,
+  window: Window = "3M",
+): Promise<DepartmentScore[]> {
+  assertRole(session, "ceo_hr");
+  const db = getDB();
+  const { results: depts } = await db
+    .prepare("SELECT id, name FROM departments ORDER BY name")
+    .all<{ id: string; name: string }>();
+
+  const scores = await Promise.all(
+    depts.map(async (d) => {
+      const agg = await getCeoDashboard(session, d.id, window);
+      return {
+        deptId: d.id,
+        name: d.name,
+        score: agg.score,
+        delta: agg.delta,
+        band: agg.score !== null ? scoreBand(agg.score) : null,
+        enoughData: agg.enoughData,
+      };
+    }),
+  );
+  scores.sort(
+    (a, b) => Number(b.enoughData) - Number(a.enoughData) || (b.score ?? 0) - (a.score ?? 0),
+  );
+  return scores;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Scoped pillar detail (org / dept / team) — the Insights tab's clickable pillars
+// ─────────────────────────────────────────────────────────────────────────────
+
+interface ScopeQuestionRow {
+  id: string;
+  text: string;
+  pillarId: PillarId;
+  optionA_text: string;
+  optionA_score: number;
+  optionB_text: string;
+  optionB_score: number;
+  optionC_text: string;
+  optionC_score: number;
+}
+
+function distribution(scores: number[], q: ScopeQuestionRow): QuestionInsight["responses"] {
+  const opts = [
+    { key: "A" as const, text: q.optionA_text, score: q.optionA_score },
+    { key: "B" as const, text: q.optionB_text, score: q.optionB_score },
+    { key: "C" as const, text: q.optionC_text, score: q.optionC_score },
+  ];
+  const total = scores.length || 1;
+  return opts.map((o) => ({
+    key: o.key,
+    text: o.text,
+    pct: Math.round((scores.filter((s) => s === o.score).length / total) * 100),
+  }));
+}
+
+export interface CeoPillarDetail {
+  pillarId: PillarId;
+  score: number;
+  delta: number;
+  percentile: number;
+  band: ReturnType<typeof scoreBand>;
+  trend: TrendPoint[];
+  questions: QuestionInsight[];
+}
+
+/**
+ * Pillar detail at whatever scope the Insights tab is currently viewing (org,
+ * a department, or a team) — same shape as the employee/manager pillar detail
+ * screens. Anonymised per-question: a question needs its own ≥3 responders
+ * even if the pillar overall clears the floor.
+ */
+export async function getCeoPillarDetail(
+  session: SessionUser,
+  scope: string,
+  pillarId: PillarId,
+  window: Window = "3M",
+): Promise<CeoPillarDetail> {
+  assertRole(session, "ceo_hr");
+  const agg = await getCeoDashboard(session, scope, window);
+  const p = agg.pillars.find((x) => x.pillarId === pillarId);
+  const empty: CeoPillarDetail = {
+    pillarId,
+    score: p?.score ?? 0,
+    delta: p?.delta ?? 0,
+    percentile: p?.percentile ?? 0,
+    band: p?.band ?? scoreBand(0),
+    trend: agg.trend,
+    questions: [],
+  };
+  if (!agg.enoughData || p?.score == null) return empty;
+
+  const db = getDB();
+  let scopeSql = "";
+  const params: string[] = [];
+  if (agg.scopeKind === "dept") {
+    scopeSql = " AND e.departmentId = ?";
+    params.push(scope);
+  } else if (agg.scopeKind === "team") {
+    scopeSql = " AND e.teamId = ?";
+    params.push(scope);
+  }
+
+  const [{ results: qRows }, { results: ciRows }] = await Promise.all([
+    db.prepare("SELECT * FROM questions WHERE isActive = 1 AND pillarId = ?").bind(pillarId).all<ScopeQuestionRow>(),
+    db
+      .prepare(
+        `SELECT c.questionId AS questionId, c.score AS score, e.userId AS userId
+           FROM checkIns c JOIN employment e ON e.id = c.employmentId
+          WHERE e.status = 'active' AND c.pillarId = ?${scopeSql}`,
+      )
+      .bind(pillarId, ...params)
+      .all<{ questionId: string; score: number; userId: string }>(),
+  ]);
+
+  const byQ = new Map<string, number[]>();
+  const respondersByQ = new Map<string, Set<string>>();
+  for (const r of ciRows) {
+    (byQ.get(r.questionId) ?? byQ.set(r.questionId, []).get(r.questionId)!).push(r.score);
+    (respondersByQ.get(r.questionId) ?? respondersByQ.set(r.questionId, new Set()).get(r.questionId)!).add(r.userId);
+  }
+
+  const questions: QuestionInsight[] = qRows
+    .filter((q) => (respondersByQ.get(q.id)?.size ?? 0) >= ANONYMISATION_FLOOR)
+    .map((q) => {
+      const scores = byQ.get(q.id)!;
+      const score = round1(avg(scores));
+      return {
+        id: q.id,
+        text: q.text,
+        pillarId: q.pillarId,
+        score,
+        responses: distribution(scores, q),
+        recommendation: getSampleRecommendation(q.pillarId).text,
+      };
+    });
+
+  return { ...empty, questions };
 }
