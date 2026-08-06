@@ -1,17 +1,19 @@
 "use client";
 
-import { useState } from "react";
-import { Mascot, OptionCard, RecommendationCard } from "@/components/kit";
-import { COPY } from "@/lib/copy";
+import { useRef, useState } from "react";
 import { getSampleRecommendation, type CheckInQuestion } from "@/lib/data";
+import { COPY } from "@/lib/copy";
 import { skipCheckInAction, submitCheckInAction } from "./actions";
 
 const t = COPY.catchup;
 
 /**
- * Catch-up on questions missed in previous weeks (oldest first). Save & next
- * records a retrospective answer (excluded from the streak); "Skip this for now"
- * moves on. A low answer (<7) shows an inline tip first.
+ * Catch-up on questions missed in earlier weeks — presented as a CAROUSEL (dots +
+ * ‹ › arrows) so it reads clearly differently from this week's full-screen check-in
+ * and never feels like the same questions again. Tapping an answer records it
+ * (retrospective — excluded from the streak) and auto-advances; "Skip" retires it
+ * from the list. "Done" (or answering/skipping the last one) hands back to the
+ * session, which continues to the dashboard.
  */
 export function CatchUpFlow({
   questions,
@@ -20,89 +22,180 @@ export function CatchUpFlow({
   questions: CheckInQuestion[];
   onDone: () => void;
 }) {
-  const [index, setIndex] = useState(0);
-  const [selected, setSelected] = useState<string | null>(null);
+  const [idx, setIdx] = useState(0);
+  const [answers, setAnswers] = useState<Record<string, { key: string; score: number }>>({});
+  const timer = useRef<number | null>(null);
 
   const total = questions.length;
-  const q = questions[index];
-  const chosen = q.options.find((o) => o.key === selected) ?? null;
-  const lowScore = chosen ? chosen.score < 7 : false;
+  const q = questions[idx];
+  const selected = answers[q.assignmentId];
+  const answeredCount = Object.keys(answers).length;
+  const allDone = answeredCount >= total;
 
-  function advance() {
-    setSelected(null);
-    if (index + 1 < total) setIndex(index + 1);
+  function clearTimer() {
+    if (timer.current) {
+      window.clearTimeout(timer.current);
+      timer.current = null;
+    }
+  }
+
+  function step() {
+    clearTimer();
+    if (idx + 1 < total) setIdx(idx + 1);
+  }
+
+  function pick(key: string, score: number) {
+    setAnswers((a) => ({ ...a, [q.assignmentId]: { key, score } }));
+    void submitCheckInAction(q.assignmentId, score); // retrospective (derived server-side)
+    clearTimer();
+    timer.current = window.setTimeout(step, 300);
+  }
+
+  function skip() {
+    void skipCheckInAction(q.assignmentId);
+    if (idx + 1 < total) setIdx(idx + 1);
     else onDone();
   }
 
-  async function save() {
-    const c = q.options.find((o) => o.key === selected);
-    if (!c) return;
-    await submitCheckInAction(q.assignmentId, c.score); // retrospective (derived server-side)
-    advance();
-  }
-
-  async function skip() {
-    await skipCheckInAction(q.assignmentId);
-    advance();
-  }
-
   return (
-    <div className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col bg-lav-bg px-5 pb-8 pt-5">
-      <div className="flex items-center gap-3">
-        <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-white">
-          <div
-            className="h-full rounded-full bg-brand transition-[width] duration-300"
-            style={{ width: `${(index / total) * 100}%` }}
+    <div className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col bg-lav-bg px-5 pb-8 pt-6">
+      {/* header — distinct from the fresh check-in */}
+      <div className="text-center">
+        <span className="inline-block rounded-full bg-lav-soft px-3 py-1 text-[10px] font-bold uppercase tracking-wide text-brand">
+          {t.chipPrefix}
+        </span>
+        <h1 className="mt-3 font-display text-[22px] font-black leading-tight text-brand">
+          A few questions from earlier weeks
+        </h1>
+        <p className="mt-1 text-xs text-ink-3">
+          {answeredCount} of {total} answered
+        </p>
+      </div>
+
+      {/* progress dots */}
+      <div className="mt-4 flex justify-center gap-1.5">
+        {questions.map((uq, i) => (
+          <span
+            key={uq.assignmentId}
+            className={`h-2 rounded-full transition-all ${
+              answers[uq.assignmentId] ? "w-2 bg-good" : i === idx ? "w-5 bg-brand" : "w-2 bg-lav-mid"
+            }`}
+          />
+        ))}
+      </div>
+
+      {/* the card */}
+      <div className="mt-4 flex flex-1 flex-col justify-center">
+        <div
+          key={idx}
+          className={`screen-enter rounded-card border p-4 shadow-card transition ${
+            selected ? "border-good bg-good/5" : "border-transparent bg-white"
+          }`}
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-semibold text-ink-4">{q.weekLabel ?? t.defaultWeekLabel}</span>
+            {selected && (
+              <span className="rounded-md bg-good/15 px-2 py-0.5 text-[10px] font-bold text-good">
+                Saved
+              </span>
+            )}
+          </div>
+          <p className="mt-2 font-display text-[17px] font-black leading-snug text-ink">{q.text}</p>
+
+          <div className="mt-4 flex flex-col gap-2">
+            {q.options.map((o) => {
+              const picked = selected?.key === o.key;
+              return (
+                <button
+                  key={o.key}
+                  type="button"
+                  onClick={() => pick(o.key, o.score)}
+                  className={`flex items-center gap-3 rounded-2xl border p-3 text-left transition active:scale-[0.99] ${
+                    picked ? "border-good bg-good/10" : "border-gray-200 bg-white"
+                  }`}
+                >
+                  <span
+                    className={`flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg text-xs font-black ${
+                      picked ? "bg-good text-white" : "bg-lav-soft text-brand"
+                    }`}
+                  >
+                    {o.key}
+                  </span>
+                  <span className="text-[13px] leading-snug text-ink">{o.text}</span>
+                </button>
+              );
+            })}
+          </div>
+
+          {selected && selected.score < 7 && (
+            <div className="mt-3 rounded-xl bg-lav-soft p-3">
+              <p className="text-[11px] font-bold text-brand">{COPY.inbox.recommendationLabel}</p>
+              <p className="mt-1 text-[12px] leading-relaxed text-ink-2">
+                {getSampleRecommendation(q.pillarId).text}
+              </p>
+            </div>
+          )}
+
+          <button
+            type="button"
+            onClick={skip}
+            className="mt-3 w-full py-1 text-center text-[12px] font-semibold text-ink-4 active:scale-95"
+          >
+            {t.skipButton}
+          </button>
+        </div>
+
+        {/* carousel nav */}
+        <div className="mt-4 flex items-center justify-between">
+          <NavArrow
+            dir="prev"
+            disabled={idx === 0}
+            onClick={() => {
+              clearTimer();
+              if (idx > 0) setIdx(idx - 1);
+            }}
+          />
+          <span className="text-xs font-semibold text-ink-3">
+            {idx + 1} of {total}
+          </span>
+          <NavArrow
+            dir="next"
+            disabled={idx + 1 >= total}
+            onClick={step}
           />
         </div>
-        <span className="text-xs font-bold text-ink-3">
-          {index + 1} of {total}
-        </span>
-      </div>
-
-      <div key={index} className="screen-enter flex flex-1 flex-col justify-center">
-        <div className="flex flex-col items-center text-center">
-          <Mascot state="welcome" size={146} float={false} />
-          <span className="mt-3 inline-block rounded-full bg-lav-soft px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-brand">
-            {t.chipPrefix} · {q.weekLabel ?? t.defaultWeekLabel}
-          </span>
-          <h1 className="mt-3 font-display text-[24px] font-bold leading-snug text-brand">{q.text}</h1>
-        </div>
-
-        <div className="mt-8 space-y-3">
-          {q.options.map((o) => (
-            <OptionCard
-              key={o.key}
-              optionKey={o.key}
-              text={o.text}
-              selected={o.key === selected}
-              onClick={() => setSelected(o.key)}
-            />
-          ))}
-        </div>
-
-        {lowScore && (
-          <div className="mt-5">
-            <RecommendationCard pillarId={q.pillarId} text={getSampleRecommendation(q.pillarId).text} />
-          </div>
-        )}
       </div>
 
       <button
         type="button"
-        onClick={save}
-        disabled={!chosen}
-        className="mt-6 w-full rounded-2xl bg-brand py-3.5 font-display text-sm font-black text-white transition active:scale-[0.98] disabled:opacity-40"
+        onClick={onDone}
+        className="mt-4 w-full rounded-2xl bg-brand py-3.5 font-display text-sm font-black text-white transition active:scale-[0.98]"
       >
-        {t.saveButton}
-      </button>
-      <button
-        type="button"
-        onClick={skip}
-        className="mt-3 w-full py-1 text-center text-sm font-semibold text-ink-3 active:scale-95"
-      >
-        {t.skipButton}
+        {allDone ? "Done" : "Continue"}
       </button>
     </div>
+  );
+}
+
+/** A subtle grey chevron for stepping through the carousel. */
+function NavArrow({
+  dir,
+  disabled,
+  onClick,
+}: {
+  dir: "prev" | "next";
+  disabled: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      aria-label={dir === "prev" ? "Previous" : "Next"}
+      className="flex h-9 w-9 items-center justify-center rounded-full text-2xl leading-none text-ink-4 transition active:scale-90 disabled:opacity-25"
+    >
+      {dir === "prev" ? "‹" : "›"}
+    </button>
   );
 }

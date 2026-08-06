@@ -1,87 +1,76 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { Mascot, OptionCard, RecommendationCard } from "@/components/kit";
+import { useRef, useState } from "react";
+import { Mascot, OptionCard } from "@/components/kit";
 import { COPY, fill } from "@/lib/copy";
-import { getSampleRecommendation, type CheckInQuestion } from "@/lib/data";
+import { type CheckInQuestion } from "@/lib/data";
 import type { SessionUser } from "@/lib/types";
 import { submitCheckInAction } from "./actions";
 
 const t = COPY.checkin;
 
 /**
- * The weekly check-in: one question at a time, A/B/C tappable cards (score
- * hidden). A low answer (<7) shows an inline tip before continuing. Focused
- * full-screen flow — no bottom nav.
+ * This week's fresh check-in: one question at a time, A/B/C tappable cards
+ * (score hidden). Tapping an answer records it and auto-advances to the next
+ * question — no Save button. Subtle grey ‹ › arrows at the top let the user step
+ * back or forward. When the last question is answered the session moves on
+ * (onDone) to the catch-up carousel or the dashboard.
  */
 export function CheckInFlow({
   session,
   questions,
+  onDone,
 }: {
   session: SessionUser;
   questions: CheckInQuestion[];
+  onDone: () => void;
 }) {
-  const router = useRouter();
   const [index, setIndex] = useState(0);
-  const [selected, setSelected] = useState<string | null>(null);
-  const [done, setDone] = useState(false);
+  const [answers, setAnswers] = useState<Record<string, string>>({});
+  const timer = useRef<number | null>(null);
 
   const first = (session.name || "there").trim().split(/\s+/)[0];
   const total = questions.length;
+  const q = questions[index];
+  const selected = answers[q.assignmentId] ?? null;
 
-  if (total === 0 || done) {
-    return (
-      <div className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col items-center justify-center gap-5 bg-lav-bg px-8 text-center">
-        <Mascot state="happy" size={150} />
-        <div>
-          <h1 className="font-display text-2xl font-black text-brand">
-            {total === 0 ? t.doneAllCaughtUpTitle : fill(t.doneNiceWorkTitle, { name: first })}
-          </h1>
-          <p className="mt-2 text-sm text-ink-2">
-            {total === 0 ? t.doneAllCaughtUpBody : t.doneLoggedBody}
-          </p>
-        </div>
-        <button
-          type="button"
-          onClick={() => router.push("/dashboard/employee")}
-          className="w-full rounded-2xl bg-brand py-3.5 font-display text-sm font-black text-white active:scale-[0.98]"
-        >
-          {t.seeDashboardButton}
-        </button>
-      </div>
-    );
+  function clearTimer() {
+    if (timer.current) {
+      window.clearTimeout(timer.current);
+      timer.current = null;
+    }
   }
 
-  const q = questions[index];
-  const chosen = q.options.find((o) => o.key === selected) ?? null;
-  const lowScore = chosen ? chosen.score < 7 : false;
-
-  async function next() {
-    const c = q.options.find((o) => o.key === selected);
-    if (!c) return;
-    await submitCheckInAction(q.assignmentId, c.score);
-    setSelected(null);
+  function advance() {
+    clearTimer();
     if (index + 1 < total) setIndex(index + 1);
-    else setDone(true);
+    else onDone();
+  }
+
+  function pick(optionKey: string, score: number) {
+    setAnswers((a) => ({ ...a, [q.assignmentId]: optionKey }));
+    void submitCheckInAction(q.assignmentId, score);
+    // Brief beat so the selection registers visually, then move on automatically.
+    clearTimer();
+    timer.current = window.setTimeout(advance, 300);
   }
 
   return (
     <div className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col bg-lav-bg px-6 pb-8 pt-5">
-      {/* top bar: back + step */}
+      {/* top: subtle grey back / forward arrows + step counter */}
       <div className="flex items-center justify-between">
-        <button
-          type="button"
-          onClick={() => router.push("/dashboard/employee")}
-          className="text-sm font-semibold text-ink-3 active:scale-95"
-        >
-          {t.backLink}
-        </button>
-        {total > 1 && (
-          <span className="text-xs font-bold text-ink-3">
-            {index + 1} of {total}
-          </span>
-        )}
+        <NavArrow
+          dir="prev"
+          disabled={index === 0}
+          onClick={() => {
+            clearTimer();
+            if (index > 0) setIndex(index - 1);
+          }}
+        />
+        <span className="text-xs font-bold text-ink-3">
+          {index + 1} of {total}
+        </span>
+        <NavArrow dir="next" disabled={!selected} onClick={advance} />
       </div>
 
       {/* greeting + question, vertically centred */}
@@ -101,27 +90,38 @@ export function CheckInFlow({
               optionKey={o.key}
               text={o.text}
               selected={o.key === selected}
-              onClick={() => setSelected(o.key)}
+              onClick={() => pick(o.key, o.score)}
             />
           ))}
         </div>
-
-        {lowScore && (
-          <div className="mt-5">
-            <RecommendationCard pillarId={q.pillarId} text={getSampleRecommendation(q.pillarId).text} />
-          </div>
-        )}
       </div>
 
-      {/* submit */}
-      <button
-        type="button"
-        onClick={next}
-        disabled={!chosen}
-        className="mt-6 w-full rounded-2xl bg-brand py-3.5 font-display text-sm font-black text-white transition active:scale-[0.98] disabled:opacity-40"
-      >
-        {index + 1 < total ? t.continueButton : t.finishButton}
-      </button>
+      <p className="mt-6 text-center text-xs text-ink-4">
+        {selected ? "Saved — moving on…" : "Tap an answer to continue"}
+      </p>
     </div>
+  );
+}
+
+/** A subtle grey chevron for stepping between questions. */
+function NavArrow({
+  dir,
+  disabled,
+  onClick,
+}: {
+  dir: "prev" | "next";
+  disabled: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      aria-label={dir === "prev" ? "Previous question" : "Next question"}
+      className="flex h-9 w-9 items-center justify-center rounded-full text-2xl leading-none text-ink-4 transition active:scale-90 disabled:opacity-25"
+    >
+      {dir === "prev" ? "‹" : "›"}
+    </button>
   );
 }
