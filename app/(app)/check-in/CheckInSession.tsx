@@ -16,12 +16,15 @@ type Phase = "followup" | "fresh" | "catchup" | "done";
 
 /**
  * A check-in session, in order:
- *   1. return check-in — did you act on your last recommendation? (if any),
- *   2. this week's fresh questions (full-screen, auto-advancing),
- *   3. catch-up on earlier weeks (a distinct carousel, if any),
+ *   1. this week's fresh questions (full-screen, auto-advancing),
+ *   2. catch-up on earlier weeks (a distinct carousel) — never for first-timers,
+ *      only when there are unanswered questions from previous weeks,
+ *   3. return check-in — did you act on your last recommendation? — never for
+ *      first-timers, only when there's an open low-score recommendation,
  *   4. a short "done" screen → the dashboard.
- * Each step is skipped when there's nothing for it, so an empty session lands
- * straight on the done screen.
+ * Each step is skipped when there's nothing for it, so a first-time user (or
+ * anyone with no backlog and no open recommendation) goes straight from this
+ * week's questions to the dashboard.
  */
 export function CheckInSession({
   session,
@@ -35,28 +38,29 @@ export function CheckInSession({
   due: CheckInQuestion[];
 }) {
   const router = useRouter();
-  const initial: Phase = openRec ? "followup" : due.length ? "fresh" : unanswered.length ? "catchup" : "done";
+  const initial: Phase = due.length
+    ? "fresh"
+    : unanswered.length
+      ? "catchup"
+      : openRec
+        ? "followup"
+        : "done";
   const [phase, setPhase] = useState<Phase>(initial);
 
-  if (phase === "followup" && openRec) {
-    return (
-      <ReturnCheckIn
-        rec={openRec}
-        onDone={() => setPhase(due.length ? "fresh" : unanswered.length ? "catchup" : "done")}
-      />
-    );
-  }
   if (phase === "fresh" && due.length) {
     return (
       <CheckInFlow
         session={session}
         questions={due}
-        onDone={() => setPhase(unanswered.length ? "catchup" : "done")}
+        onDone={() => setPhase(unanswered.length ? "catchup" : openRec ? "followup" : "done")}
       />
     );
   }
   if (phase === "catchup" && unanswered.length) {
-    return <CatchUpFlow questions={unanswered} onDone={() => setPhase("done")} />;
+    return <CatchUpFlow questions={unanswered} onDone={() => setPhase(openRec ? "followup" : "done")} />;
+  }
+  if (phase === "followup" && openRec) {
+    return <ReturnCheckIn rec={openRec} onDone={() => setPhase("done")} />;
   }
 
   // Done — a short confirmation, then the dashboard.
