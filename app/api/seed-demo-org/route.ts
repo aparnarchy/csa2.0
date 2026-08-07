@@ -196,19 +196,24 @@ export async function POST(request: Request) {
   const url = new URL(request.url);
   const onlySlug = url.searchParams.get("dept");
 
+  // Cheap + idempotent, so it's safe to run on every call rather than needing
+  // a special "setup-only" first request.
+  await db.prepare("UPDATE departments SET name = 'Product' WHERE id = 'dept-engineering'").run();
+  await db.prepare("DELETE FROM teams WHERE id IN ('team-design', 'team-sales')").run();
+  await db.prepare("DELETE FROM departments WHERE id IN ('dept-product', 'dept-sales')").run();
+  results.push("Renamed Engineering to Product; removed empty placeholder departments");
+
+  // Require an explicit ?dept — defaulting to "all 9" is exactly what exceeded
+  // the subrequest cap before. Call this once per slug.
   if (!onlySlug) {
-    // Rename Engineering -> Product (same id, same real data — nothing else changes).
-    await db.prepare("UPDATE departments SET name = 'Product' WHERE id = 'dept-engineering'").run();
-    results.push("Renamed Engineering department to Product");
-
-    // Drop the old empty placeholder departments/teams (no manager, no employees).
-    await db.prepare("DELETE FROM teams WHERE id IN ('team-design', 'team-sales')").run();
-    await db.prepare("DELETE FROM departments WHERE id IN ('dept-product', 'dept-sales')").run();
-    results.push("Removed empty placeholder departments (old Product/Sales)");
+    return NextResponse.json({
+      ok: true,
+      results,
+      note: "Setup done. Now call again with ?dept=<slug> for each: " + DEMO_DEPTS.map((d) => d.slug).join(", "),
+    });
   }
-
-  const targets = onlySlug ? DEMO_DEPTS.filter((d) => d.slug === onlySlug) : DEMO_DEPTS;
-  if (onlySlug && targets.length === 0) {
+  const targets = DEMO_DEPTS.filter((d) => d.slug === onlySlug);
+  if (targets.length === 0) {
     return NextResponse.json({ error: `Unknown dept slug "${onlySlug}"` }, { status: 400 });
   }
 
