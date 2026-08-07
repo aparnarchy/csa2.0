@@ -10,7 +10,11 @@
  * employee@test.com etc. are untouched).
  *
  * SAFE TO RUN IN PRODUCTION (admin-gated, not env-blocked like /api/seed) and
- * idempotent (INSERT OR IGNORE / re-runnable). Every row this creates is
+ * idempotent (INSERT OR IGNORE / re-runnable). Call once per department via
+ * ?dept=<slug> (support, finance, marketing, peopleops, revops, sales-am,
+ * sales-apac, sales-emea, sales-in) — doing all 9 in one request exceeds
+ * Cloudflare's per-invocation D1 subrequest limit even after batching. Every
+ * row this creates is
  * prefixed "demo-" (departments/teams) or uses a "@csademo.test" email
  * (people) — DELETE BEFORE REAL LAUNCH: this is temporary data for the
  * owner's manager-facing demo, see the prelaunch-delete-test-accounts note.
@@ -168,7 +172,17 @@ const QUESTIONS = [
   { id: "q9", pillarId: "compensation" }, { id: "q10", pillarId: "compensation" },
 ];
 
-export async function POST() {
+/**
+ * Cloudflare caps the number of D1 calls (subrequests) a single Worker
+ * invocation can make. Seeding all 9 departments' full check-in history in one
+ * request blew past it ("Too many API requests by single Worker invocation").
+ * Two fixes: batch every employee's ~110 check-in rows into ONE db.batch()
+ * call instead of 110 separate .run()s, AND process one department per HTTP
+ * request (?dept=<slug>) so even an unbatched step never accumulates across
+ * departments. Omit ?dept to run the shared setup (rename + drop placeholders)
+ * plus the first department only — call again per slug for the rest.
+ */
+export async function POST(request: Request) {
   const session = await getSession();
   if (!session || !session.user.roles.includes("admin")) {
     return NextResponse.json({ error: "Admin only" }, { status: 403 });
@@ -179,16 +193,26 @@ export async function POST() {
   const auth = createAuth(db);
   const results: string[] = [];
 
-  // Rename Engineering -> Product (same id, same real data — nothing else changes).
-  await db.prepare("UPDATE departments SET name = 'Product' WHERE id = 'dept-engineering'").run();
-  results.push("Renamed Engineering department to Product");
+  const url = new URL(request.url);
+  const onlySlug = url.searchParams.get("dept");
 
-  // Drop the old empty placeholder departments/teams (no manager, no employees).
-  await db.prepare("DELETE FROM teams WHERE id IN ('team-design', 'team-sales')").run();
-  await db.prepare("DELETE FROM departments WHERE id IN ('dept-product', 'dept-sales')").run();
-  results.push("Removed empty placeholder departments (old Product/Sales)");
+  if (!onlySlug) {
+    // Rename Engineering -> Product (same id, same real data — nothing else changes).
+    await db.prepare("UPDATE departments SET name = 'Product' WHERE id = 'dept-engineering'").run();
+    results.push("Renamed Engineering department to Product");
 
-  for (const dept of DEMO_DEPTS) {
+    // Drop the old empty placeholder departments/teams (no manager, no employees).
+    await db.prepare("DELETE FROM teams WHERE id IN ('team-design', 'team-sales')").run();
+    await db.prepare("DELETE FROM departments WHERE id IN ('dept-product', 'dept-sales')").run();
+    results.push("Removed empty placeholder departments (old Product/Sales)");
+  }
+
+  const targets = onlySlug ? DEMO_DEPTS.filter((d) => d.slug === onlySlug) : DEMO_DEPTS;
+  if (onlySlug && targets.length === 0) {
+    return NextResponse.json({ error: `Unknown dept slug "${onlySlug}"` }, { status: 400 });
+  }
+
+  for (const dept of targets) {
     const deptId = `dept-demo-${dept.slug}`;
     const teamId = `team-demo-${dept.slug}`;
 
@@ -244,29 +268,34 @@ export async function POST() {
         .bind(empId, userId, deptId, teamId, managerId, person.designation, email)
         .run();
 
-      // Check-ins W13-W23, scored around this team's target average.
-      await db.prepare("DELETE FROM checkIns WHERE id LIKE ?").bind(`ci-${empId}-%`).run();
+      // Check-ins W13-W23, scored around this team's target average. Batched
+      // into ONE D1 call (delete + ~110 inserts + streak upsert) — the whole
+      // reason this route hit the subrequest cap was doing these one at a time.
+      const stmts = [db.prepare("DELETE FROM checkIns WHERE id LIKE ?").bind(`ci-${empId}-%`)];
       let idx = 1;
       for (const weekId of ANSWERED_WEEKS) {
         for (const q of QUESTIONS) {
           const offset = PILLAR_OFFSET[q.pillarId] ?? 0;
           const noise = (Math.random() - 0.5) * 1.6;
           const score = pickScore(dept.targetAvg + offset + noise);
-          await db
-            .prepare(
-              `INSERT INTO checkIns (id, userId, questionId, pillarId, weekId, score, isRetrospective, employmentId)
-               VALUES (?, ?, ?, ?, ?, ?, 0, ?)`,
-            )
-            .bind(`ci-${empId}-${idx++}`, userId, q.id, q.pillarId, weekId, score, empId)
-            .run();
+          stmts.push(
+            db
+              .prepare(
+                `INSERT INTO checkIns (id, userId, questionId, pillarId, weekId, score, isRetrospective, employmentId)
+                 VALUES (?, ?, ?, ?, ?, ?, 0, ?)`,
+              )
+              .bind(`ci-${empId}-${idx++}`, userId, q.id, q.pillarId, weekId, score, empId),
+          );
         }
       }
-      await db
-        .prepare(
-          "INSERT INTO streaks (userId, currentStreak, longestStreak, lastCheckInWeek) VALUES (?, ?, ?, ?) ON CONFLICT(userId) DO UPDATE SET currentStreak = excluded.currentStreak, longestStreak = excluded.longestStreak, lastCheckInWeek = excluded.lastCheckInWeek",
-        )
-        .bind(userId, ANSWERED_WEEKS.length, ANSWERED_WEEKS.length, ANSWERED_WEEKS[ANSWERED_WEEKS.length - 1])
-        .run();
+      stmts.push(
+        db
+          .prepare(
+            "INSERT INTO streaks (userId, currentStreak, longestStreak, lastCheckInWeek) VALUES (?, ?, ?, ?) ON CONFLICT(userId) DO UPDATE SET currentStreak = excluded.currentStreak, longestStreak = excluded.longestStreak, lastCheckInWeek = excluded.lastCheckInWeek",
+          )
+          .bind(userId, ANSWERED_WEEKS.length, ANSWERED_WEEKS.length, ANSWERED_WEEKS[ANSWERED_WEEKS.length - 1]),
+      );
+      await db.batch(stmts);
     }
 
     results.push(`${dept.deptName}: team + manager + ${dept.employees.length} employees seeded (target ${dept.targetAvg})`);
