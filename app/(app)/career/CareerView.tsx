@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import {
   AIInsight,
+  BackButton,
   BigScore,
   Card,
   InsightBarRow,
@@ -81,13 +82,7 @@ export function CareerView({ history }: { history: CareerHistory }) {
 
   return (
     <ScreenShell active="profile">
-      <button
-        type="button"
-        onClick={() => router.push("/profile")}
-        className="px-1 text-sm font-bold text-brand active:scale-[0.99]"
-      >
-        {COPY.career.backToProfile}
-      </button>
+      <BackButton label={COPY.career.backToProfile} onClick={() => router.push("/profile")} />
 
       {/* Overall career header */}
       <div
@@ -240,9 +235,7 @@ function CompanyDetailView({ detail, onBack }: { detail: CompanyDetail; onBack: 
 
   return (
     <ScreenShell active="profile">
-      <button type="button" onClick={onBack} className="px-1 text-sm font-bold text-brand active:scale-[0.99]">
-        {COPY.career.backToCareer}
-      </button>
+      <BackButton label={COPY.career.backToCareer} onClick={onBack} />
 
       {/* Header — same lavender gradient card as the insights dashboard, with the
           company standing in for the greeting. */}

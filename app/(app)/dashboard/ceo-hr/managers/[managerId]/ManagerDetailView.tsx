@@ -90,18 +90,16 @@ export function ManagerDetailView({
           <AIInsight text={aiText ?? undefined} />
 
           <Card>
-            <div className="mb-3 flex items-center justify-between gap-3">
-              <p className="text-sm font-bold text-brand">Pillar ranking</p>
-              <div className="w-40">
-                <SegmentedToggle<HighLow>
-                  value={highLow}
-                  onChange={setHighLow}
-                  options={[
-                    { value: "high", label: "Strengths" },
-                    { value: "low", label: "Watch-outs" },
-                  ]}
-                />
-              </div>
+            <p className="mb-3 text-sm font-bold text-brand">Pillar ranking</p>
+            <div className="mb-4 w-full">
+              <SegmentedToggle<HighLow>
+                value={highLow}
+                onChange={setHighLow}
+                options={[
+                  { value: "high", label: "Strengths" },
+                  { value: "low", label: "Watch-outs" },
+                ]}
+              />
             </div>
             <div className="space-y-2">
               {ranked.map((p) => (

@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useMemo, useRef, useState, useTransition } from "react";
-import { Modal, ScreenShell } from "@/components/kit";
+import { BackButton, Modal, ScreenShell } from "@/components/kit";
 import { PILLARS, PILLAR_ORDER } from "@/lib/pillars";
 import type { PillarId, Question, SessionUser } from "@/lib/types";
 import type { BulkDeleteResult, CsvImportResult, QuestionInput } from "@/lib/admin";
@@ -173,7 +173,7 @@ export function QuestionBankView({
       {/* Header — mode-aware, with a back link to the admin hub. */}
       {isPlay ? (
         <div className="rounded-card bg-lav-bg px-5 py-5">
-          <BackBtn onClick={() => router.push("/dashboard/admin")} />
+          <BackButton label="Admin" onClick={() => router.push("/dashboard/admin")} />
           <p className="text-xs font-semibold text-brand/70">📋 Question bank</p>
           <h1 className="mt-1 font-display text-[28px] font-black leading-tight text-ink">
             Check-in questions
@@ -184,7 +184,7 @@ export function QuestionBankView({
           className="rounded-card px-5 py-5"
           style={{ background: "linear-gradient(135deg, #EDE7FF 0%, #C9B4FF 100%)" }}
         >
-          <BackBtn onClick={() => router.push("/dashboard/admin")} />
+          <BackButton label="Admin" onClick={() => router.push("/dashboard/admin")} />
           <p className="text-xs font-semibold text-brand/70">📋 Question bank</p>
           <h1 className="mt-1 font-display text-[28px] font-black leading-tight text-brand">
             Check-in questions
@@ -441,13 +441,6 @@ function OptionCells({ text, score }: { text: string; score: number }) {
   );
 }
 
-function BackBtn({ onClick }: { onClick: () => void }) {
-  return (
-    <button type="button" onClick={onClick} className="mb-2 text-xs font-bold text-brand">
-      ← Admin
-    </button>
-  );
-}
 
 /** Modal editor for adding or editing a question. */
 function Editor({

@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useMemo, useState, useTransition } from "react";
-import { Card, Modal, ScreenShell } from "@/components/kit";
+import { BackButton, Card, Modal, ScreenShell } from "@/components/kit";
 import type { SessionUser } from "@/lib/types";
 import type { OrgStructure, TeamInput } from "@/lib/admin";
 import {
@@ -64,7 +64,7 @@ export function OrgStructureView({
     <ScreenShell wide noNav>
       {isPlay ? (
         <div className="rounded-card bg-lav-bg px-5 py-5">
-          <BackBtn onClick={() => router.push("/dashboard/admin")} />
+          <BackButton label="Admin" onClick={() => router.push("/dashboard/admin")} />
           <p className="text-xs font-semibold text-brand/70">🏢 Org structure</p>
           <h1 className="mt-1 font-display text-[28px] font-black leading-tight text-ink">
             Departments &amp; teams
@@ -75,7 +75,7 @@ export function OrgStructureView({
           className="rounded-card px-5 py-5"
           style={{ background: "linear-gradient(135deg, #EDE7FF 0%, #C9B4FF 100%)" }}
         >
-          <BackBtn onClick={() => router.push("/dashboard/admin")} />
+          <BackButton label="Admin" onClick={() => router.push("/dashboard/admin")} />
           <p className="text-xs font-semibold text-brand/70">🏢 Org structure</p>
           <h1 className="mt-1 font-display text-[28px] font-black leading-tight text-brand">
             Departments &amp; teams
@@ -278,13 +278,6 @@ export function OrgStructureView({
 const inputCls =
   "mt-1 w-full rounded-xl border border-lav-mid bg-lav-light px-3 py-2 text-sm text-ink focus:border-brand focus:outline-none";
 
-function BackBtn({ onClick }: { onClick: () => void }) {
-  return (
-    <button type="button" onClick={onClick} className="mb-2 text-xs font-bold text-brand">
-      ← Admin
-    </button>
-  );
-}
 
 function SectionHeader({
   title,

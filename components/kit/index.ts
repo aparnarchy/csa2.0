@@ -2,6 +2,7 @@
 export { Card } from "./Card";
 export { ScreenShell, CEO_NAV, type NavItem } from "./ScreenShell";
 export { GradientHeader } from "./GradientHeader";
+export { BackButton } from "./BackButton";
 export { Avatar } from "./Avatar";
 export { Mascot } from "./Mascot";
 export { CountUp } from "./CountUp";

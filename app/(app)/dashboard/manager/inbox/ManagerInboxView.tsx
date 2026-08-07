@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Card, GradientHeader, Mascot, NotEnoughData, ScreenShell } from "@/components/kit";
+import { BackButton, Card, GradientHeader, Mascot, NotEnoughData, ScreenShell } from "@/components/kit";
 import { HEADER_MASCOT_SIZE } from "@/lib/mascot";
 import { PILLARS } from "@/lib/pillars";
 import {
@@ -90,13 +90,7 @@ export function ManagerInboxView({ session, initial }: { session: SessionUser; i
 
   return (
     <ScreenShell active="inbox">
-      <button
-        type="button"
-        onClick={() => router.push("/dashboard/manager")}
-        className="px-1 text-sm font-bold text-brand active:scale-[0.99]"
-      >
-        {COPY.managerInbox.backToDashboard}
-      </button>
+      <BackButton label={COPY.managerInbox.backToDashboard} onClick={() => router.push("/dashboard/manager")} />
 
       {/* Header — Play: lavender card + mascot; Professional: gradient card. */}
       {isPlay ? (

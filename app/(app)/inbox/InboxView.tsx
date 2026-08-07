@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Card, GradientHeader, Mascot, ScreenShell } from "@/components/kit";
+import { BackButton, Card, GradientHeader, Mascot, ScreenShell } from "@/components/kit";
 import { HEADER_MASCOT_SIZE } from "@/lib/mascot";
 import {
   getSampleRecommendation,
@@ -593,9 +593,7 @@ function HistoryView({
 
   return (
     <ScreenShell title={COPY.inbox.historyTitle} active="inbox">
-      <button type="button" onClick={onBack} className="px-1 text-sm font-bold text-brand active:scale-[0.99]">
-        {COPY.inbox.backToInbox}
-      </button>
+      <BackButton label={COPY.inbox.backToInbox} onClick={onBack} />
 
       {isEmpty && (
         <Card>

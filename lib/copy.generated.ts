@@ -133,7 +133,7 @@ export const COPY = {
     "howThisWorks": "How this works",
     "howItWorksBody": "Your feedback feeds aggregated team data — your manager sees anonymised patterns, never individual responses. Notes are paraphrased and your name is never shown. Data only surfaces when a manager has 3 or more reportees.",
     "historyTitle": "Response history",
-    "backToInbox": "← Back to inbox",
+    "backToInbox": "Inbox",
     "noPastResponses": "No past responses yet.",
     "yourResponse": "Your response:"
   },
@@ -171,11 +171,11 @@ export const COPY = {
     "signedInAs": "Signed in as {name} · {email}"
   },
   "career": {
-    "backToProfile": "← Profile",
+    "backToProfile": "Profile",
     "headerLabel": "Career happiness",
     "acrossSummary": "Across {tenure} and {count} companies.",
     "currentChip": "Current",
-    "backToCareer": "← Career history",
+    "backToCareer": "Career history",
     "liveDataChip": "📍 Live data",
     "snapshotChip": "🔒 Snapshot · {date}",
     "pillarsTitle": "Pillars",
@@ -260,7 +260,7 @@ export const COPY = {
     "footnote": "Aggregates only. Nothing here can identify an individual."
   },
   "managerInbox": {
-    "backToDashboard": "← Team dashboard",
+    "backToDashboard": "Team dashboard",
     "eyebrow": "✅ Action Inbox",
     "title": "Your team's actions",
     "resolvedMeter": "{resolved}/{total} resolved · {pct}%",

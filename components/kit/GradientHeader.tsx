@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { BackButton } from "./BackButton";
 
 /**
  * Soft lavender header card used at the top of dashboards and detail screens.
@@ -35,15 +36,7 @@ export function GradientHeader({
           never overlap or hide the title (incl. long pillar names). */}
       <div className="flex items-center gap-3">
         <div className="min-w-0 flex-1">
-          {back && (
-            <button
-              type="button"
-              onClick={back.onClick}
-              className="mb-3 inline-flex items-center gap-1.5 rounded-[10px] bg-white/70 px-3 py-1.5 text-xs font-bold text-brand shadow-sm active:scale-95"
-            >
-              ← {back.label}
-            </button>
-          )}
+          {back && <BackButton label={back.label} onClick={back.onClick} />}
 
           {eyebrow && <p className="mb-1.5 text-xs text-ink-3">{eyebrow}</p>}
           <h1 className="font-display text-[28px] font-black leading-tight text-brand">{title}</h1>
