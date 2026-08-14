@@ -1,0 +1,16 @@
+text,pillarId,optionA_text,optionA_score,optionB_text,optionB_score,optionC_text,optionC_score,isActive
+"Do you feel your contributions are recognized by your manager?",compensation,"Yes, I receive regular recognition.",10,"Sometimes, but I'd like it more consistently.",7,"Not really, I feel like my efforts go unnoticed.",4,true
+"If there is an open position in your organization, how likely are you to recommend your friend?",culture,"I would love to do this",10,"I am okay to do this if asked",7,"Unlikely to do this",4,true
+"Does your team demand high standards of performance from you?",culture,"Very challenged. My team has folks who push each other consistently",10,"Somewhat, it happens on certain tasks but not as a standard practice",7,"Not challenged much.",4,true
+"Do people in your team challenge opinions of the group?",culture,"Yes, we do this regularly",10,"It does happen, but I sense hesitation quite often",7,"Folks don't do this",4,true
+"Do you have flexibility in how you approach your work?",culture,"Definitely, I have a significant say in how I do my work",10,"To some extent, but would like more",7,"Not really, I'm expected to do things a particular way",4,true
+"If you're working on a tight deadline, would your team members offer to take up some load?",culture,"Yes",10,"Maybe",7,"No",4,true
+"Do you think people in your team care about you as a person?",culture,"Most of them do",10,"I think it's just a couple of people",7,"The relationships are mostly transactional",4,true
+"Does your manager support your career aspirations?",culture,"Yes, we have great mutual trust",10,"It's a mixed bag, there is scope for improvement",7,"No, there is very low trust",4,true
+"How many times have you been promoted in the past 2 years?",growth,"Once or more",10,"Not at all",4,"I'm yet to complete 2 years",7,true
+"Do you see clear opportunities for growth?",growth,"I can see plenty of avenues",10,"Somewhat, but I would like a clearer picture",7,"I don't have clarity",4,true
+"Does your work challenge you beyond your comfort zone?",growth,"I'm pushed to learn and grow constantly",10,"To some extent, but not consistently",7,"I've gotten too comfortable",4,true
+"In the last 6 months, how many projects have given you the feeling of ""I've accomplished it!""",meaningful_work,"0",4,"1",7,"2",10,true
+"Do you get opportunities to tackle complex problems?",meaningful_work,"No, my work is pretty routine",4,"I get to work on complex problems regularly",10,"Sometimes, but not as much as I'd like",7,true
+"Do you feel your role allows you to use your strengths?",meaningful_work,"I feel my strengths are underutilized",4,"My strengths are put to good use",10,"I could use more opportunities to shine",7,true
+"Do you feel a sense of accomplishment in your work?",meaningful_work,"Yes, most of the time",10,"Sometimes",7,"Very rarely",4,true
