@@ -21,7 +21,11 @@ import type { CeoDashboard, ManagerDetail, PillarScore, TeamAggregate, Window } 
 import type { PillarId } from "./types";
 
 const GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
-const MODEL = "llama-3.3-70b-versatile";
+// llama-3.3-70b-versatile was removed from Groq entirely (not renamed — gone
+// from the account's model list, confirmed 2026-08-28 via /v1/models). This
+// was silently falling back to the static copy for every AI insight box; any
+// already-cached text kept displaying, which is what made it look "working."
+const MODEL = "openai/gpt-oss-120b";
 const TIMEOUT_MS = 8000;
 
 interface InsightFacts {
@@ -111,7 +115,11 @@ async function callGroq(apiKey: string, system: string, user: string): Promise<s
         { role: "user", content: user },
       ],
       temperature: 0.4,
-      max_tokens: 160,
+      // gpt-oss is a reasoning model — it spends some of max_tokens on a
+      // hidden "reasoning" pass before the visible answer, so the budget
+      // needs headroom beyond just the ~55-word answer itself.
+      max_tokens: 350,
+      reasoning_effort: "low",
     }),
     signal: AbortSignal.timeout(TIMEOUT_MS),
   });
@@ -182,8 +190,10 @@ export interface CareerCompanyFacts {
   pillars: { pillarId: PillarId; score: number }[];
 }
 
-/** Highest and lowest company for one pillar, ignoring companies missing it. */
-function pillarExtremes(companies: CareerCompanyFacts[], pillarId: PillarId) {
+/** Highest and lowest company for one pillar, ignoring companies missing it.
+ *  Exported for lib/root-facts.ts's career-comparison fact — same rule, reused
+ *  verbatim rather than reimplemented. */
+export function pillarExtremes(companies: CareerCompanyFacts[], pillarId: PillarId) {
   const withPillar = companies
     .map((c) => ({ name: c.name, score: c.pillars.find((p) => p.pillarId === pillarId)?.score }))
     .filter((c): c is { name: string; score: number } => c.score !== undefined);
