@@ -131,7 +131,10 @@ export async function getManagerInbox(
   if (reporteeCount < ANONYMISATION_FLOOR) return { ...resolved0, reporteeCount };
 
   const [{ results: qRows }, { results: ciRows }, { results: actRows }] = await Promise.all([
-    db.prepare("SELECT * FROM questions WHERE isActive = 1").all<QuestionRow>(),
+    // Every question ever asked, not just active ones — a question going
+    // inactive should stop it being assigned going forward, never erase the
+    // real historical signal (or trigger-question text) it already produced.
+    db.prepare("SELECT * FROM questions").all<QuestionRow>(),
     db
       .prepare(
         `SELECT c.questionId AS questionId, c.pillarId AS pillarId, c.score AS score, e.userId AS userId
@@ -251,9 +254,11 @@ export async function submitManagerAction(
   const pid = input.itemId.replace(/^open-/, "") as PillarId;
   if (!PILLAR_ORDER.includes(pid)) throw new Error("Unknown action item.");
 
-  // Recompute the trigger question (weakest in the pillar) for this team.
+  // Recompute the trigger question (weakest in the pillar) for this team —
+  // any question ever asked, not just active ones, so this matches whatever
+  // was actually shown as the open item (see getManagerInbox above).
   const { results: qRows } = await db
-    .prepare("SELECT id, pillarId FROM questions WHERE isActive = 1 AND pillarId = ?")
+    .prepare("SELECT id, pillarId FROM questions WHERE pillarId = ?")
     .bind(pid)
     .all<{ id: string; pillarId: PillarId }>();
   const { results: ci } = await db
