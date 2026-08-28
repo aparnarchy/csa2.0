@@ -189,8 +189,11 @@ export async function submitCheckIn(
     .bind(assignmentId, userId)
     .first<{ questionId: string; weekId: string }>();
   if (!a) return; // not this user's assignment (or unknown) — ignore, don't fail the flow
+  // Not filtered to isActive: an assignment made while a question was active
+  // must still be answerable after it's later deactivated, or the answer
+  // silently fails to save and the assignment loops forever unanswered.
   const q = await db
-    .prepare("SELECT pillarId FROM questions WHERE id = ? AND isActive = 1")
+    .prepare("SELECT pillarId FROM questions WHERE id = ?")
     .bind(a.questionId)
     .first<{ pillarId: PillarId }>();
   if (!q) return;

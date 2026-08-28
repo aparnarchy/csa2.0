@@ -59,8 +59,10 @@ async function computeAggregate(userId: string, window: Window): Promise<Employe
       .prepare("SELECT weekId, questionId, pillarId, score FROM checkIns WHERE userId = ?")
       .bind(userId)
       .all<CheckInRow>(),
+    // Not filtered to isActive: a deactivated question's past answers still
+    // belong in this person's own breakdown, or they silently vanish from it.
     db
-      .prepare("SELECT id, text, pillarId FROM questions WHERE isActive = 1")
+      .prepare("SELECT id, text, pillarId FROM questions")
       .all<{ id: string; text: string; pillarId: PillarId }>(),
     db.prepare("SELECT currentStreak FROM streaks WHERE userId = ?").bind(userId).first<{
       currentStreak: number;

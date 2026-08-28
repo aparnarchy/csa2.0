@@ -364,7 +364,9 @@ export async function getCeoPillarDetail(
   }
 
   const [{ results: qRows }, { results: ciRows }] = await Promise.all([
-    db.prepare("SELECT * FROM questions WHERE isActive = 1 AND pillarId = ?").bind(pillarId).all<ScopeQuestionRow>(),
+    // Not filtered to isActive: a deactivated question's past answers still
+    // belong in this scope's breakdown, or they silently vanish from it.
+    db.prepare("SELECT * FROM questions WHERE pillarId = ?").bind(pillarId).all<ScopeQuestionRow>(),
     db
       .prepare(
         `SELECT c.questionId AS questionId, c.score AS score, e.userId AS userId
