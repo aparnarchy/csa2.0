@@ -2,7 +2,37 @@
 
 import { useEffect, useRef, useState, type WheelEvent } from "react";
 import { createPortal } from "react-dom";
+import { Mascot } from "@/components/kit";
 import type { RootAnalysis } from "@/lib/rca";
+
+/**
+ * Shown the instant "Let's find out why" is tapped, while the real AI
+ * analysis is being fetched (lib/root-analysis.ts) — same background as the
+ * journey itself so it reads as one continuous moment, not a jarring swap.
+ */
+export function RootLoadingOverlay({ onClose }: { onClose: () => void }) {
+  if (typeof document === "undefined") return null;
+  return createPortal(
+    <div
+      className="fixed inset-x-0 top-0 z-[60] flex h-[100dvh] flex-col items-center justify-center text-ink"
+      style={{ background: "linear-gradient(180deg, #f4f2ff 0%, #eae8ff 55%, #e1ddff 100%)" }}
+    >
+      <button
+        type="button"
+        onClick={onClose}
+        className="absolute right-4 z-30 flex h-9 w-9 items-center justify-center rounded-full bg-white text-lg text-ink-3 shadow-card active:scale-90"
+        style={{ top: "calc(env(safe-area-inset-top) + 0.75rem)" }}
+        aria-label="Close"
+      >
+        ✕
+      </button>
+      <Mascot state="welcome" size={96} float sparkle={false} />
+      <p className="mt-5 font-display text-base font-black text-brand">Finding the root…</p>
+      <p className="mt-1 text-xs text-ink-3">Looking at your history, trends and reflections</p>
+    </div>,
+    document.body,
+  );
+}
 
 // All stops live on ONE big canvas; the camera flies between them. Coordinates
 // are virtual "world" px; the camera maps the focused stop to screen centre.

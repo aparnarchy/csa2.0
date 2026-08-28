@@ -320,7 +320,7 @@ export async function submitManagerAction(
 
 // ── Employee side ─────────────────────────────────────────────────────────────
 
-interface VisibleAction {
+export interface VisibleAction {
   id: string;
   pillarId: PillarId;
   questionId: string;
@@ -329,8 +329,10 @@ interface VisibleAction {
   visibleToEmployeesAt: string | null;
 }
 
-/** Actions on the employee's team that are past the delay AND affected them. */
-async function visibleAffectedActions(
+/** Actions on the employee's team that are past the delay AND affected them.
+ *  Exported for lib/root-facts.ts (the "did an action already target this
+ *  pillar" fact for Find-the-Root) — same visibility rule, reused verbatim. */
+export async function visibleAffectedActions(
   db: DB,
   userId: string,
 ): Promise<VisibleAction[]> {

@@ -17,14 +17,14 @@ import {
   TrendChart,
 } from "@/components/kit";
 import { type EmployeeScores, type Window } from "@/lib/data";
-import { getEmployeeScoresAction } from "./actions";
+import { getEmployeeScoresAction, getRootAnalysisAction } from "./actions";
 import { HEADER_MASCOT_SIZE, mascotForScore } from "@/lib/mascot";
 import { buildEmployeeInsight } from "@/lib/insight";
-import { buildRootAnalysis } from "@/lib/rca";
+import { buildRootAnalysis, type RootAnalysis } from "@/lib/rca";
 import { chromeFor } from "@/lib/voice";
 import type { PillarId, SessionUser } from "@/lib/types";
 import { PillarDetailView } from "./PillarDetailView";
-import { RootJourney } from "./RootJourney";
+import { RootJourney, RootLoadingOverlay } from "./RootJourney";
 
 type Tab = "strengths" | "concerns";
 
@@ -41,6 +41,9 @@ export function AnalysisView({
   const [tab, setTab] = useState<Tab>("strengths");
   const [selectedPillar, setSelectedPillar] = useState<PillarId | null>(null);
   const [showRoot, setShowRoot] = useState(false);
+  // The real AI-reasoned analysis, fetched on demand when the CTA is tapped
+  // (not on every page load) — null while loading, so the overlay shows.
+  const [rootAnalysis, setRootAnalysis] = useState<RootAnalysis | null>(null);
   /** Accordion: at most one question row is expanded at a time. */
   const [openId, setOpenId] = useState<string | null>(null);
 
@@ -69,9 +72,27 @@ export function AnalysisView({
   const isPlay = session.themeMode === "play";
   const persona = isPlay ? session.persona : undefined;
   const insight = buildEmployeeInsight(data, persona);
+  // Deterministic — instant, drives the teaser box (available/feelings) that's
+  // shown before the CTA is tapped. The real AI analysis (rootAnalysis state)
+  // is fetched only once the person actually asks to see it.
   const rca = buildRootAnalysis(data, persona);
   const chrome = chromeFor(persona);
   const firstName = (session.name || "there").trim().split(/\s+/)[0];
+
+  async function openRoot() {
+    setShowRoot(true);
+    setRootAnalysis(null);
+    try {
+      setRootAnalysis(await getRootAnalysisAction(data, persona));
+    } catch {
+      setRootAnalysis(rca); // never dead-end the CTA — fall back to the deterministic version
+    }
+  }
+
+  function closeRoot() {
+    setShowRoot(false);
+    setRootAnalysis(null);
+  }
 
   return (
     <ScreenShell active="insights">
@@ -184,7 +205,7 @@ export function AnalysisView({
                 </div>
                 <button
                   type="button"
-                  onClick={() => setShowRoot(true)}
+                  onClick={openRoot}
                   className="mt-4 w-full rounded-2xl bg-brand py-3.5 font-display text-sm font-black text-white transition active:scale-[0.98]"
                 >
                   {chrome.cta}
@@ -200,7 +221,7 @@ export function AnalysisView({
                 </p>
                 <button
                   type="button"
-                  onClick={() => setShowRoot(true)}
+                  onClick={openRoot}
                   className="mt-3 text-sm font-bold text-brand"
                 >
                   {chrome.cta}
@@ -288,9 +309,12 @@ export function AnalysisView({
         </>
       )}
 
-      {showRoot && rca.available && (
-        <RootJourney analysis={rca} onClose={() => setShowRoot(false)} />
-      )}
+      {showRoot &&
+        (rootAnalysis === null ? (
+          <RootLoadingOverlay onClose={closeRoot} />
+        ) : (
+          rootAnalysis.available && <RootJourney analysis={rootAnalysis} onClose={closeRoot} />
+        ))}
     </ScreenShell>
   );
 }

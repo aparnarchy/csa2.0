@@ -309,7 +309,9 @@ export async function getCareerHistory(
  * `current` is passed in rather than fetched here so the live aggregation runs
  * at most once per request.
  */
-async function careerFacts(
+/** Exported for lib/root-facts.ts's career-comparison fact — same data,
+ *  reused verbatim rather than reimplemented. */
+export async function careerFacts(
   userId: string,
   current: { name: string; scores: EmployeeScores } | null,
 ): Promise<CareerCompanyFacts[]> {
