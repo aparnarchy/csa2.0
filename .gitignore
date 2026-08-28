@@ -50,3 +50,6 @@ next-env.d.ts
 
 # Local D1 backups (never commit data dumps)
 backups/
+
+# scratch files (artifact drafts, etc. — not app code)
+.scratch/
