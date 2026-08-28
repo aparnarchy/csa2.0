@@ -39,6 +39,8 @@ const FAKE_SESSION: SessionUser = {
   teamId: "team-engineering",
   themeMode: "play",
   persona: "spiderman",
+  remindersEnabled: true,
+  weeklyDigestEnabled: true,
 };
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {

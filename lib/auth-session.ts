@@ -28,6 +28,8 @@ export async function getSession() {
       teamId: (u.teamId as string | null) ?? null,
       themeMode: (u.themeMode === "play" ? "play" : "professional") as ThemeMode,
       persona: (u.persona === "batman" ? "batman" : "spiderman") as Persona,
+      remindersEnabled: (u.remindersEnabled ?? 1) !== 0,
+      weeklyDigestEnabled: (u.weeklyDigestEnabled ?? 1) !== 0,
       roles,
     },
   };

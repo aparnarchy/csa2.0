@@ -101,7 +101,7 @@ export function ProfileView({ session, stats }: { session: SessionUser; stats: P
       <AppearanceCard session={session} />
 
       {/* Preferences */}
-      <PreferencesCard />
+      <PreferencesCard session={session} />
 
       {/* Switch view — only if also a manager */}
       {isManager && (
@@ -235,14 +235,39 @@ function AppearanceCard({ session }: { session: SessionUser }) {
   );
 }
 
-// ── Notification preferences (local sample state) ────────────────────────────
-function PreferencesCard() {
-  const [reminders, setReminders] = useState(true);
-  const [weekly, setWeekly] = useState(true);
+// ── Notification preferences (real, persisted to the user's own record) ─────
+function PreferencesCard({ session }: { session: SessionUser }) {
+  const router = useRouter();
+  const [reminders, setReminders] = useState(session.remindersEnabled);
+  const [weekly, setWeekly] = useState(session.weeklyDigestEnabled);
+  const [saving, setSaving] = useState(false);
+
+  async function save(next: { remindersEnabled: boolean; weeklyDigestEnabled: boolean }) {
+    setReminders(next.remindersEnabled);
+    setWeekly(next.weeklyDigestEnabled);
+    setSaving(true);
+    await fetch("/api/preferences/notifications", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(next),
+    });
+    router.refresh();
+    setSaving(false);
+  }
 
   const rows: { label: string; desc: string; val: boolean; set: (v: boolean) => void }[] = [
-    { label: COPY.profile.prefReminders, desc: COPY.profile.prefRemindersSub, val: reminders, set: setReminders },
-    { label: COPY.profile.prefWeekly, desc: COPY.profile.prefWeeklySub, val: weekly, set: setWeekly },
+    {
+      label: COPY.profile.prefReminders,
+      desc: COPY.profile.prefRemindersSub,
+      val: reminders,
+      set: (v) => save({ remindersEnabled: v, weeklyDigestEnabled: weekly }),
+    },
+    {
+      label: COPY.profile.prefWeekly,
+      desc: COPY.profile.prefWeeklySub,
+      val: weekly,
+      set: (v) => save({ remindersEnabled: reminders, weeklyDigestEnabled: v }),
+    },
   ];
 
   return (
@@ -260,8 +285,9 @@ function PreferencesCard() {
             </div>
             <button
               type="button"
+              disabled={saving}
               onClick={() => r.set(!r.val)}
-              className={`relative h-6 w-11 flex-shrink-0 rounded-full transition ${r.val ? "bg-brand" : "bg-lav-mid"}`}
+              className={`relative h-6 w-11 flex-shrink-0 rounded-full transition disabled:opacity-50 ${r.val ? "bg-brand" : "bg-lav-mid"}`}
               aria-pressed={r.val}
             >
               <span

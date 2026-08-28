@@ -197,4 +197,6 @@ export interface SessionUser {
   teamId: string | null;
   themeMode: ThemeMode;
   persona: Persona;
+  remindersEnabled: boolean;
+  weeklyDigestEnabled: boolean;
 }
