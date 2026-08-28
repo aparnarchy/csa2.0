@@ -11,6 +11,7 @@
 import { getSession } from "@/lib/auth-session";
 import {
   bulkDeleteQuestions,
+  clearRecommendation,
   createDepartment,
   createQuestion,
   createTeam,
@@ -18,11 +19,13 @@ import {
   deleteQuestion,
   deleteTeam,
   getOrgStructure,
+  getRecommendationsCms,
   importQuestionsCsv,
   listQuestions,
   updateDepartment,
   updateQuestion,
   updateTeam,
+  upsertRecommendation,
   createContent,
   createModule,
   deleteContent,
@@ -41,6 +44,7 @@ import {
   type InviteWithMeta,
   type OrgStructure,
   type QuestionInput,
+  type RecommendationRow,
   type TeamInput,
   type WisdomContentInput,
   type WisdomModuleInput,
@@ -91,6 +95,24 @@ export async function importQuestionsCsvAction(
   const user = await requireAdmin();
   const result = await importQuestionsCsv(user, text);
   return { result, questions: await listQuestions(user) };
+}
+
+export async function getRecommendationsAction(): Promise<RecommendationRow[]> {
+  const user = await requireAdmin();
+  return getRecommendationsCms(user);
+}
+
+export async function upsertRecommendationAction(
+  questionId: string,
+  text: string,
+): Promise<RecommendationRow[]> {
+  const user = await requireAdmin();
+  return upsertRecommendation(user, questionId, text);
+}
+
+export async function clearRecommendationAction(questionId: string): Promise<RecommendationRow[]> {
+  const user = await requireAdmin();
+  return clearRecommendation(user, questionId);
 }
 
 // ── Org structure ─────────────────────────────────────────────────────────────

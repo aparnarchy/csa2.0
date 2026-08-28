@@ -12,7 +12,7 @@
 
 import { getDB } from "./db";
 import { assertOwner, assertRole } from "./access-control";
-import { getSampleRecommendation } from "./data";
+import { loadRecommendations, pickRecommendation } from "./recommendations";
 import type {
   ActionHistoryItem,
   ActionResponseValue,
@@ -130,7 +130,7 @@ export async function getManagerInbox(
   const reporteeCount = reporteeRow?.n ?? 0;
   if (reporteeCount < ANONYMISATION_FLOOR) return { ...resolved0, reporteeCount };
 
-  const [{ results: qRows }, { results: ciRows }, { results: actRows }] = await Promise.all([
+  const [{ results: qRows }, { results: ciRows }, { results: actRows }, recMap] = await Promise.all([
     // Every question ever asked, not just active ones — a question going
     // inactive should stop it being assigned going forward, never erase the
     // real historical signal (or trigger-question text) it already produced.
@@ -147,6 +147,7 @@ export async function getManagerInbox(
       .prepare("SELECT * FROM managerActions WHERE teamId = ?")
       .bind(team)
       .all<ActionRow>(),
+    loadRecommendations(),
   ]);
 
   const responders = new Set(ciRows.map((r) => r.userId)).size;
@@ -191,7 +192,7 @@ export async function getManagerInbox(
       triggerQuestion: q.text,
       teamAvg: round1(avg(qScores)),
       responses: distribution(qScores, q),
-      recommendation: getSampleRecommendation(pid).text,
+      recommendation: pickRecommendation(recMap, q.id, pid),
       status: (existing?.status === "in_progress" ? "flagged" : "open") as ManagerActionStatus,
       dateLabel: `Flagged ${monthLabel(new Date().toISOString())}`,
     });
@@ -221,7 +222,7 @@ export async function getManagerInbox(
       triggerQuestion: q?.text ?? "",
       teamAvg: qScores.length ? round1(avg(qScores)) : 0,
       responses: q ? distribution(qScores, q) : [],
-      recommendation: a.recommendationText ?? getSampleRecommendation(a.pillarId).text,
+      recommendation: a.recommendationText ?? pickRecommendation(recMap, a.questionId, a.pillarId),
       status: "resolved",
       dateLabel: `Flagged ${monthLabel(a.submittedAt)}`,
       actionNote: a.actionText ?? undefined,
@@ -279,7 +280,7 @@ export async function submitManagerAction(
 
   const week = (await activeWeek(db)) ?? "";
   const id = `ma-${team}-${pid}`; // one action per pillar per team (idempotent)
-  const rec = getSampleRecommendation(pid).text;
+  const rec = pickRecommendation(await loadRecommendations(), questionId, pid);
 
   if (input.decision === "yes") {
     const now = new Date();

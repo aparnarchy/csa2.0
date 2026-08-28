@@ -14,7 +14,7 @@
 
 import { getDB } from "./db";
 import { assertRole } from "./access-control";
-import { getSampleRecommendation } from "./data";
+import { loadRecommendations, pickRecommendation } from "./recommendations";
 import type { PillarScore, QuestionInsight, TeamAggregate, TrendPoint, Window } from "./data";
 import { PILLAR_ORDER } from "./pillars";
 import { ANONYMISATION_FLOOR, scoreBand } from "./scoring";
@@ -234,7 +234,7 @@ export async function getTeamPillarDetail(
   }
   if (!resolvedTeamId) return empty;
 
-  const [{ results: qRows }, { results: ciRows }] = await Promise.all([
+  const [{ results: qRows }, { results: ciRows }, recMap] = await Promise.all([
     // Not filtered to isActive: a deactivated question's past team answers
     // still belong in this breakdown, or they silently vanish from it.
     db.prepare("SELECT * FROM questions WHERE pillarId = ?").bind(pillarId).all<TeamQuestionRow>(),
@@ -246,6 +246,7 @@ export async function getTeamPillarDetail(
       )
       .bind(resolvedTeamId, pillarId)
       .all<{ questionId: string; score: number; userId: string }>(),
+    loadRecommendations(),
   ]);
 
   const byQ = new Map<string, number[]>();
@@ -266,7 +267,7 @@ export async function getTeamPillarDetail(
         pillarId: q.pillarId,
         score,
         responses: distribution(scores, q),
-        recommendation: getSampleRecommendation(q.pillarId).text,
+        recommendation: pickRecommendation(recMap, q.id, q.pillarId),
       };
     });
 

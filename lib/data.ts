@@ -351,6 +351,9 @@ export interface CheckInQuestion {
   text: string;
   pillarId: PillarId;
   options: CheckInOption[];
+  /** Real admin-authored tip if one's been written for this question, else
+   *  the generic pillar-level placeholder (lib/recommendations.ts). */
+  recommendation: string;
   weekLabel?: string; // for catch-up questions, e.g. "June 2026"
 }
 

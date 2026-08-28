@@ -14,7 +14,7 @@
 
 import { getDB } from "./db";
 import { assertOwner } from "./access-control";
-import { getSampleRecommendation } from "./data";
+import { loadRecommendations, pickRecommendation } from "./recommendations";
 import type {
   EmployeeScores,
   PillarScore,
@@ -54,7 +54,7 @@ interface CheckInRow {
 /** Shared aggregation used by both the dashboard and a single pillar's detail. */
 async function computeAggregate(userId: string, window: Window): Promise<EmployeeScores> {
   const db = getDB();
-  const [ciRes, qRes, sRes, wRes] = await Promise.all([
+  const [ciRes, qRes, sRes, wRes, recMap] = await Promise.all([
     db
       .prepare("SELECT weekId, questionId, pillarId, score FROM checkIns WHERE userId = ?")
       .bind(userId)
@@ -71,6 +71,7 @@ async function computeAggregate(userId: string, window: Window): Promise<Employe
       weekId: string;
       startDate: string;
     }>(),
+    loadRecommendations(),
   ]);
 
   const streak = sRes?.currentStreak ?? 0;
@@ -177,7 +178,7 @@ async function computeAggregate(userId: string, window: Window): Promise<Employe
         pillarId: meta.pillarId,
         score,
         responses: singleAnswer(score),
-        recommendation: getSampleRecommendation(meta.pillarId).text,
+        recommendation: pickRecommendation(recMap, qid, meta.pillarId),
       };
     });
 

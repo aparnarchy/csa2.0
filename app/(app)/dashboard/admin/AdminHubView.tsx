@@ -32,6 +32,12 @@ const SECTIONS: Section[] = [
     href: "/dashboard/admin/wisdom",
   },
   {
+    icon: "💡",
+    title: "Recommendations",
+    desc: "One coaching tip per question, shown wherever that question scores low.",
+    href: "/dashboard/admin/recommendations",
+  },
+  {
     icon: "✉️",
     title: "Invites",
     desc: "Invite managers and individuals; bulk-import from CSV; resend or cancel.",

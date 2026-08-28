@@ -12,7 +12,7 @@
 
 import { getDB } from "./db";
 import { assertOwner } from "./access-control";
-import { getSampleRecommendation } from "./data";
+import { loadRecommendations, pickRecommendation } from "./recommendations";
 import { ensureUserAssignments, ensureActiveWeek } from "./scheduler";
 import type {
   CheckInQuestion,
@@ -46,7 +46,11 @@ const ASSIGNED_QUESTION_COLS = `
   q.id AS id, q.text AS text, q.pillarId AS pillarId,
   q.optionA_text, q.optionA_score, q.optionB_text, q.optionB_score, q.optionC_text, q.optionC_score`;
 
-function toCheckInQuestion(q: AssignedQuestionRow, withLabel: boolean): CheckInQuestion {
+function toCheckInQuestion(
+  q: AssignedQuestionRow,
+  withLabel: boolean,
+  recMap: Map<string, string>,
+): CheckInQuestion {
   return {
     assignmentId: q.assignmentId,
     weekId: q.weekId,
@@ -58,6 +62,7 @@ function toCheckInQuestion(q: AssignedQuestionRow, withLabel: boolean): CheckInQ
       { key: "B", text: q.optionB_text, score: q.optionB_score },
       { key: "C", text: q.optionC_text, score: q.optionC_score },
     ],
+    recommendation: pickRecommendation(recMap, q.id, q.pillarId),
     weekLabel: withLabel ? monthLabel(q.startDate) : undefined,
   };
 }
@@ -136,7 +141,8 @@ export async function getDueCheckIns(
     )
     .bind(userId, week)
     .all<AssignedQuestionRow>();
-  return results.map((r) => toCheckInQuestion(r, false));
+  const recMap = await loadRecommendations();
+  return results.map((r) => toCheckInQuestion(r, false, recMap));
 }
 
 /**
@@ -164,7 +170,8 @@ export async function getUnansweredCheckIns(
     )
     .bind(userId, week.weekId)
     .all<AssignedQuestionRow>();
-  return results.map((r) => toCheckInQuestion(r, true));
+  const recMap = await loadRecommendations();
+  return results.map((r) => toCheckInQuestion(r, true, recMap));
 }
 
 /**
@@ -277,7 +284,8 @@ export async function getLatestCheckIn(
   const db = getDB();
   const row = await db
     .prepare(
-      `SELECT c.score AS score, c.pillarId AS pillarId, c.weekId AS weekId, q.text AS questionText
+      `SELECT c.questionId AS questionId, c.score AS score, c.pillarId AS pillarId,
+              c.weekId AS weekId, q.text AS questionText
          FROM checkIns c
          JOIN questions q ON q.id = c.questionId
         WHERE c.userId = ?
@@ -285,15 +293,18 @@ export async function getLatestCheckIn(
         LIMIT 1`,
     )
     .bind(userId)
-    .first<{ score: number; pillarId: PillarId; weekId: string; questionText: string }>();
+    .first<{ questionId: string; score: number; pillarId: PillarId; weekId: string; questionText: string }>();
   if (!row) return null;
   const isLow = row.score < 7;
+  const recommendation = isLow
+    ? pickRecommendation(await loadRecommendations(), row.questionId, row.pillarId)
+    : null;
   return {
     questionText: row.questionText,
     pillarId: row.pillarId,
     score: row.score,
     isLow,
-    recommendation: isLow ? getSampleRecommendation(row.pillarId).text : null,
+    recommendation,
     dateLabel: await weekLabel(db, row.weekId),
   };
 }
@@ -324,7 +335,7 @@ export async function getOpenRecommendation(
     questionId: row.questionId,
     pillarId: row.pillarId,
     questionText: row.questionText,
-    recommendation: getSampleRecommendation(row.pillarId).text,
+    recommendation: pickRecommendation(await loadRecommendations(), row.questionId, row.pillarId),
     weekLabel: await weekLabel(db, row.weekId),
   };
 }
@@ -386,13 +397,14 @@ export async function getOpenRecommendations(
     )
     .bind(userId)
     .all<{ questionId: string; pillarId: PillarId; weekId: string; questionText: string }>();
+  const recMap = await loadRecommendations();
   const out: OpenRecommendationItem[] = [];
   for (const r of results) {
     out.push({
       questionId: r.questionId,
       pillarId: r.pillarId,
       questionText: r.questionText,
-      recommendation: getSampleRecommendation(r.pillarId).text,
+      recommendation: pickRecommendation(recMap, r.questionId, r.pillarId),
       weekLabel: await weekLabel(db, r.weekId),
     });
   }
@@ -428,13 +440,14 @@ export async function getRecommendationHistory(
       followUpAt: string | null;
       questionText: string;
     }>();
+  const recMap = await loadRecommendations();
   const out: RecommendationHistoryItem[] = [];
   for (const r of results) {
     out.push({
       questionId: r.questionId,
       pillarId: r.pillarId,
       questionText: r.questionText,
-      recommendation: getSampleRecommendation(r.pillarId).text,
+      recommendation: pickRecommendation(recMap, r.questionId, r.pillarId),
       status: r.status,
       weekLabel: await weekLabel(db, r.weekId),
       respondedAtLabel: dayLabel(r.followUpAt ?? ""),

@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { BackButton, Card, GradientHeader, Mascot, ScreenShell } from "@/components/kit";
 import { HEADER_MASCOT_SIZE } from "@/lib/mascot";
 import {
-  getSampleRecommendation,
   type ActionHistoryItem,
   type ActionResponseValue,
   type CheckInQuestion,
@@ -261,7 +260,7 @@ function UnansweredCard({ questions }: { questions: CheckInQuestion[] }) {
           <div className="mt-3 rounded-xl bg-lav-soft p-3">
             <p className="text-[11px] font-bold text-brand">{COPY.inbox.recommendationLabel}</p>
             <p className="mt-1 text-[12px] leading-relaxed text-ink-2">
-              {getSampleRecommendation(q.pillarId).text}
+              {q.recommendation}
             </p>
           </div>
         )}

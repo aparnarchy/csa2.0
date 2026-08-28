@@ -283,6 +283,92 @@ export async function importQuestionsCsv(
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Recommendations: one real coaching tip per question, shown whenever that
+// question scores low. Fixed scoreBand 0–6 (matches the A/B/C scale's "low"
+// answer, 4) — the only band ever surfaced today. Any question without a row
+// here falls back to a generic pillar-level placeholder (lib/recommendations.ts),
+// so the app never breaks while these are still being filled in.
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** One question plus whatever recommendation text is on file for it, if any. */
+export interface RecommendationRow {
+  questionId: string;
+  questionText: string;
+  pillarId: PillarId;
+  text: string | null;
+}
+
+interface QuestionForRecRow {
+  id: string;
+  text: string;
+  pillarId: PillarId;
+}
+
+/** Every question, each paired with its recommendation text (or null if the
+ *  admin hasn't written one yet). Admin only. */
+export async function getRecommendationsCms(session: SessionUser): Promise<RecommendationRow[]> {
+  assertRole(session, "admin");
+  const db = getDB();
+  const [{ results: qRows }, { results: recRows }] = await Promise.all([
+    db.prepare("SELECT id, text, pillarId FROM questions").all<QuestionForRecRow>(),
+    db.prepare("SELECT questionId, text FROM recommendations").all<{ questionId: string; text: string }>(),
+  ]);
+  const recByQ = new Map(recRows.map((r) => [r.questionId, r.text]));
+  return qRows
+    .map((q) => ({
+      questionId: q.id,
+      questionText: q.text,
+      pillarId: q.pillarId,
+      text: recByQ.get(q.id) ?? null,
+    }))
+    .sort((a, b) => PILLAR_RANK[a.pillarId] - PILLAR_RANK[b.pillarId] || a.questionId.localeCompare(b.questionId));
+}
+
+/** Write (or overwrite) the recommendation for one question. Admin only. */
+export async function upsertRecommendation(
+  session: SessionUser,
+  questionId: string,
+  text: string,
+): Promise<RecommendationRow[]> {
+  assertRole(session, "admin");
+  if (!text.trim()) throw new Error("Recommendation text is required.");
+  const db = getDB();
+  const q = await db
+    .prepare("SELECT pillarId FROM questions WHERE id = ?")
+    .bind(questionId)
+    .first<{ pillarId: PillarId }>();
+  if (!q) throw new Error("Unknown question.");
+  const existing = await db
+    .prepare("SELECT id FROM recommendations WHERE questionId = ?")
+    .bind(questionId)
+    .first<{ id: string }>();
+  if (existing) {
+    await db.prepare("UPDATE recommendations SET text = ? WHERE id = ?").bind(text.trim(), existing.id).run();
+  } else {
+    await db
+      .prepare(
+        `INSERT INTO recommendations (id, questionId, pillarId, scoreBandMin, scoreBandMax, text)
+         VALUES (?, ?, ?, 0, 6, ?)`,
+      )
+      .bind(`rec-${questionId}`, questionId, q.pillarId, text.trim())
+      .run();
+  }
+  return getRecommendationsCms(session);
+}
+
+/** Remove a question's recommendation, reverting it to the generic pillar
+ *  placeholder. Admin only. */
+export async function clearRecommendation(
+  session: SessionUser,
+  questionId: string,
+): Promise<RecommendationRow[]> {
+  assertRole(session, "admin");
+  const db = getDB();
+  await db.prepare("DELETE FROM recommendations WHERE questionId = ?").bind(questionId).run();
+  return getRecommendationsCms(session);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Org structure: departments, teams, and assignments (Phase 4.4)
 // ─────────────────────────────────────────────────────────────────────────────
 
