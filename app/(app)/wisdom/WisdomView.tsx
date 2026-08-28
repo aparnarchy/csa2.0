@@ -84,8 +84,6 @@ export function WisdomView({
     levels.flatMap((l) => (l.unlocked ? l.modules : [])).find((m) => !m.badgeEarned) ??
     null;
 
-  const earnedBadges = levels.flatMap((l) => l.modules.filter((m) => m.badgeEarned).map((m) => m.badge));
-
   return (
     <ScreenShell active={active}>
       {/* Header — Play: lavender card + mascot; Professional: gradient card, no mascot. */}
@@ -124,29 +122,6 @@ export function WisdomView({
         {levels.map((l, i) => (
           <LevelCard key={l.level} level={l} onToggle={toggle} isLast={i === levels.length - 1} />
         ))}
-      </div>
-
-      {/* Badges */}
-      <p className="px-1 pt-2 font-display text-sm font-black text-ink">
-        {COPY.wisdom.badgesHeading} <span className="font-bold text-ink-3">· {earnedBadges.length}/{wisdom.badges.length}</span>
-      </p>
-      <div className="grid grid-cols-3 gap-2.5">
-        {wisdom.badges.map((b, i) => {
-          const earned = earnedBadges.includes(b.label);
-          return (
-            <div
-              key={`${b.label}-${i}`}
-              className={`rounded-card border p-3 text-center transition ${
-                earned ? "border-lav-mid bg-white shadow-card" : "border-gray-200 bg-gray-50 opacity-50"
-              }`}
-            >
-              <div className="text-2xl leading-none">{earned ? b.icon : "🔒"}</div>
-              <p className={`mt-1.5 text-[10px] font-bold leading-tight ${earned ? "text-ink-2" : "text-ink-4"}`}>
-                {b.label}
-              </p>
-            </div>
-          );
-        })}
       </div>
 
       <p className="pb-2 text-center text-[11px] text-ink-4">{footnote}</p>

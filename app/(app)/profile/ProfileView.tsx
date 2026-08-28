@@ -79,20 +79,23 @@ export function ProfileView({ session, stats }: { session: SessionUser; stats: P
         </div>
       </Card>
 
-      {/* Career history link → 2.8 */}
-      <button
-        type="button"
-        onClick={() => router.push("/career")}
-        className="flex w-full items-center justify-between rounded-card bg-white p-4 text-left shadow-card transition active:scale-[0.99]"
-      >
-        <div>
-          <p className="text-sm font-bold text-ink">{COPY.profile.careerHistoryTitle}</p>
-          <p className="mt-0.5 text-xs text-ink-3">
-            {hasTenure ? fill(COPY.profile.careerTenure, { tenure: stats.careerTenure }) : COPY.profile.addWorkHistory}
-          </p>
-        </div>
-        <span className="text-xl text-ink-4">›</span>
-      </button>
+      {/* Career history link → 2.8. Employee-only: a manager's own work history
+          isn't part of the manager surface, so it's hidden once they hold that role. */}
+      {!isManager && (
+        <button
+          type="button"
+          onClick={() => router.push("/career")}
+          className="flex w-full items-center justify-between rounded-card bg-white p-4 text-left shadow-card transition active:scale-[0.99]"
+        >
+          <div>
+            <p className="text-sm font-bold text-ink">{COPY.profile.careerHistoryTitle}</p>
+            <p className="mt-0.5 text-xs text-ink-3">
+              {hasTenure ? fill(COPY.profile.careerTenure, { tenure: stats.careerTenure }) : COPY.profile.addWorkHistory}
+            </p>
+          </div>
+          <span className="text-xl text-ink-4">›</span>
+        </button>
+      )}
 
       {/* Appearance (mode + persona) */}
       <AppearanceCard session={session} />
