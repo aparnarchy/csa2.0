@@ -414,11 +414,22 @@ export async function getOrgStructure(session: SessionUser): Promise<OrgStructur
   };
 }
 
+/** A UNIQUE-index violation from D1 (e.g. a duplicate department/team name),
+    surfaced as a plain-English message instead of a raw SQL error. */
+function isUniqueConstraintError(e: unknown): boolean {
+  return e instanceof Error && /UNIQUE constraint failed/i.test(e.message);
+}
+
 export async function createDepartment(session: SessionUser, name: string): Promise<void> {
   assertRole(session, "admin");
   if (!name.trim()) throw new Error("Department name is required.");
   const id = `dept-${crypto.randomUUID().slice(0, 8)}`;
-  await getDB().prepare("INSERT INTO departments (id, name) VALUES (?, ?)").bind(id, name.trim()).run();
+  try {
+    await getDB().prepare("INSERT INTO departments (id, name) VALUES (?, ?)").bind(id, name.trim()).run();
+  } catch (e) {
+    if (isUniqueConstraintError(e)) throw new Error("A department with this name already exists.");
+    throw e;
+  }
 }
 
 export async function updateDepartment(
@@ -428,7 +439,12 @@ export async function updateDepartment(
 ): Promise<void> {
   assertRole(session, "admin");
   if (!name.trim()) throw new Error("Department name is required.");
-  await getDB().prepare("UPDATE departments SET name = ? WHERE id = ?").bind(name.trim(), id).run();
+  try {
+    await getDB().prepare("UPDATE departments SET name = ? WHERE id = ?").bind(name.trim(), id).run();
+  } catch (e) {
+    if (isUniqueConstraintError(e)) throw new Error("A department with this name already exists.");
+    throw e;
+  }
 }
 
 /** Delete a department; any teams in it become unassigned (departmentId → null). */
@@ -452,10 +468,15 @@ export async function createTeam(session: SessionUser, input: TeamInput): Promis
   assertRole(session, "admin");
   if (!input.name.trim()) throw new Error("Team name is required.");
   const id = `team-${crypto.randomUUID().slice(0, 8)}`;
-  await getDB()
-    .prepare("INSERT INTO teams (id, name, managerId, departmentId) VALUES (?, ?, ?, ?)")
-    .bind(id, input.name.trim(), input.managerId || null, input.departmentId || null)
-    .run();
+  try {
+    await getDB()
+      .prepare("INSERT INTO teams (id, name, managerId, departmentId) VALUES (?, ?, ?, ?)")
+      .bind(id, input.name.trim(), input.managerId || null, input.departmentId || null)
+      .run();
+  } catch (e) {
+    if (isUniqueConstraintError(e)) throw new Error("A team with this name already exists.");
+    throw e;
+  }
 }
 
 export async function updateTeam(
@@ -465,10 +486,15 @@ export async function updateTeam(
 ): Promise<void> {
   assertRole(session, "admin");
   if (!input.name.trim()) throw new Error("Team name is required.");
-  await getDB()
-    .prepare("UPDATE teams SET name = ?, managerId = ?, departmentId = ? WHERE id = ?")
-    .bind(input.name.trim(), input.managerId || null, input.departmentId || null, id)
-    .run();
+  try {
+    await getDB()
+      .prepare("UPDATE teams SET name = ?, managerId = ?, departmentId = ? WHERE id = ?")
+      .bind(input.name.trim(), input.managerId || null, input.departmentId || null, id)
+      .run();
+  } catch (e) {
+    if (isUniqueConstraintError(e)) throw new Error("A team with this name already exists.");
+    throw e;
+  }
 }
 
 export async function deleteTeam(session: SessionUser, id: string): Promise<void> {
@@ -761,12 +787,20 @@ export async function createInvite(
     return { created: false };
   }
   const id = `inv-${crypto.randomUUID().slice(0, 8)}`;
-  await db
-    .prepare(
-      "INSERT INTO invites (id, email, role, invitedBy, teamId, status) VALUES (?, ?, ?, ?, ?, 'pending')",
-    )
-    .bind(id, email, input.role, session.id, input.teamId || null)
-    .run();
+  try {
+    await db
+      .prepare(
+        "INSERT INTO invites (id, email, role, invitedBy, teamId, status) VALUES (?, ?, ?, ?, ?, 'pending')",
+      )
+      .bind(id, email, input.role, session.id, input.teamId || null)
+      .run();
+  } catch (e) {
+    // The "existing" check above and this insert aren't atomic, so a second
+    // request for the same email in the same instant could still race past
+    // it — the partial unique index (migration 0012) is the real guarantee.
+    if (isUniqueConstraintError(e)) throw new Error("A pending invite for this email already exists.");
+    throw e;
+  }
   // TODO(email): send the invite email here once the Resend key is configured.
   return { created: true };
 }

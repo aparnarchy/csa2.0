@@ -31,6 +31,13 @@ export function OrgStructureView({
   const [teamEdit, setTeamEdit] = useState<TeamEdit | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  const [search, setSearch] = useState("");
+
+  const query = search.trim().toLowerCase();
+  const shownDepartments = query
+    ? org.departments.filter((d) => d.name.toLowerCase().includes(query))
+    : org.departments;
+  const shownTeams = query ? org.teams.filter((t) => t.name.toLowerCase().includes(query)) : org.teams;
 
   const deptName = useMemo(() => {
     const m = new Map(org.departments.map((d) => [d.id, d.name]));
@@ -87,6 +94,14 @@ export function OrgStructureView({
         <p className="rounded-xl bg-red-50 px-3 py-2 text-xs font-semibold text-red-600">{error}</p>
       )}
 
+      <input
+        type="search"
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+        placeholder="Search departments & teams…"
+        className="w-full rounded-xl border border-lav-mid bg-white px-3 py-2 text-sm text-ink placeholder-ink-4 focus:border-brand focus:outline-none"
+      />
+
       {/* Departments */}
       <SectionHeader
         title="Departments"
@@ -97,8 +112,10 @@ export function OrgStructureView({
         }}
       />
       <div className="space-y-2">
-        {org.departments.length === 0 && <Empty>No departments yet.</Empty>}
-        {org.departments.map((d) => (
+        {shownDepartments.length === 0 && (
+          <Empty>{query ? "No departments match that search." : "No departments yet."}</Empty>
+        )}
+        {shownDepartments.map((d) => (
           <Card key={d.id}>
             <div className="flex items-center justify-between gap-2">
               <div className="min-w-0">
@@ -133,8 +150,8 @@ export function OrgStructureView({
         }}
       />
       <div className="space-y-2">
-        {org.teams.length === 0 && <Empty>No teams yet.</Empty>}
-        {org.teams.map((t) => (
+        {shownTeams.length === 0 && <Empty>{query ? "No teams match that search." : "No teams yet."}</Empty>}
+        {shownTeams.map((t) => (
           <Card key={t.id}>
             <div className="flex items-center justify-between gap-2">
               <div className="min-w-0">

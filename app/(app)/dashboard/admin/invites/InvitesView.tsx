@@ -33,9 +33,13 @@ export function InvitesView({
   const [summary, setSummary] = useState<CsvImportResult | null>(null);
   const [pending, startTransition] = useTransition();
   const [filter, setFilter] = useState<"all" | "pending" | "accepted">("all");
+  const [search, setSearch] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
 
-  const shown = invites.filter((iv) => filter === "all" || iv.status === filter);
+  const query = search.trim().toLowerCase();
+  const shown = invites.filter(
+    (iv) => (filter === "all" || iv.status === filter) && (!query || iv.email.toLowerCase().includes(query)),
+  );
   const countPending = invites.filter((iv) => iv.status === "pending").length;
   const countAccepted = invites.filter((iv) => iv.status === "accepted").length;
 
@@ -174,7 +178,7 @@ export function InvitesView({
         </Card>
       )}
 
-      {/* Filter toggle */}
+      {/* Filter toggle + search */}
       <div className="flex gap-1.5 rounded-2xl bg-white/70 p-1 shadow-card">
         {([
           { key: "all", label: `All · ${invites.length}` },
@@ -193,6 +197,13 @@ export function InvitesView({
           </button>
         ))}
       </div>
+      <input
+        type="search"
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+        placeholder="Search by email…"
+        className="w-full rounded-xl border border-lav-mid bg-white px-3 py-2 text-sm text-ink placeholder-ink-4 focus:border-brand focus:outline-none"
+      />
 
       {/* Invite table (scrolls horizontally on narrow screens) */}
       <div className="overflow-x-auto rounded-card border border-lav-mid bg-white shadow-card">
@@ -211,7 +222,9 @@ export function InvitesView({
             {shown.length === 0 && (
               <tr>
                 <td colSpan={6} className="px-3 py-6 text-center text-[11px] text-ink-4">
-                  No {filter === "all" ? "" : `${filter} `}invites yet.
+                  {query
+                    ? "No invites match that search."
+                    : `No ${filter === "all" ? "" : `${filter} `}invites yet.`}
                 </td>
               </tr>
             )}
