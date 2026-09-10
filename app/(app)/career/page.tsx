@@ -16,5 +16,5 @@ export default async function CareerPage() {
 
   const history = await getCareerHistory(session.user, session.user.id);
 
-  return <CareerView history={history} />;
+  return <CareerView history={history} isCeoHr={session.user.roles.includes("ceo_hr")} />;
 }

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
-import { Card, GradientHeader, Mascot, ScreenShell } from "@/components/kit";
+import { Card, CEO_NAV, GradientHeader, Mascot, ScreenShell } from "@/components/kit";
 import { HEADER_MASCOT_SIZE } from "@/lib/mascot";
 import { COPY, fill } from "@/lib/copy";
 import type { ProfileStats } from "@/lib/data";
@@ -19,12 +19,13 @@ export function ProfileView({ session, stats }: { session: SessionUser; stats: P
   const isPlay = session.themeMode === "play";
   const firstName = (session.name || "there").trim().split(/\s+/)[0];
   const isManager = session.roles.includes("manager");
+  const isCeoHr = session.roles.includes("ceo_hr");
   // Compose "role · company" from whatever is set; empty for a fresh account.
   const roleCompany = [stats.role, stats.company].filter(Boolean).join(" · ");
   const hasTenure = Boolean(stats.careerTenure) && stats.careerTenure !== "—";
 
   return (
-    <ScreenShell active="profile">
+    <ScreenShell active="profile" navItems={isCeoHr ? CEO_NAV : undefined}>
       {/* Header — matches the dashboard look (mascot only in Play). */}
       {isPlay ? (
         <GradientHeader

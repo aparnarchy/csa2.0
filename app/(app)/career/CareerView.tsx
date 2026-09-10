@@ -8,6 +8,7 @@ import {
   BackButton,
   BigScore,
   Card,
+  CEO_NAV,
   InsightBarRow,
   PillarCard,
   ScreenShell,
@@ -26,7 +27,7 @@ function scoreColor(score: number) {
   return "text-bad";
 }
 
-export function CareerView({ history }: { history: CareerHistory }) {
+export function CareerView({ history, isCeoHr = false }: { history: CareerHistory; isCeoHr?: boolean }) {
   const router = useRouter();
   const [openId, setOpenId] = useState<string | null>(null);
   const [detail, setDetail] = useState<CompanyDetail | null>(null);
@@ -62,7 +63,7 @@ export function CareerView({ history }: { history: CareerHistory }) {
   }, [openId]);
 
   if (openId && detail) {
-    return <CompanyDetailView detail={detail} onBack={() => setOpenId(null)} />;
+    return <CompanyDetailView detail={detail} onBack={() => setOpenId(null)} isCeoHr={isCeoHr} />;
   }
 
   // The questionnaire is a focused full-screen flow — no bottom nav, like the
@@ -81,7 +82,7 @@ export function CareerView({ history }: { history: CareerHistory }) {
   }
 
   return (
-    <ScreenShell active="profile">
+    <ScreenShell active="profile" navItems={isCeoHr ? CEO_NAV : undefined}>
       <BackButton label={COPY.career.backToProfile} onClick={() => router.push("/profile")} />
 
       {/* Overall career header */}
@@ -226,7 +227,7 @@ export function CareerView({ history }: { history: CareerHistory }) {
  * no response breakdowns and no series, so those blocks are omitted rather than
  * drawn empty.
  */
-function CompanyDetailView({ detail, onBack }: { detail: CompanyDetail; onBack: () => void }) {
+function CompanyDetailView({ detail, onBack, isCeoHr = false }: { detail: CompanyDetail; onBack: () => void; isCeoHr?: boolean }) {
   const [tab, setTab] = useState<"strengths" | "concerns">("strengths");
   const [openId, setOpenId] = useState<string | null>(null);
   const rows = tab === "strengths" ? detail.strengths : detail.concerns;
@@ -234,7 +235,7 @@ function CompanyDetailView({ detail, onBack }: { detail: CompanyDetail; onBack: 
   const up = (detail.delta ?? 0) >= 0;
 
   return (
-    <ScreenShell active="profile">
+    <ScreenShell active="profile" navItems={isCeoHr ? CEO_NAV : undefined}>
       <BackButton label={COPY.career.backToCareer} onClick={onBack} />
 
       {/* Header — same lavender gradient card as the insights dashboard, with the
