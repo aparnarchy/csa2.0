@@ -140,6 +140,7 @@ export async function addCareerCompany(
 
   const name = input.name.trim();
   if (!name) throw new Error("Company name is required.");
+  if (!input.role.trim()) throw new Error("Role is required.");
   if (!input.startDate || !input.endDate) throw new Error("Start and end dates are required.");
   if (new Date(input.endDate) <= new Date(input.startDate)) {
     throw new Error("The end date must be after the start date.");

@@ -3,10 +3,10 @@
  * compute — so the screen reads "insight-first" and scannable today. In Phase 5
  * the AI slot can replace this copy with richer LLM prose; the shape stays.
  */
-import { getSampleRecommendation, type EmployeeScores } from "./data";
+import { type EmployeeScores } from "./data";
 import { PILLARS } from "./pillars";
 import type { Persona, PillarId } from "./types";
-import { voicedHeadline, voicedRca, type Trend } from "./voice";
+import { voicedHeadline, type Trend } from "./voice";
 
 export interface EmployeeInsight {
   headline: string; // short, punchy hero phrase
@@ -14,7 +14,6 @@ export interface EmployeeInsight {
   brightSpot: { label: string; score: number; pillarId: PillarId } | null;
   watchOut: { label: string; score: number; pillarId: PillarId } | null;
   comparison: string | null; // e.g. "Happier than 91% of your org"
-  action: string | null; // one thing to try (lowest pillar)
 }
 
 export function buildEmployeeInsight(data: EmployeeScores, persona?: Persona): EmployeeInsight {
@@ -25,7 +24,6 @@ export function buildEmployeeInsight(data: EmployeeScores, persona?: Persona): E
       brightSpot: null,
       watchOut: null,
       comparison: "Answer a few check-ins to unlock your insights",
-      action: null,
     };
   }
 
@@ -67,11 +65,5 @@ export function buildEmployeeInsight(data: EmployeeScores, persona?: Persona): E
         ? { label: PILLARS[bottom.pillarId].label, score: bottom.score as number, pillarId: bottom.pillarId }
         : null,
     comparison: pct ? `Happier than ${pct}% of your org` : null,
-    action:
-      bottom && (bottom.score as number) < 7
-        ? persona
-          ? voicedRca(persona, bottom.pillarId).actions[0]
-          : getSampleRecommendation(bottom.pillarId).text
-        : null,
   };
 }

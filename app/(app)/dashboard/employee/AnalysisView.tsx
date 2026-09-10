@@ -18,15 +18,13 @@ import {
   TrendChart,
 } from "@/components/kit";
 import { type EmployeeScores, type Window } from "@/lib/data";
-import { getEmployeeInsightAction, getEmployeeScoresAction, getRootAnalysisAction } from "./actions";
+import { getEmployeeInsightAction, getEmployeeScoresAction } from "./actions";
 import { HEADER_MASCOT_SIZE, mascotForScore } from "@/lib/mascot";
 import { STRENGTH_CUTOFF } from "@/lib/pillars";
 import { buildEmployeeInsight } from "@/lib/insight";
-import { buildRootAnalysis, type RootAnalysis } from "@/lib/rca";
 import { chromeFor } from "@/lib/voice";
 import type { PillarId, SessionUser } from "@/lib/types";
 import { PillarDetailView } from "./PillarDetailView";
-import { RootJourney, RootLoadingOverlay } from "./RootJourney";
 
 type Tab = "strengths" | "concerns";
 
@@ -45,10 +43,6 @@ export function AnalysisView({
   const [aiText, setAiText] = useState<string | null>(initialInsight);
   const [tab, setTab] = useState<Tab>("strengths");
   const [selectedPillar, setSelectedPillar] = useState<PillarId | null>(null);
-  const [showRoot, setShowRoot] = useState(false);
-  // The real AI-reasoned analysis, fetched on demand when the CTA is tapped
-  // (not on every page load) — null while loading, so the overlay shows.
-  const [rootAnalysis, setRootAnalysis] = useState<RootAnalysis | null>(null);
   /** Accordion: at most one question row is expanded at a time. */
   const [openId, setOpenId] = useState<string | null>(null);
 
@@ -80,27 +74,8 @@ export function AnalysisView({
   const isPlay = session.themeMode === "play";
   const persona = isPlay ? session.persona : undefined;
   const insight = buildEmployeeInsight(data, persona);
-  // Deterministic — instant, drives the teaser box (available/feelings) that's
-  // shown before the CTA is tapped. The real AI analysis (rootAnalysis state)
-  // is fetched only once the person actually asks to see it.
-  const rca = buildRootAnalysis(data, persona);
   const chrome = chromeFor(persona);
   const firstName = (session.name || "there").trim().split(/\s+/)[0];
-
-  async function openRoot() {
-    setShowRoot(true);
-    setRootAnalysis(null);
-    try {
-      setRootAnalysis(await getRootAnalysisAction(data, persona));
-    } catch {
-      setRootAnalysis(rca); // never dead-end the CTA — fall back to the deterministic version
-    }
-  }
-
-  function closeRoot() {
-    setShowRoot(false);
-    setRootAnalysis(null);
-  }
 
   return (
     <ScreenShell active="insights">
@@ -187,57 +162,6 @@ export function AnalysisView({
             )
           )}
 
-          {/* Insight box — leads with the recommendation; the CTA opens the
-              root-cause view. Play adds the mascot + a persona feeling line. */}
-          {rca.available && (
-            isPlay ? (
-              <div className="rounded-card bg-lav-soft p-5 shadow-card">
-                <div className="flex items-start gap-3.5">
-                  <div className="min-w-0 flex-1">
-                    <p className="text-[11px] font-bold uppercase tracking-wide text-brand">
-                      {chrome.tryLabel}
-                    </p>
-                    <p className="mt-1.5 font-display text-[17px] font-black leading-snug text-brand">
-                      {insight.action ?? "Take a closer look at your weakest area this week."}
-                    </p>
-                    {rca.feelings.length > 0 && (
-                      <p className="mt-2.5 text-[12px] text-brand/70">
-                        {chrome.feelingsLead}{" "}
-                        <span className="font-semibold text-brand">
-                          {rca.feelings.slice(0, 2).join(" · ").toLowerCase()}
-                        </span>
-                      </p>
-                    )}
-                  </div>
-                  <Mascot state="sad" size={101} sparkle={false} float={false} />
-                </div>
-                <button
-                  type="button"
-                  onClick={openRoot}
-                  className="mt-4 w-full rounded-2xl bg-brand py-3.5 font-display text-sm font-black text-white transition active:scale-[0.98]"
-                >
-                  {chrome.cta}
-                </button>
-              </div>
-            ) : (
-              <div className="rounded-card bg-lav-soft p-5 shadow-card">
-                <p className="text-[11px] font-bold uppercase tracking-wide text-brand">
-                  {chrome.tryLabel}
-                </p>
-                <p className="mt-1.5 font-display text-[17px] font-black leading-snug text-brand">
-                  {insight.action ?? "Take a closer look at your weakest area this week."}
-                </p>
-                <button
-                  type="button"
-                  onClick={openRoot}
-                  className="mt-3 text-sm font-bold text-brand"
-                >
-                  {chrome.cta}
-                </button>
-              </div>
-            )
-          )}
-
           {/* Happiness score + pillars first (unchanged), then Strengths/Concerns,
               then the trend chart (owner: only these two swapped places). */}
           <Card>
@@ -267,8 +191,13 @@ export function AnalysisView({
             </div>
           </Card>
 
-          {/* AI insight — same shared card every other dashboard uses, over
-              this person's own data (never an aggregate, so no privacy floor
+          {/* AI insight — the ONLY insight card on this screen (there used to
+              be a second, click-through "Find the Root" entry point below
+              this; removed — its fact-gathering now feeds this card
+              directly, shown immediately, no click-through). Same shared
+              card every other dashboard uses, over this person's own data
+              (career, journal reflections, manager-action impact, not just
+              the current scores — never an aggregate, so no privacy floor
               to enforce here). */}
           <AIInsight text={aiText ?? undefined} />
 
@@ -326,13 +255,6 @@ export function AnalysisView({
           </button>
         </>
       )}
-
-      {showRoot &&
-        (rootAnalysis === null ? (
-          <RootLoadingOverlay onClose={closeRoot} />
-        ) : (
-          rootAnalysis.available && <RootJourney analysis={rootAnalysis} onClose={closeRoot} />
-        ))}
     </ScreenShell>
   );
 }

@@ -17,7 +17,7 @@
 import { getRequestContext } from "@cloudflare/next-on-pages";
 import { getDB } from "./db";
 import { PILLARS, PILLAR_ORDER } from "./pillars";
-import type { CeoDashboard, EmployeeScores, ManagerDetail, PillarScore, TeamAggregate, Window } from "./data";
+import type { CeoDashboard, ManagerDetail, PillarScore, TeamAggregate, Window } from "./data";
 import type { PillarId } from "./types";
 
 const GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
@@ -37,7 +37,7 @@ interface InsightFacts {
   pillars: PillarScore[];
 }
 
-function signed(n: number): string {
+export function signed(n: number): string {
   return `${n >= 0 ? "+" : ""}${n}`;
 }
 
@@ -104,7 +104,7 @@ export async function getDashboardInsight(
 }
 
 /** One chat completion, or null on any failure. */
-async function callGroq(apiKey: string, system: string, user: string): Promise<string | null> {
+export async function callGroq(apiKey: string, system: string, user: string): Promise<string | null> {
   const res = await fetch(GROQ_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
@@ -129,7 +129,7 @@ async function callGroq(apiKey: string, system: string, user: string): Promise<s
   return data.choices?.[0]?.message?.content?.trim().replace(/^"|"$/g, "") ?? null;
 }
 
-async function writeCache(id: string, fingerprint: string, text: string): Promise<void> {
+export async function writeCache(id: string, fingerprint: string, text: string): Promise<void> {
   await getDB()
     .prepare(
       `INSERT INTO aiInsights (id, fingerprint, text, createdAt) VALUES (?, ?, ?, ?)
@@ -174,63 +174,11 @@ export function getManagerDetailInsight(
   });
 }
 
-/**
- * The employee's own dashboard insight — unlike getDashboardInsight above,
- * this is deliberately ONE PERSON'S data, addressed to them as "you", not an
- * anonymous aggregate (there's no privacy floor to enforce over your own
- * numbers). Same cache-by-fingerprint pattern as everything else here.
- */
-export async function getEmployeeInsight(
-  userId: string,
-  window: Window,
-  scores: EmployeeScores,
-): Promise<string | null> {
-  if (!scores.enoughData || scores.overall === null) return null;
-  const scored = scores.pillars.filter((p) => p.score !== null);
-  if (scored.length === 0) return null;
-
-  const fingerprint = JSON.stringify({
-    s: scores.overall,
-    d: scores.delta,
-    pi: scored.map((p) => [p.pillarId, p.score, p.delta]),
-  });
-  const id = `employee:${userId}|${window}`;
-
-  try {
-    const db = getDB();
-    const cached = await db
-      .prepare("SELECT fingerprint, text FROM aiInsights WHERE id = ?")
-      .bind(id)
-      .first<{ fingerprint: string; text: string }>();
-    if (cached && cached.fingerprint === fingerprint) return cached.text;
-
-    const apiKey = getRequestContext().env.GROQ_API_KEY;
-    if (!apiKey) return null;
-
-    const system =
-      "You write the short \"AI insight\" box on someone's own workplace-happiness dashboard, " +
-      "addressed to them as \"you\". " +
-      "Write 2-3 sentences, at most 55 words, in warm plain British English. " +
-      "Name their strongest and weakest pillar and give one practical, low-effort suggestion aimed at the weakest. " +
-      "Use only the numbers provided - never invent data. " +
-      "No headings, bullet points, emojis or quotation marks.";
-
-    const factLines = [
-      `Their overall happiness score: ${scores.overall}/10${scores.delta !== null ? ` (${signed(scores.delta)} vs the previous week)` : ""}, over the last ${window === "All" ? "available period" : window}.`,
-      `Pillar scores: ${scored
-        .map((p) => `${PILLARS[p.pillarId].label} ${p.score}/10${p.delta !== null ? ` (${signed(p.delta!)})` : ""}`)
-        .join(", ")}.`,
-    ];
-
-    const text = await callGroq(apiKey, system, factLines.join("\n"));
-    if (!text) return null;
-
-    await writeCache(id, fingerprint, text);
-    return text;
-  } catch {
-    return null;
-  }
-}
+// getEmployeeInsight moved to lib/employee-facts.ts — it needs
+// gatherEmployeeInsightFacts from that same module, and that module needs
+// pillarExtremes from here, so the function that calls both has to live on
+// one side of that pair, not in ai.ts itself (importing it back here would
+// cycle: ai.ts -> employee-facts.ts -> ai.ts).
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Career insight — the ✨ box on a company page. Unlike the dashboard insights

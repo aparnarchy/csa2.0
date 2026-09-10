@@ -46,6 +46,7 @@ export function AddCompanyFlow({ onDone, onCancel }: { onDone: () => void; onCan
   function startQuestions() {
     const name = details.name.trim();
     if (!name) return setError(t.errorNameRequired);
+    if (!details.role.trim()) return setError(t.errorRoleRequired);
     if (!details.startDate || !details.endDate) return setError(t.errorDatesRequired);
     if (new Date(details.endDate) <= new Date(details.startDate)) {
       return setError(t.errorEndBeforeStart);

@@ -8,11 +8,9 @@
 
 import { getSession } from "@/lib/auth-session";
 import { getEmployeeScores, getPillarDetail, type PillarDetail } from "@/lib/scores";
-import { getRootAnalysis } from "@/lib/root-analysis";
-import { getEmployeeInsight } from "@/lib/ai";
-import type { RootAnalysis } from "@/lib/rca";
+import { getEmployeeInsight } from "@/lib/employee-facts";
 import type { EmployeeScores, Window } from "@/lib/data";
-import type { Persona, PillarId } from "@/lib/types";
+import type { PillarId } from "@/lib/types";
 
 export async function getEmployeeScoresAction(window: Window): Promise<EmployeeScores> {
   const session = await getSession();
@@ -24,7 +22,7 @@ export async function getEmployeeInsightAction(window: Window): Promise<string |
   const session = await getSession();
   if (!session) throw new Error("Not signed in.");
   const scores = await getEmployeeScores(session.user, session.user.id, window);
-  return getEmployeeInsight(session.user.id, window, scores);
+  return getEmployeeInsight(session.user, session.user.id, window, scores);
 }
 
 export async function getPillarDetailAction(
@@ -34,20 +32,4 @@ export async function getPillarDetailAction(
   const session = await getSession();
   if (!session) throw new Error("Not signed in.");
   return getPillarDetail(session.user, session.user.id, pillarId, window);
-}
-
-/**
- * The real "Find the Root" analysis — AI-reasoned over this person's own
- * career history, check-in trends and journal reflections, falling back to
- * the deterministic engine (same `data` the caller already has on screen)
- * if there isn't enough data or the AI call doesn't pan out. Fetched on
- * demand when "Let's find out why" is tapped, not on every page load.
- */
-export async function getRootAnalysisAction(
-  data: EmployeeScores,
-  persona?: Persona,
-): Promise<RootAnalysis> {
-  const session = await getSession();
-  if (!session) throw new Error("Not signed in.");
-  return getRootAnalysis(session.user, session.user.id, data, persona);
 }
