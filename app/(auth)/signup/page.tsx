@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { authClient } from "@/lib/auth-client";
 import { COPY } from "@/lib/copy";
 import Link from "next/link";
@@ -10,11 +10,19 @@ const t = COPY.signup;
 
 export default function SignupPage() {
   const router = useRouter();
+  const { data: session } = authClient.useSession();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  // Same guard as /login — every other route redirects an already-signed-in
+  // user away, but this page never did, so a swipe-back replaying real
+  // browser history onto it looked like an unwanted sign-out.
+  useEffect(() => {
+    if (session) router.replace("/dashboard");
+  }, [session, router]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();

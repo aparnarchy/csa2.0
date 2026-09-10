@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { authClient } from "@/lib/auth-client";
 import { COPY } from "@/lib/copy";
 import Link from "next/link";
@@ -10,10 +10,20 @@ const t = COPY.login;
 
 export default function LoginPage() {
   const router = useRouter();
+  const { data: session } = authClient.useSession();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  // Nothing else in the app leaves /login reachable while already signed in
+  // (every other page redirects away instead) — but a swipe-back gesture can
+  // replay real browser history back onto it from before the user logged in.
+  // The session is still perfectly valid; only this page was missing the
+  // guard every other route already has.
+  useEffect(() => {
+    if (session) router.replace("/dashboard");
+  }, [session, router]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
