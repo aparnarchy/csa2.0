@@ -7,6 +7,7 @@
  * enforced in server code, never in the UI.
  */
 
+import { Resend } from "resend";
 import { getDB } from "@/lib/db";
 import { assertRole } from "@/lib/access-control";
 import type {
@@ -736,6 +737,28 @@ export interface InviteInput {
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+/** Invite emails are best-effort — a delivery failure shouldn't undo the
+    invite row that's already saved, so this only logs, never throws. */
+async function sendInviteEmail(email: string): Promise<void> {
+  try {
+    const resend = new Resend(process.env.RESEND_API_KEY);
+    const signupUrl = `${process.env.BETTER_AUTH_URL ?? "http://localhost:3000"}/signup`;
+    await resend.emails.send({
+      from: "CSA <noreply@resend.dev>",
+      to: email,
+      subject: "You're invited to CSA",
+      html: `
+        <p>Hi,</p>
+        <p>You've been invited to join CSA (Culture Super App). Sign up using this
+        email address to get started:</p>
+        <p><a href="${signupUrl}">${signupUrl}</a></p>
+      `,
+    });
+  } catch (e) {
+    console.error("Failed to send invite email:", e);
+  }
+}
+
 /** Normalise a role cell: accept "individual" as a friendly alias for employee. */
 function normaliseRole(raw: string): "manager" | "employee" | null {
   const r = raw.trim().toLowerCase();
@@ -801,18 +824,19 @@ export async function createInvite(
     if (isUniqueConstraintError(e)) throw new Error("A pending invite for this email already exists.");
     throw e;
   }
-  // TODO(email): send the invite email here once the Resend key is configured.
+  await sendInviteEmail(email);
   return { created: true };
 }
 
-/** "Resend" a pending invite — refreshes its timestamp (and, later, re-sends the email). */
+/** "Resend" a pending invite — refreshes its timestamp and re-sends the email. */
 export async function resendInvite(session: SessionUser, id: string): Promise<void> {
   assertRole(session, "admin");
-  await getDB()
-    .prepare("UPDATE invites SET createdAt = datetime('now') WHERE id = ? AND status = 'pending'")
+  const db = getDB();
+  const invite = await db
+    .prepare("UPDATE invites SET createdAt = datetime('now') WHERE id = ? AND status = 'pending' RETURNING email")
     .bind(id)
-    .run();
-  // TODO(email): re-send the invite email here once the Resend key is configured.
+    .first<{ email: string }>();
+  if (invite) await sendInviteEmail(invite.email);
 }
 
 /** Cancel (delete) an invite. Admin only. */

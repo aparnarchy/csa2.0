@@ -99,15 +99,6 @@ export function InvitesView({
         </div>
       )}
 
-      {/* Email-not-connected notice */}
-      <Card>
-        <p className="text-[11px] leading-relaxed text-ink-3">
-          Invites are recorded here now. The actual invitation <strong>email is not sent yet</strong>{" "}
-          — that switches on once the email service is connected. Until then, use this to prepare the
-          invite list.
-        </p>
-      </Card>
-
       {error && !edit && (
         <p className="rounded-xl bg-red-50 px-3 py-2 text-xs font-semibold text-red-600">{error}</p>
       )}
