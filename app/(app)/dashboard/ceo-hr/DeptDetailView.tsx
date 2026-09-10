@@ -7,16 +7,19 @@ import {
   BigScore,
   Card,
   GradientHeader,
+  InsightBarRow,
   Mascot,
   NotEnoughData,
   PillarCard,
   ScreenShell,
+  SegmentedToggle,
   TrendChart,
   CEO_NAV,
 } from "@/components/kit";
 import { type CeoDashboard, type Window } from "@/lib/data";
 import { getCeoDashboardAction, getCeoInsightAction } from "./actions";
 import { HEADER_MASCOT_SIZE, mascotForScore } from "@/lib/mascot";
+import { STRENGTH_CUTOFF } from "@/lib/pillars";
 import type { PillarId, SessionUser } from "@/lib/types";
 import { CeoPillarDetailView } from "./CeoPillarDetailView";
 
@@ -32,17 +35,24 @@ export function DeptDetailView({
   scope,
   initial,
   initialInsight,
+  from,
 }: {
   session: SessionUser;
   scope: string;
   initial: CeoDashboard;
   initialInsight: string | null;
+  /** Where this screen was opened from, so "back" returns there instead of
+      always assuming the Org dashboard — it's also entered from Insights'
+      department bar chart. */
+  from?: string;
 }) {
   const router = useRouter();
   const [window, setWindow] = useState<Window>("3M");
   const [data, setData] = useState<CeoDashboard>(initial);
   const [aiText, setAiText] = useState<string | null>(initialInsight);
   const [selectedPillar, setSelectedPillar] = useState<PillarId | null>(null);
+  const [scTab, setScTab] = useState<"strengths" | "concerns">("strengths");
+  const [scOpenId, setScOpenId] = useState<string | null>(null);
 
   useEffect(() => {
     getCeoDashboardAction(scope, window).then(setData);
@@ -51,6 +61,15 @@ export function DeptDetailView({
 
   const isPlay = session.themeMode === "play";
   const up = (data.delta ?? 0) >= 0;
+  const back =
+    from === "insights"
+      ? { label: "Insights", onClick: () => router.push("/dashboard/ceo-hr/insights") }
+      : { label: "Org dashboard", onClick: () => router.push("/dashboard/ceo-hr") };
+
+  const scSorted = [...data.questions].sort((a, b) => b.score - a.score);
+  const scStrengths = scSorted.filter((q) => q.score >= STRENGTH_CUTOFF).slice(0, 3);
+  const scConcerns = scSorted.filter((q) => q.score < STRENGTH_CUTOFF).reverse().slice(0, 3);
+  const scShown = scTab === "strengths" ? scStrengths : scConcerns;
 
   if (selectedPillar) {
     return (
@@ -65,7 +84,7 @@ export function DeptDetailView({
       <GradientHeader
         eyebrow={data.scopeKind === "dept" ? "🏬 Department" : "👥 Team"}
         title={data.scopeLabel}
-        back={{ label: "Org dashboard", onClick: () => router.push("/dashboard/ceo-hr") }}
+        back={back}
         avatar={
           isPlay ? (
             <Mascot
@@ -114,6 +133,40 @@ export function DeptDetailView({
           </Card>
 
           <AIInsight text={aiText ?? undefined} />
+
+          {/* Strengths & Concerns — same shape as every other dashboard
+              (SegmentedToggle + InsightBarRow over real, anonymised
+              per-question scores), before Trend like everywhere else. */}
+          <Card>
+            <p className="mb-3 text-sm font-bold text-brand">Insights</p>
+            <div className="mb-4">
+              <SegmentedToggle
+                value={scTab}
+                onChange={(v) => {
+                  setScTab(v);
+                  setScOpenId(null);
+                }}
+                options={[
+                  { value: "strengths", label: "💪 Strengths" },
+                  { value: "concerns", label: "⚠️ Concerns" },
+                ]}
+              />
+            </div>
+            {scShown.map((q) => (
+              <InsightBarRow
+                key={q.id}
+                q={q}
+                isStrength={scTab === "strengths"}
+                open={scOpenId === q.id}
+                onToggle={() => setScOpenId((cur) => (cur === q.id ? null : q.id))}
+              />
+            ))}
+            {scShown.length === 0 && (
+              <p className="text-xs text-ink-4">
+                {scTab === "strengths" ? "Nothing scoring 7+ yet." : "Nothing scoring below 7 — nice."}
+              </p>
+            )}
+          </Card>
 
           {data.impact && (
             <Card>

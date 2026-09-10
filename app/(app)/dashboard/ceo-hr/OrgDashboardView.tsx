@@ -2,12 +2,13 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { BigScore, Card, CustomDropdown, GradientHeader, Mascot, NotEnoughData, CEO_NAV, ScreenShell } from "@/components/kit";
+import { BigScore, Card, CustomDropdown, GradientHeader, Mascot, NotEnoughData, PillarCard, CEO_NAV, ScreenShell } from "@/components/kit";
 import { type CeoDashboard, type Window } from "@/lib/data";
 import { getCeoDashboardAction, getDepartmentScoresAction } from "./actions";
 import type { DepartmentScore } from "@/lib/ceo";
 import { HEADER_MASCOT_SIZE, mascotForScore } from "@/lib/mascot";
-import type { SessionUser } from "@/lib/types";
+import type { PillarId, SessionUser } from "@/lib/types";
+import { CeoPillarDetailView } from "./CeoPillarDetailView";
 
 const BAND_COLOR: Record<"green" | "amber" | "red", string> = {
   green: "#059669",
@@ -37,6 +38,7 @@ export function OrgDashboardView({
   const [window, setWindow] = useState<Window>("3M");
   const [org, setOrg] = useState<CeoDashboard>(initialOrg);
   const [depts, setDepts] = useState<DepartmentScore[]>(initialDepts);
+  const [selectedPillar, setSelectedPillar] = useState<PillarId | null>(null);
 
   useEffect(() => {
     getCeoDashboardAction("org", window).then(setOrg);
@@ -45,6 +47,14 @@ export function OrgDashboardView({
 
   const isPlay = session.themeMode === "play";
   const firstName = (session.name || "there").trim().split(/\s+/)[0];
+
+  if (selectedPillar) {
+    return (
+      <ScreenShell active="dashboard" navItems={CEO_NAV}>
+        <CeoPillarDetailView scope="org" pillarId={selectedPillar} onBack={() => setSelectedPillar(null)} />
+      </ScreenShell>
+    );
+  }
 
   return (
     <ScreenShell active="dashboard" navItems={CEO_NAV}>
@@ -97,9 +107,23 @@ export function OrgDashboardView({
           </div>
         </div>
         {org.enoughData && org.score !== null && (
-          <p className="mt-1 text-xs text-ink-3">
-            {org.peopleCount} people · {org.percentile}th percentile
-          </p>
+          <>
+            <p className="mt-1 text-xs text-ink-3">
+              {org.peopleCount} people · {org.percentile}th percentile
+            </p>
+            {/* Pillar grid — org-wide aggregates, same shape as the employee
+                and manager dashboards. Tap through to the org-scoped pillar
+                detail (same style as every other pillar drill-down). */}
+            <div className="-mx-1.5 mt-4 grid grid-cols-4 gap-2">
+              {org.pillars.map((p) => (
+                <PillarCard
+                  key={p.pillarId}
+                  data={p}
+                  onClick={p.score !== null ? () => setSelectedPillar(p.pillarId) : undefined}
+                />
+              ))}
+            </div>
+          </>
         )}
       </Card>
 

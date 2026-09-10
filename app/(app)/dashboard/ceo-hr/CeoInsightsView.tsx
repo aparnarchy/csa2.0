@@ -112,7 +112,7 @@ export function CeoInsightsView({
             <button
               key={d.deptId}
               type="button"
-              onClick={() => router.push(`/dashboard/ceo-hr/dept/${d.deptId}`)}
+              onClick={() => router.push(`/dashboard/ceo-hr/dept/${d.deptId}?from=insights`)}
               disabled={d.score === null}
               className="flex w-full items-center gap-3 text-left disabled:opacity-50"
             >

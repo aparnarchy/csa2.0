@@ -1397,6 +1397,7 @@ export interface CeoDashboard {
   percentile: number | null;
   peopleCount: number;
   pillars: PillarScore[];
+  questions: QuestionInsight[];
   trend: TrendPoint[];
   impact: ActionImpact | null;
 }
@@ -1498,6 +1499,7 @@ export async function getCeoDashboard(
       percentile: null,
       peopleCount: s.people,
       pillars: [],
+      questions: [],
       trend: [],
       impact: null,
     };
@@ -1519,6 +1521,7 @@ export async function getCeoDashboard(
     percentile: pctFromScore(score),
     peopleCount: s.people,
     pillars: pillarScoresFrom(trend),
+    questions: questionInsights(s.seedKey),
     trend,
     impact: impactFor(s.seedKey),
   };

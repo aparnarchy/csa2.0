@@ -41,6 +41,22 @@ export function CeoPillarDetailView({
     getCeoPillarDetailAction(scope, pillarId, window).then(setDetail);
   }, [scope, pillarId, window]);
 
+  // This drill-down is local state, not its own URL (used inline from the Org
+  // dashboard, a department's detail view, and Insights) — a swipe-back has
+  // no history entry to pop for it and would otherwise fall through to real
+  // browser history, skipping this screen. Same fix as Career's company
+  // detail: intercept the shared back-intent event and close it here first.
+  // (Using globalThis, not `window` — that name is shadowed by the time-
+  // window state above.)
+  useEffect(() => {
+    function onBackIntent(e: Event) {
+      e.preventDefault();
+      onBack();
+    }
+    globalThis.addEventListener("app:back-intent", onBackIntent);
+    return () => globalThis.removeEventListener("app:back-intent", onBackIntent);
+  }, [onBack]);
+
   const questions = [...(detail?.questions ?? [])].sort((a, b) => b.score - a.score);
   const strengths = questions.filter((q) => q.score >= STRENGTH_CUTOFF).slice(0, 3);
   const concerns = questions.filter((q) => q.score < STRENGTH_CUTOFF).reverse().slice(0, 3);

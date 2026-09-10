@@ -9,10 +9,13 @@ import { DeptDetailView } from "../../DeptDetailView";
 /** Department (or team) head view — reached by tapping a panel on the org dashboard. */
 export default async function CeoDeptPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ deptId: string }>;
+  searchParams: Promise<{ from?: string }>;
 }) {
   const { deptId } = await params;
+  const { from } = await searchParams;
   const session = await getSession();
   if (!session) redirect("/login");
   if (!session.user.onboardingComplete) redirect("/onboarding");
@@ -22,6 +25,6 @@ export default async function CeoDeptPage({
   const insight = await getCeoInsight("3M", data);
 
   return (
-    <DeptDetailView session={session.user} scope={deptId} initial={data} initialInsight={insight} />
+    <DeptDetailView session={session.user} scope={deptId} initial={data} initialInsight={insight} from={from} />
   );
 }

@@ -3,11 +3,11 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
-import { Card, CEO_NAV, GradientHeader, Mascot, ScreenShell } from "@/components/kit";
+import { BigScore, Card, CEO_NAV, GradientHeader, Mascot, ScreenShell } from "@/components/kit";
 import { HEADER_MASCOT_SIZE } from "@/lib/mascot";
 import { COPY, fill } from "@/lib/copy";
 import { setViewModeAction } from "@/lib/view-mode";
-import type { ProfileStats } from "@/lib/data";
+import type { CeoDashboard, ProfileStats } from "@/lib/data";
 import type { Persona, SessionUser, ThemeMode } from "@/lib/types";
 
 const PERSONAS: { key: Persona; name: string; tagline: string; emoji: string }[] = [
@@ -19,11 +19,16 @@ export function ProfileView({
   session,
   stats,
   viewingAsEmployee,
+  orgScore,
+  orgParticipation,
 }: {
   session: SessionUser;
   stats: ProfileStats;
   /** Only meaningful when isDualRole — which "hat" they're currently viewing. */
   viewingAsEmployee: boolean;
+  /** CEO/HR only — org-wide happiness score, "dashboard style". */
+  orgScore: CeoDashboard | null;
+  orgParticipation: { respondedCount: number; peopleCount: number; participation: number } | null;
 }) {
   const router = useRouter();
   const isPlay = session.themeMode === "play";
@@ -44,31 +49,62 @@ export function ProfileView({
 
   return (
     <ScreenShell active="profile" navItems={isCeoHr ? CEO_NAV : undefined}>
-      {/* Header — matches the dashboard look (mascot only in Play). */}
+      {/* Header — matches the dashboard look (mascot only in Play). CEO/HR
+          gets no personal stat row here — their numbers are org-wide and
+          live in the dashboard-style card below, not blended into the
+          header like an individual's happiness/streak/participation. */}
       {isPlay ? (
         <GradientHeader
-          eyebrow={roleCompany || undefined}
+          eyebrow={isCeoHr ? "🏢 CEO / HR" : roleCompany || undefined}
           title={session.name}
           avatar={<Mascot state="happy" size={HEADER_MASCOT_SIZE} float={false} sparkle={false} />}
-          below={<HeaderStats stats={stats} hasEmployment={session.hasEmployment} />}
+          below={isCeoHr ? undefined : <HeaderStats stats={stats} hasEmployment={session.hasEmployment} />}
         />
       ) : (
         <div
           className="rounded-card px-5 py-6"
           style={{ background: "linear-gradient(135deg, #EDE7FF 0%, #C9B4FF 100%)" }}
         >
-          {roleCompany && <p className="text-xs font-semibold text-brand/70">{roleCompany}</p>}
+          <p className="text-xs font-semibold text-brand/70">{isCeoHr ? "🏢 CEO / HR" : roleCompany}</p>
           <h1 className="mt-1 font-display text-[30px] font-black leading-tight text-brand">{session.name}</h1>
-          <div className="mt-3">
-            <HeaderStats stats={stats} hasEmployment={session.hasEmployment} />
-          </div>
+          {!isCeoHr && (
+            <div className="mt-3">
+              <HeaderStats stats={stats} hasEmployment={session.hasEmployment} />
+            </div>
+          )}
         </div>
+      )}
+
+      {/* Org happiness + participation — CEO/HR only, same dashboard-style
+          card (BigScore + a full-width data-confidence row) used on the Org
+          dashboard and Manager dashboard, for visual consistency app-wide. */}
+      {isCeoHr && orgScore && (
+        <Card>
+          {!orgScore.enoughData || orgScore.score === null ? (
+            <p className="text-xs text-ink-3">{orgScore.reason}</p>
+          ) : (
+            <>
+              <BigScore score={orgScore.score} caption="Org happiness" />
+              {orgParticipation && (
+                <div className="mt-4 flex flex-wrap items-center gap-x-2 gap-y-1 border-t border-lav-mid pt-3">
+                  <OrgConfidenceDot participation={orgParticipation.participation} />
+                  <span className="text-xs text-ink-3">·</span>
+                  <span className="whitespace-nowrap text-xs text-ink-3">
+                    {orgParticipation.respondedCount}/{orgParticipation.peopleCount} people · {orgParticipation.participation}% participation this week
+                  </span>
+                </div>
+              )}
+            </>
+          )}
+        </Card>
       )}
 
       {/* Activity — streak + best + recent-week dots (no heatmap). Only for
           people who actually do check-ins; a manager with no employment of
-          their own has no activity to show here. */}
-      {session.hasEmployment && (
+          their own has no activity to show here. CEO/HR never sees this —
+          their profile stays org-scoped even if they also have employment
+          somewhere (e.g. the owner's own account). */}
+      {session.hasEmployment && !isCeoHr && (
         <Card>
           <div className="flex items-center justify-between">
             <p className="text-sm font-bold text-brand">{COPY.profile.activityTitle}</p>
@@ -89,22 +125,25 @@ export function ProfileView({
         </Card>
       )}
 
-      {/* Badges */}
-      <Card>
-        <p className="text-sm font-bold text-brand">{COPY.profile.badgesTitle}</p>
-        <div className="mt-3 flex flex-wrap gap-2">
-          {stats.badges.map((b) => (
-            <span key={b} className="rounded-full bg-lav-soft px-3 py-1.5 text-xs font-bold text-brand">
-              🏅 {b}
-            </span>
-          ))}
-          {stats.badges.length === 0 && <p className="text-sm text-ink-3">{COPY.profile.noBadges}</p>}
-        </div>
-      </Card>
+      {/* Badges — not shown to CEO/HR, whose profile stays org-scoped. */}
+      {!isCeoHr && (
+        <Card>
+          <p className="text-sm font-bold text-brand">{COPY.profile.badgesTitle}</p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {stats.badges.map((b) => (
+              <span key={b} className="rounded-full bg-lav-soft px-3 py-1.5 text-xs font-bold text-brand">
+                🏅 {b}
+              </span>
+            ))}
+            {stats.badges.length === 0 && <p className="text-sm text-ink-3">{COPY.profile.noBadges}</p>}
+          </div>
+        </Card>
+      )}
 
       {/* Career history link → 2.8. Employee-only: a manager's own work history
-          isn't part of the manager surface, so it's hidden once they hold that role. */}
-      {!isManager && (
+          isn't part of the manager surface, so it's hidden once they hold that
+          role, and CEO/HR never sees it either — org-scoped, not personal. */}
+      {!isManager && !isCeoHr && (
         <button
           type="button"
           onClick={() => router.push("/career")}
@@ -124,8 +163,9 @@ export function ProfileView({
       <AppearanceCard session={session} />
 
       {/* Preferences — same reasoning as Activity above: notification prefs are
-          about check-in reminders, meaningless without employment. */}
-      {session.hasEmployment && <PreferencesCard session={session} />}
+          about check-in reminders, meaningless without employment (and, same
+          as Activity/Badges/Career, never shown on the CEO/HR profile). */}
+      {session.hasEmployment && !isCeoHr && <PreferencesCard session={session} />}
 
       {/* Switch view — only for someone who genuinely plays both roles: leads
           a team AND has their own employment. Toggles which experience
@@ -163,6 +203,19 @@ export function ProfileView({
 
       <p className="pb-2 text-center text-[11px] text-ink-4">{fill(COPY.profile.signedInAs, { name: firstName, email: session.email })}</p>
     </ScreenShell>
+  );
+}
+
+/** Small colour-tiered dot + label — same data-confidence pattern used on the
+    manager dashboard and Manager Inbox, kept consistent here too. */
+function OrgConfidenceDot({ participation }: { participation: number }) {
+  const color = participation >= 80 ? "#059669" : participation >= 50 ? "#B45309" : "#DC2626";
+  const label = participation >= 80 ? "Strong" : participation >= 50 ? "Moderate" : "Limited";
+  return (
+    <span className="inline-flex items-center gap-1.5 whitespace-nowrap text-xs font-bold" style={{ color }}>
+      <span className="h-1.5 w-1.5 flex-shrink-0 rounded-full" style={{ background: color }} />
+      {label} data coverage
+    </span>
   );
 }
 

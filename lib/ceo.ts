@@ -34,6 +34,7 @@ const avg = (xs: number[]) => xs.reduce((a, b) => a + b, 0) / xs.length;
 interface Row {
   weekId: string;
   pillarId: PillarId;
+  questionId: string;
   score: number;
   userId: string;
 }
@@ -106,6 +107,7 @@ export async function getCeoDashboard(
     percentile: null,
     peopleCount,
     pillars: [],
+    questions: [],
     trend: [],
     impact: null,
   });
@@ -114,7 +116,7 @@ export async function getCeoDashboard(
 
   const { results: allRows } = await db
     .prepare(
-      `SELECT c.weekId AS weekId, c.pillarId AS pillarId, c.score AS score, e.userId AS userId
+      `SELECT c.weekId AS weekId, c.pillarId AS pillarId, c.questionId AS questionId, c.score AS score, e.userId AS userId
          FROM checkIns c
          JOIN employment e ON e.id = c.employmentId
         WHERE e.status = 'active'${scopeSql}`,
@@ -183,6 +185,33 @@ export async function getCeoDashboard(
     };
   });
 
+  // Question-level insights (Strengths & Concerns), same shape and anonymity
+  // rule as every other dashboard: a question only appears once >=
+  // ANONYMISATION_FLOOR distinct people answered it in this scope+window.
+  const [{ results: qRows }, recMap] = await Promise.all([
+    db.prepare("SELECT * FROM questions").all<ScopeQuestionRow>(),
+    loadRecommendations(),
+  ]);
+  const byQ = new Map<string, number[]>();
+  const respondersByQ = new Map<string, Set<string>>();
+  for (const r of rows) {
+    (byQ.get(r.questionId) ?? byQ.set(r.questionId, []).get(r.questionId)!).push(r.score);
+    (respondersByQ.get(r.questionId) ?? respondersByQ.set(r.questionId, new Set()).get(r.questionId)!).add(r.userId);
+  }
+  const questions: QuestionInsight[] = qRows
+    .filter((q) => (respondersByQ.get(q.id)?.size ?? 0) >= ANONYMISATION_FLOOR)
+    .map((q) => {
+      const scores = byQ.get(q.id)!;
+      return {
+        id: q.id,
+        text: q.text,
+        pillarId: q.pillarId,
+        score: round1(avg(scores)),
+        responses: distribution(scores, q),
+        recommendation: pickRecommendation(recMap, q.id, q.pillarId),
+      };
+    });
+
   return {
     scope,
     scopeLabel: label,
@@ -194,6 +223,7 @@ export async function getCeoDashboard(
     percentile: Math.max(20, Math.min(98, Math.round(score * 10 + 4))), // sample derivation
     peopleCount,
     pillars,
+    questions,
     trend,
     impact: await computeImpact(db, kind, scope),
   };
@@ -236,6 +266,43 @@ async function computeImpact(
     resolutionPct: Math.round((resolved / submitted) * 100),
     pillarsImproved: r?.pillarsImproved ?? 0,
   };
+}
+
+/**
+ * Org-wide check-in participation for this week — a data-validity signal for
+ * the CEO/HR Profile screen (never an individual's response). Distinct active
+ * employees with an answered assignment in the active week, out of the whole
+ * organisation.
+ */
+export async function getOrgParticipation(
+  session: SessionUser,
+): Promise<{ respondedCount: number; peopleCount: number; participation: number }> {
+  assertRole(session, "ceo_hr");
+  const db = getDB();
+
+  const peopleRow = await db
+    .prepare("SELECT COUNT(*) AS n FROM employment WHERE status = 'active'")
+    .first<{ n: number }>();
+  const peopleCount = peopleRow?.n ?? 0;
+  if (peopleCount === 0) return { respondedCount: 0, peopleCount: 0, participation: 0 };
+
+  const week = await db
+    .prepare("SELECT weekId FROM weeklyWindows WHERE isActive = 1 ORDER BY weekId DESC LIMIT 1")
+    .first<{ weekId: string }>();
+  if (!week) return { respondedCount: 0, peopleCount, participation: 0 };
+
+  const respondedRow = await db
+    .prepare(
+      `SELECT COUNT(DISTINCT a.userId) AS n
+         FROM checkInAssignments a
+         JOIN employment e ON e.userId = a.userId AND e.status = 'active'
+        WHERE a.weekId = ? AND a.status = 'answered'`,
+    )
+    .bind(week.weekId)
+    .first<{ n: number }>();
+  const respondedCount = respondedRow?.n ?? 0;
+
+  return { respondedCount, peopleCount, participation: Math.min(100, Math.round((respondedCount / peopleCount) * 100)) };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -329,8 +396,9 @@ export interface CeoPillarDetail {
 /**
  * Pillar detail at whatever scope the Insights tab is currently viewing (org,
  * a department, or a team) — same shape as the employee/manager pillar detail
- * screens. Anonymised per-question: a question needs its own ≥3 responders
- * even if the pillar overall clears the floor.
+ * screens. Reuses getCeoDashboard's already-anonymised, already-windowed
+ * question list, filtered to this pillar — same pattern as the employee's
+ * getPillarDetail and the manager's getTeamPillarDetail.
  */
 export async function getCeoPillarDetail(
   session: SessionUser,
@@ -341,64 +409,13 @@ export async function getCeoPillarDetail(
   assertRole(session, "ceo_hr");
   const agg = await getCeoDashboard(session, scope, window);
   const p = agg.pillars.find((x) => x.pillarId === pillarId);
-  const empty: CeoPillarDetail = {
+  return {
     pillarId,
     score: p?.score ?? 0,
     delta: p?.delta ?? 0,
     percentile: p?.percentile ?? 0,
     band: p?.band ?? scoreBand(0),
     trend: agg.trend,
-    questions: [],
+    questions: agg.questions.filter((q) => q.pillarId === pillarId),
   };
-  if (!agg.enoughData || p?.score == null) return empty;
-
-  const db = getDB();
-  let scopeSql = "";
-  const params: string[] = [];
-  if (agg.scopeKind === "dept") {
-    scopeSql = " AND e.departmentId = ?";
-    params.push(scope);
-  } else if (agg.scopeKind === "team") {
-    scopeSql = " AND e.teamId = ?";
-    params.push(scope);
-  }
-
-  const [{ results: qRows }, { results: ciRows }, recMap] = await Promise.all([
-    // Not filtered to isActive: a deactivated question's past answers still
-    // belong in this scope's breakdown, or they silently vanish from it.
-    db.prepare("SELECT * FROM questions WHERE pillarId = ?").bind(pillarId).all<ScopeQuestionRow>(),
-    db
-      .prepare(
-        `SELECT c.questionId AS questionId, c.score AS score, e.userId AS userId
-           FROM checkIns c JOIN employment e ON e.id = c.employmentId
-          WHERE e.status = 'active' AND c.pillarId = ?${scopeSql}`,
-      )
-      .bind(pillarId, ...params)
-      .all<{ questionId: string; score: number; userId: string }>(),
-    loadRecommendations(),
-  ]);
-
-  const byQ = new Map<string, number[]>();
-  const respondersByQ = new Map<string, Set<string>>();
-  for (const r of ciRows) {
-    (byQ.get(r.questionId) ?? byQ.set(r.questionId, []).get(r.questionId)!).push(r.score);
-    (respondersByQ.get(r.questionId) ?? respondersByQ.set(r.questionId, new Set()).get(r.questionId)!).add(r.userId);
-  }
-
-  const questions: QuestionInsight[] = qRows
-    .filter((q) => (respondersByQ.get(q.id)?.size ?? 0) >= ANONYMISATION_FLOOR)
-    .map((q) => {
-      const scores = byQ.get(q.id)!;
-      const score = round1(avg(scores));
-      return {
-        id: q.id,
-        text: q.text,
-        pillarId: q.pillarId,
-        score,
-        responses: distribution(scores, q),
-        recommendation: pickRecommendation(recMap, q.id, q.pillarId),
-      };
-    });
-
-  return { ...empty, questions };
 }
