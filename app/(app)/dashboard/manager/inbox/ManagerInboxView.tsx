@@ -38,6 +38,10 @@ export function ManagerInboxView({ session, initial }: { session: SessionUser; i
 
   // Poll for employee responses arriving on already-resolved actions. Pauses
   // when the tab is hidden so it doesn't run needlessly in the background.
+  // 60s, not a near-real-time interval — an employee's reaction to a
+  // feedback action isn't time-critical, and this query joins checkIns/
+  // employment/employeeResponses on every tick, so a shorter interval just
+  // burns D1 read quota for no real freshness benefit.
   useEffect(() => {
     let timer: ReturnType<typeof setInterval> | null = null;
     const tick = async () => {
@@ -51,7 +55,7 @@ export function ManagerInboxView({ session, initial }: { session: SessionUser; i
         }),
       );
     };
-    timer = setInterval(tick, 12000);
+    timer = setInterval(tick, 60000);
     return () => {
       if (timer) clearInterval(timer);
     };
