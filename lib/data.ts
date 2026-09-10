@@ -1077,6 +1077,10 @@ export interface ManagerActionItem {
   submittedAtLabel?: string;
   visibleToEmployeesLabel?: string;
   employeeResponse?: { yes: number; maybe: number; notYet: number }; // arrives via polling
+  // Employee notes on this action, aggregate-only: present only once >= the
+  // anonymisation floor of employees left one, in random order, never
+  // attributed to who wrote which.
+  employeeNotes?: string[];
   // Read-only handover context from a previous manager:
   carriedOver?: boolean;
   handledByLabel?: string; // e.g. "Logged by the previous manager"

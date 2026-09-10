@@ -214,6 +214,16 @@ export async function getManagerInbox(
       )
       .bind(a.id)
       .first<{ yes: number; maybe: number; notYet: number }>();
+    // Notes are aggregate-only: only surfaced once >= the anonymisation floor
+    // of employees left one on this action, in random order, never attributed
+    // — same rule as every other team aggregate in this app.
+    const { results: noteRows } = await db
+      .prepare(
+        "SELECT note FROM employeeResponses WHERE actionId = ? AND note IS NOT NULL AND trim(note) != '' ORDER BY RANDOM()",
+      )
+      .bind(a.id)
+      .all<{ note: string }>();
+    const employeeNotes = noteRows.length >= ANONYMISATION_FLOOR ? noteRows.map((r) => r.note) : undefined;
     const visible = a.visibleToEmployeesAt && new Date(a.visibleToEmployeesAt.replace(" ", "T")) <= new Date();
     resolved.push({
       id: a.id,
@@ -235,6 +245,7 @@ export async function getManagerInbox(
         maybe: counts?.maybe ?? 0,
         notYet: counts?.notYet ?? 0,
       },
+      employeeNotes,
     });
   }
 
@@ -402,16 +413,16 @@ export async function getActionHistory(
   const out: ActionHistoryItem[] = [];
   for (const a of actions) {
     const resp = await db
-      .prepare("SELECT response, submittedAt FROM employeeResponses WHERE userId = ? AND actionId = ?")
+      .prepare("SELECT response, note, submittedAt FROM employeeResponses WHERE userId = ? AND actionId = ?")
       .bind(userId, a.id)
-      .first<{ response: ActionResponseValue; submittedAt: string }>();
+      .first<{ response: ActionResponseValue; note: string | null; submittedAt: string }>();
     if (!resp) continue;
     out.push({
       id: a.id,
       pillarLabel: PILLARS[a.pillarId].label,
       actionNote: a.actionText ?? "",
       response: resp.response,
-      note: null, // anonymous note routing to the manager is a later feature
+      note: resp.note, // the employee's own note, read back to them — not privacy-sensitive
       respondedAtLabel: monthLabel(resp.submittedAt),
     });
   }
@@ -432,9 +443,9 @@ export async function submitActionResponse(
 
   await db
     .prepare(
-      "INSERT OR REPLACE INTO employeeResponses (id, userId, actionId, response) VALUES (?, ?, ?, ?)",
+      "INSERT OR REPLACE INTO employeeResponses (id, userId, actionId, response, note) VALUES (?, ?, ?, ?, ?)",
     )
-    .bind(`er-${userId}-${input.actionId}`, userId, input.actionId, input.response)
+    .bind(`er-${userId}-${input.actionId}`, userId, input.actionId, input.response, input.note?.trim() || null)
     .run();
 
   // Capture the optional note privately for now (author-only journal entry).

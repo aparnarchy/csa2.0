@@ -47,7 +47,7 @@ export function ManagerInboxView({ session, initial }: { session: SessionUser; i
         prev.map((it) => {
           if (touched.current.has(it.id)) return it;
           const next = fresh.resolved.find((r) => r.id === it.id);
-          return next ? { ...it, employeeResponse: next.employeeResponse } : it;
+          return next ? { ...it, employeeResponse: next.employeeResponse, employeeNotes: next.employeeNotes } : it;
         }),
       );
     };
@@ -333,6 +333,20 @@ function ResolvedActionCard({ item }: { item: ManagerActionItem }) {
             <span>{fill(COPY.managerInbox.reactionHelped, { n: r.yes })}</span>
             <span>{fill(COPY.managerInbox.reactionUnsure, { n: r.maybe })}</span>
             <span>{fill(COPY.managerInbox.reactionNotYet, { n: r.notYet })}</span>
+          </div>
+        </div>
+      )}
+
+      {item.employeeNotes && item.employeeNotes.length > 0 && (
+        <div className="mt-3 rounded-card bg-lav-soft p-3">
+          <p className="text-[10px] font-bold uppercase tracking-wide text-brand">{COPY.managerInbox.whatTeamSaid}</p>
+          <p className="mt-0.5 text-[10px] text-ink-4">{COPY.managerInbox.notesAnonymous}</p>
+          <div className="mt-2 space-y-1.5">
+            {item.employeeNotes.map((note, i) => (
+              <p key={i} className="text-[12px] italic leading-relaxed text-ink-2">
+                &ldquo;{note}&rdquo;
+              </p>
+            ))}
           </div>
         </div>
       )}

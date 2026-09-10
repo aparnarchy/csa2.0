@@ -299,6 +299,8 @@ export const COPY = {
     "howTeamFelt": "How the team felt",
     "reactionHelped": "✅ {n} helped",
     "reactionUnsure": "😐 {n} unsure",
-    "reactionNotYet": "🚩 {n} not yet"
+    "reactionNotYet": "🚩 {n} not yet",
+    "whatTeamSaid": "What the team said",
+    "notesAnonymous": "Anonymous — shown only once enough teammates left a note"
   }
 } as const;
