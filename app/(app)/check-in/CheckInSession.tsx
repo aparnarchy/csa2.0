@@ -60,7 +60,18 @@ export function CheckInSession({
     return <CatchUpFlow questions={unanswered} onDone={() => setPhase(openRec ? "followup" : "done")} />;
   }
   if (phase === "followup" && openRec) {
-    return <ReturnCheckIn rec={openRec} onDone={() => setPhase("done")} />;
+    return (
+      <ReturnCheckIn
+        rec={openRec}
+        // The "Yes, I acted on it" path already showed its own celebration
+        // screen — go straight to the dashboard instead of also showing this
+        // session's "done" screen. "Not yet" never celebrated, so it still
+        // needs one.
+        onDone={(alreadyCelebrated) =>
+          alreadyCelebrated ? router.push("/dashboard/employee") : setPhase("done")
+        }
+      />
+    );
   }
 
   // Done — a short confirmation (reached automatically after the last answer),

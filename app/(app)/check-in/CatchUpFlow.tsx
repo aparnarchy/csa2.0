@@ -29,6 +29,17 @@ export function CatchUpFlow({
   const [leaving, setLeaving] = useState(false);
   const beat = useRef<number | null>(null);
   const leave = useRef<number | null>(null);
+  // Submits/skips are fire-and-forget for snappy UI, but finishing leads to a
+  // server-side redirect that re-checks "anything still unanswered?" —
+  // awaiting these before finishing avoids a race where that check runs
+  // before the last write lands and bounces the user back into catch-up
+  // right after they already saw the "done" screen.
+  const pending = useRef<Promise<unknown>[]>([]);
+
+  async function finish() {
+    await Promise.all(pending.current);
+    onDone();
+  }
 
   const total = questions.length;
   const q = questions[idx];
@@ -55,7 +66,7 @@ export function CatchUpFlow({
   function pick(key: string, score: number) {
     if (leaving) return;
     setAnswers((a) => ({ ...a, [q.assignmentId]: { key, score } }));
-    void submitCheckInAction(q.assignmentId, score); // retrospective (derived server-side)
+    pending.current.push(submitCheckInAction(q.assignmentId, score)); // retrospective (derived server-side)
     // glide to the next unanswered one; on the last card, stay (Done finishes).
     if (idx + 1 < total) {
       clearTimers();
@@ -65,10 +76,10 @@ export function CatchUpFlow({
 
   function skip() {
     if (leaving) return;
-    void skipCheckInAction(q.assignmentId); // retire it from the pending list
+    pending.current.push(skipCheckInAction(q.assignmentId)); // retire it from the pending list
     transitionTo(() => {
       if (idx + 1 < total) setIdx(idx + 1);
-      else onDone();
+      else void finish();
     });
   }
 
@@ -180,7 +191,7 @@ export function CatchUpFlow({
 
       <button
         type="button"
-        onClick={onDone}
+        onClick={() => void finish()}
         className="mt-4 w-full rounded-2xl bg-brand py-3.5 font-display text-sm font-black text-white transition active:scale-[0.98]"
       >
         {allDone ? "Done" : "Continue"}

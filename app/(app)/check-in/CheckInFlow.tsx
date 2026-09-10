@@ -33,6 +33,11 @@ export function CheckInFlow({
   const [leaving, setLeaving] = useState(false);
   const beat = useRef<number | null>(null);
   const leave = useRef<number | null>(null);
+  // The last question's submit is fire-and-forget for snappy UI, but onDone()
+  // leads straight to a server-side redirect that re-checks "anything still
+  // unanswered?" — awaiting it here before finishing avoids a race where that
+  // check runs before the write lands and bounces the user back into catch-up.
+  const pendingSubmit = useRef<Promise<unknown>>(Promise.resolve());
 
   const first = (session.name || "there").trim().split(/\s+/)[0];
   const total = questions.length;
@@ -56,15 +61,19 @@ export function CheckInFlow({
     }, LEAVE_MS);
   }
 
-  function nextStep() {
-    if (index + 1 < total) setIndex(index + 1);
-    else onDone();
+  async function nextStep() {
+    if (index + 1 < total) {
+      setIndex(index + 1);
+    } else {
+      await pendingSubmit.current;
+      onDone();
+    }
   }
 
   function pick(optionKey: string, score: number) {
     if (leaving) return;
     setAnswers((a) => ({ ...a, [q.assignmentId]: optionKey }));
-    void submitCheckInAction(q.assignmentId, score);
+    pendingSubmit.current = submitCheckInAction(q.assignmentId, score);
     clearTimers();
     beat.current = window.setTimeout(() => transitionTo(nextStep), HIGHLIGHT_MS);
   }

@@ -14,14 +14,17 @@ const t = COPY.followup;
  * recommendation exists. Recalls the recommendation and asks whether the user
  * acted on it: "Yes" opens a short journal (saved + followUpStatus="acted");
  * "Not yet" shows gentle encouragement (followUpStatus="not_acted"). There is
- * no high-score path. When finished it calls onDone() to continue the session.
+ * no high-score path. When finished it calls onDone(), passing true when this
+ * screen already showed its own "Love that!" celebration (the "Yes" path) so
+ * the caller can skip straight to the dashboard instead of stacking a second,
+ * near-identical completion screen on top.
  */
 export function ReturnCheckIn({
   rec,
   onDone,
 }: {
   rec: OpenRecommendation;
-  onDone: () => void;
+  onDone: (alreadyCelebrated?: boolean) => void;
 }) {
   const [answer, setAnswer] = useState<"yes" | "not_yet" | null>(null);
   const [note, setNote] = useState("");
@@ -62,7 +65,7 @@ export function ReturnCheckIn({
         </div>
         <button
           type="button"
-          onClick={onDone}
+          onClick={() => onDone(true)}
           className="w-full rounded-2xl bg-brand py-3.5 font-display text-sm font-black text-white active:scale-[0.98]"
         >
           {t.continueButton}
