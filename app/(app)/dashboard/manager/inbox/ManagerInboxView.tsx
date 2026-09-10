@@ -101,6 +101,7 @@ export function ManagerInboxView({ session, initial }: { session: SessionUser; i
           className="flex min-h-[180px] flex-col justify-center"
         >
           <ResolvedMeter pct={resolvedPct} resolved={resolved.length} total={open.length + resolved.length} />
+          <ParticipationLine respondedCount={initial.respondedCount} reporteeCount={initial.reporteeCount} participation={initial.participation} />
         </GradientHeader>
       ) : (
         <div
@@ -111,6 +112,7 @@ export function ManagerInboxView({ session, initial }: { session: SessionUser; i
           <h1 className="mt-1 font-display text-[30px] font-black leading-tight text-brand">{COPY.managerInbox.title}</h1>
           <div className="mt-3">
             <ResolvedMeter pct={resolvedPct} resolved={resolved.length} total={open.length + resolved.length} />
+            <ParticipationLine respondedCount={initial.respondedCount} reporteeCount={initial.reporteeCount} participation={initial.participation} />
           </div>
         </div>
       )}
@@ -184,6 +186,26 @@ function ResolvedMeter({ pct, resolved, total }: { pct: number; resolved: number
       </div>
       <p className="mt-1.5 text-xs font-bold text-brand">{fill(COPY.managerInbox.resolvedMeter, { resolved, total, pct })}</p>
     </div>
+  );
+}
+
+/** This week's check-in participation — a data-validity signal (how much to
+    trust the aggregates above), never tied to who specifically has or hasn't
+    answered. Same tiering as the manager dashboard's confidence chip. */
+function ParticipationLine({
+  respondedCount,
+  reporteeCount,
+  participation,
+}: {
+  respondedCount: number;
+  reporteeCount: number;
+  participation: number;
+}) {
+  const color = participation >= 80 ? "#059669" : participation >= 50 ? "#B45309" : "#DC2626";
+  return (
+    <p className="mt-1.5 text-xs font-bold" style={{ color }}>
+      {fill(COPY.managerInbox.participationLine, { answered: respondedCount, total: reporteeCount, pct: participation })}
+    </p>
   );
 }
 

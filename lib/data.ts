@@ -1093,6 +1093,10 @@ export interface ManagerInbox {
   reporteeCount: number;
   enoughReportees: boolean; // >= ANONYMISATION_FLOOR
   resolvedPct: number; // resolved / (open + resolved)
+  /** This week's check-in participation — how many of the team have answered
+      so far, and what % that is. A data-validity signal, never tied to who. */
+  respondedCount: number;
+  participation: number;
   open: ManagerActionItem[];
   resolved: ManagerActionItem[];
 }
@@ -1113,7 +1117,7 @@ export async function getManagerInbox(
 
   const reporteeCount = 6; // sample team size
   if (reporteeCount < ANONYMISATION_FLOOR) {
-    return { reporteeCount, enoughReportees: false, resolvedPct: 0, open: [], resolved: [] };
+    return { reporteeCount, enoughReportees: false, resolvedPct: 0, respondedCount: 0, participation: 0, open: [], resolved: [] };
   }
 
   const trend = buildTrend("team-" + teamId, 6.7, 8);
@@ -1184,8 +1188,10 @@ export async function getManagerInbox(
 
   const total = open.length + resolved.length;
   const resolvedPct = total === 0 ? 0 : Math.round((resolved.length / total) * 100);
+  const respondedCount = 5; // sample: 5 of 6 reportees answered this week
+  const participation = Math.round((respondedCount / reporteeCount) * 100);
 
-  return { reporteeCount, enoughReportees: true, resolvedPct, open, resolved };
+  return { reporteeCount, enoughReportees: true, resolvedPct, respondedCount, participation, open, resolved };
 }
 
 /**

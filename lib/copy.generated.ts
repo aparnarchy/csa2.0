@@ -283,6 +283,7 @@ export const COPY = {
     "eyebrow": "✅ Action Inbox",
     "title": "Your team's actions",
     "resolvedMeter": "{resolved}/{total} resolved · {pct}%",
+    "participationLine": "{answered}/{total} answered this week · {pct}%",
     "belowFloor": "Your team has fewer than 3 reportees, so the Action Inbox is hidden to protect everyone's anonymity.",
     "openTab": "Open",
     "resolvedTab": "Resolved",

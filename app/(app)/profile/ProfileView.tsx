@@ -50,7 +50,7 @@ export function ProfileView({
           eyebrow={roleCompany || undefined}
           title={session.name}
           avatar={<Mascot state="happy" size={HEADER_MASCOT_SIZE} float={false} sparkle={false} />}
-          below={<HeaderStats stats={stats} />}
+          below={<HeaderStats stats={stats} hasEmployment={session.hasEmployment} />}
         />
       ) : (
         <div
@@ -60,7 +60,7 @@ export function ProfileView({
           {roleCompany && <p className="text-xs font-semibold text-brand/70">{roleCompany}</p>}
           <h1 className="mt-1 font-display text-[30px] font-black leading-tight text-brand">{session.name}</h1>
           <div className="mt-3">
-            <HeaderStats stats={stats} />
+            <HeaderStats stats={stats} hasEmployment={session.hasEmployment} />
           </div>
         </div>
       )}
@@ -166,18 +166,24 @@ export function ProfileView({
   );
 }
 
-function HeaderStats({ stats }: { stats: ProfileStats }) {
+function HeaderStats({ stats, hasEmployment }: { stats: ProfileStats; hasEmployment: boolean }) {
+  // Streak only means anything for someone who actually does check-ins —
+  // same reasoning as hiding the Activity/Preferences cards below. Without
+  // it this becomes a 2-up row, so it gets a bit more room to breathe rather
+  // than just auto-shrinking into the same 3-up sizing.
   return (
-    <div className="flex gap-2">
-      <div className="flex-1 rounded-2xl bg-white/60 px-3 py-2 text-center">
+    <div className={hasEmployment ? "flex gap-2" : "flex gap-3"}>
+      <div className={`flex-1 rounded-2xl bg-white/60 text-center ${hasEmployment ? "px-3 py-2" : "px-4 py-3"}`}>
         <p className="font-display text-xl font-black leading-none text-brand">{stats.overallScore.toFixed(1)}</p>
         <p className="mt-1 text-[10px] font-semibold text-ink-3">{COPY.profile.statHappiness}</p>
       </div>
-      <div className="flex-1 rounded-2xl bg-white/60 px-3 py-2 text-center">
-        <p className="font-display text-xl font-black leading-none text-brand">🔥 {stats.streak}</p>
-        <p className="mt-1 text-[10px] font-semibold text-ink-3">{COPY.profile.statStreak}</p>
-      </div>
-      <div className="flex-1 rounded-2xl bg-white/60 px-3 py-2 text-center">
+      {hasEmployment && (
+        <div className="flex-1 rounded-2xl bg-white/60 px-3 py-2 text-center">
+          <p className="font-display text-xl font-black leading-none text-brand">🔥 {stats.streak}</p>
+          <p className="mt-1 text-[10px] font-semibold text-ink-3">{COPY.profile.statStreak}</p>
+        </div>
+      )}
+      <div className={`flex-1 rounded-2xl bg-white/60 text-center ${hasEmployment ? "px-3 py-2" : "px-4 py-3"}`}>
         <p className="font-display text-xl font-black leading-none text-brand">{stats.participationPct}%</p>
         <p className="mt-1 text-[10px] font-semibold text-ink-3">{COPY.profile.statParticipation}</p>
       </div>

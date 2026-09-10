@@ -117,6 +117,8 @@ export async function getManagerInbox(
     reporteeCount: 0,
     enoughReportees: false,
     resolvedPct: 0,
+    respondedCount: 0,
+    participation: 0,
     open: [],
     resolved: [],
   };
@@ -129,6 +131,23 @@ export async function getManagerInbox(
     .first<{ n: number }>();
   const reporteeCount = reporteeRow?.n ?? 0;
   if (reporteeCount < ANONYMISATION_FLOOR) return { ...resolved0, reporteeCount };
+
+  // This week's check-in participation — distinct teammates with at least
+  // one answered assignment in the active week, out of the whole team.
+  const week = await activeWeek(db);
+  const respondedRow = week
+    ? await db
+        .prepare(
+          `SELECT COUNT(DISTINCT a.userId) AS n
+             FROM checkInAssignments a
+             JOIN employment e ON e.userId = a.userId AND e.status = 'active'
+            WHERE e.teamId = ? AND a.weekId = ? AND a.status = 'answered'`,
+        )
+        .bind(team, week)
+        .first<{ n: number }>()
+    : null;
+  const respondedCount = respondedRow?.n ?? 0;
+  const participation = Math.min(100, Math.round((respondedCount / reporteeCount) * 100));
 
   const [{ results: qRows }, { results: ciRows }, { results: actRows }, recMap] = await Promise.all([
     // Every question ever asked, not just active ones — a question going
@@ -251,7 +270,7 @@ export async function getManagerInbox(
 
   const total = open.length + resolved.length;
   const resolvedPct = total === 0 ? 0 : Math.round((resolved.length / total) * 100);
-  return { reporteeCount, enoughReportees: true, resolvedPct, open, resolved };
+  return { reporteeCount, enoughReportees: true, resolvedPct, respondedCount, participation, open, resolved };
 }
 
 export async function submitManagerAction(
