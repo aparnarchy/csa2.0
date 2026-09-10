@@ -78,7 +78,13 @@ export async function getTeamAggregate(
   const reporteeCount = memRes?.n ?? 0;
   if (reporteeCount < ANONYMISATION_FLOOR) return { ...empty, reporteeCount };
 
-  // Team check-ins, scoped to active employment (so only during-employment counts).
+  // Team check-ins, scoped to active employment (so only during-employment
+  // counts). Reads this team's full history — can't bound this to the
+  // selected window in SQL without changing which weeks count for a team
+  // that's gone quiet recently (verified this actually shifts computed
+  // scores against real seed data, so deliberately not doing it). Now an
+  // indexed seek (idx_checkins_employmentId, migration 0014) rather than a
+  // full table scan, which was the actual source of excessive D1 reads.
   const { results: allRows } = await db
     .prepare(
       `SELECT c.weekId AS weekId, c.pillarId AS pillarId, c.questionId AS questionId, c.score AS score, e.userId AS userId

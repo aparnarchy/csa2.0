@@ -114,6 +114,12 @@ export async function getCeoDashboard(
 
   if (peopleCount < ANONYMISATION_FLOOR) return belowFloor();
 
+  // This scope's full check-in history. Can't be bounded to the selected
+  // window in SQL without changing which weeks count for a scope that's gone
+  // quiet recently (verified this actually changes computed scores against
+  // real data — reverted an earlier attempt at that). Now an indexed seek
+  // (idx_checkins_employmentId, migration 0014) rather than a full table
+  // scan, which was the actual source of excessive D1 reads.
   const { results: allRows } = await db
     .prepare(
       `SELECT c.weekId AS weekId, c.pillarId AS pillarId, c.questionId AS questionId, c.score AS score, e.userId AS userId
