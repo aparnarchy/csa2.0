@@ -2,6 +2,7 @@ export const runtime = "edge";
 
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth-session";
+import { getViewMode } from "@/lib/view-mode";
 import { getActionHistory, getFeedbackActions, getManagerInbox } from "@/lib/feedback";
 import {
   getLatestCheckIn,
@@ -27,7 +28,8 @@ export default async function InboxPage() {
   if (!session) redirect("/login");
   if (!session.user.onboardingComplete) redirect("/onboarding");
 
-  if (session.user.roles.includes("manager")) {
+  const viewingAsEmployee = session.user.hasEmployment && (await getViewMode()) === "employee";
+  if (session.user.roles.includes("manager") && !viewingAsEmployee) {
     const inbox = await getManagerInbox(session.user, "my-team");
     return <ManagerInboxView session={session.user} initial={inbox} />;
   }

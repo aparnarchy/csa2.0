@@ -199,4 +199,10 @@ export interface SessionUser {
   persona: Persona;
   remindersEnabled: boolean;
   weeklyDigestEnabled: boolean;
+  /** Does this person have an active employment record — i.e. do they
+      actually do check-ins themselves? A "manager" role alone doesn't imply
+      this: someone can lead a team without being an individual contributor
+      with their own check-in history. Gates the employee-only Profile
+      sections and the manager/employee view switch. */
+  hasEmployment: boolean;
 }

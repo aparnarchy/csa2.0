@@ -77,6 +77,11 @@ export function ScreenShell({
               <Link
                 key={item.key}
                 href={item.href}
+                // These tabs route to different content per role/view-mode
+                // (Insights, Inbox), so they must never serve a prefetched
+                // payload that could have been cached before that context
+                // was current — always a fresh request.
+                prefetch={false}
                 className={`flex flex-1 flex-col items-center gap-0.5 rounded-xl py-1.5 text-[11px] font-semibold ${
                   isActive ? "text-brand" : "text-ink-4"
                 }`}

@@ -19,6 +19,11 @@ export async function getSession() {
 
   const roles: Role[] = rolesResult.results.map((r: { role: Role }) => r.role);
 
+  const employmentRow = await env.DB
+    .prepare("SELECT 1 AS x FROM employment WHERE userId = ? AND status = 'active' LIMIT 1")
+    .bind(session.user.id)
+    .first<{ x: number }>();
+
   return {
     user: {
       id: session.user.id,
@@ -31,6 +36,7 @@ export async function getSession() {
       remindersEnabled: (u.remindersEnabled ?? 1) !== 0,
       weeklyDigestEnabled: (u.weeklyDigestEnabled ?? 1) !== 0,
       roles,
+      hasEmployment: Boolean(employmentRow),
     },
   };
 }

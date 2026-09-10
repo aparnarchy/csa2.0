@@ -41,6 +41,7 @@ const FAKE_SESSION: SessionUser = {
   persona: "spiderman",
   remindersEnabled: true,
   weeklyDigestEnabled: true,
+  hasEmployment: true,
 };
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {

@@ -13,13 +13,14 @@ import {
   RecommendationCard,
   ScoreCircles,
   ScreenShell,
+  SegmentedToggle,
   TrendChart,
 } from "@/components/kit";
 import { getSampleRecommendation, type TeamAggregate, type Window } from "@/lib/data";
 import { COPY, fill } from "@/lib/copy";
 import { getTeamAggregateAction, getTeamInsightAction } from "./actions";
 import { HEADER_MASCOT_SIZE, mascotForScore } from "@/lib/mascot";
-import { PILLARS } from "@/lib/pillars";
+import { PILLARS, STRENGTH_CUTOFF } from "@/lib/pillars";
 import type { PillarId, SessionUser } from "@/lib/types";
 import { TeamPillarDetailView } from "./TeamPillarDetailView";
 
@@ -37,6 +38,7 @@ export function ManagerDashboardView({
   const [data, setData] = useState<TeamAggregate>(initial);
   const [aiText, setAiText] = useState<string | null>(initialInsight);
   const [selectedPillar, setSelectedPillar] = useState<PillarId | null>(null);
+  const [scTab, setScTab] = useState<"strengths" | "concerns">("strengths");
 
   // Time filter recomputes the whole aggregate via a server action (real D1,
   // privacy-enforced). The team is resolved server-side to the signed-in manager.
@@ -63,6 +65,17 @@ export function ManagerDashboardView({
   const watchPillar = scoredPillars.length
     ? [...scoredPillars].sort((a, b) => (a.score ?? 0) - (b.score ?? 0))[0]
     : null;
+
+  // Strengths & Concerns — pillar-level (this dashboard only has 4 pillar
+  // aggregates, not individual questions; question-level detail lives one tap
+  // in, on the pillar drill-down).
+  const scStrengths = [...scoredPillars]
+    .filter((p) => (p.score ?? 0) >= STRENGTH_CUTOFF)
+    .sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
+  const scConcerns = [...scoredPillars]
+    .filter((p) => (p.score ?? 0) < STRENGTH_CUTOFF)
+    .sort((a, b) => (a.score ?? 0) - (b.score ?? 0));
+  const scShown = scTab === "strengths" ? scStrengths : scConcerns;
 
   if (selectedPillar) {
     return (
@@ -199,25 +212,39 @@ export function ManagerDashboardView({
             </Card>
           )}
 
-          {/* Leadership wisdom — manager-audience learning path (Phase 3.4) */}
-          <button
-            type="button"
-            onClick={() => router.push("/dashboard/manager/wisdom")}
-            className="w-full rounded-card border border-lav-mid bg-white p-4 text-left shadow-card transition active:scale-[0.99]"
-          >
-            <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-2xl bg-lav-soft text-xl">
-                🧭
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="font-display text-base font-black leading-tight text-ink">{COPY.managerDashboard.leadershipWisdomTitle}</p>
-                <p className="mt-0.5 text-[11px] text-ink-3">
-                  {COPY.managerDashboard.leadershipWisdomSub}
-                </p>
-              </div>
-              <span className="flex-shrink-0 text-brand-light">→</span>
+          {/* Strengths & Concerns — pillar-level, before Trend (same order as
+              every other dashboard). */}
+          <Card>
+            <p className="mb-3 text-sm font-bold text-brand">Insights</p>
+            <div className="mb-4">
+              <SegmentedToggle
+                value={scTab}
+                onChange={setScTab}
+                options={[
+                  { value: "strengths", label: "💪 Strengths" },
+                  { value: "concerns", label: "⚠️ Concerns" },
+                ]}
+              />
             </div>
-          </button>
+            <div className="space-y-2">
+              {scShown.map((p) => (
+                <button
+                  key={p.pillarId}
+                  type="button"
+                  onClick={() => setSelectedPillar(p.pillarId)}
+                  className="flex w-full items-center justify-between rounded-2xl bg-lav-soft px-3.5 py-2.5 text-left transition active:scale-[0.99]"
+                >
+                  <span className="text-sm font-semibold text-ink">{PILLARS[p.pillarId].label}</span>
+                  <span className="font-display text-sm font-black text-brand">{p.score!.toFixed(1)}</span>
+                </button>
+              ))}
+              {scShown.length === 0 && (
+                <p className="text-xs text-ink-4">
+                  {scTab === "strengths" ? "Nothing scoring 7+ yet." : "Nothing scoring below 7 — nice."}
+                </p>
+              )}
+            </div>
+          </Card>
 
           {/* Trend — team vs org / dept / industry */}
           <TrendChart data={data.trend} window={window} onWindowChange={setWindow} />

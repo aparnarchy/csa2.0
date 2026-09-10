@@ -180,6 +180,8 @@ export const COPY = {
     "prefWeeklySub": "Your insights digest every Monday",
     "switchManagerTitle": "Switch to Manager view",
     "switchManagerSub": "See your team's insights",
+    "switchEmployeeTitle": "Switch to Employee view",
+    "switchEmployeeSub": "See your own check-ins & progress",
     "signOut": "Sign out",
     "signedInAs": "Signed in as {name} · {email}"
   },

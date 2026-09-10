@@ -6,6 +6,7 @@ import { authClient } from "@/lib/auth-client";
 import { Card, CEO_NAV, GradientHeader, Mascot, ScreenShell } from "@/components/kit";
 import { HEADER_MASCOT_SIZE } from "@/lib/mascot";
 import { COPY, fill } from "@/lib/copy";
+import { setViewModeAction } from "@/lib/view-mode";
 import type { ProfileStats } from "@/lib/data";
 import type { Persona, SessionUser, ThemeMode } from "@/lib/types";
 
@@ -14,12 +15,29 @@ const PERSONAS: { key: Persona; name: string; tagline: string; emoji: string }[]
   { key: "batman", name: COPY.profile.personaBatman, tagline: COPY.profile.personaBatmanTagline, emoji: "🦇" },
 ];
 
-export function ProfileView({ session, stats }: { session: SessionUser; stats: ProfileStats }) {
+export function ProfileView({
+  session,
+  stats,
+  viewingAsEmployee,
+}: {
+  session: SessionUser;
+  stats: ProfileStats;
+  /** Only meaningful when isDualRole — which "hat" they're currently viewing. */
+  viewingAsEmployee: boolean;
+}) {
   const router = useRouter();
   const isPlay = session.themeMode === "play";
   const firstName = (session.name || "there").trim().split(/\s+/)[0];
   const isManager = session.roles.includes("manager");
   const isCeoHr = session.roles.includes("ceo_hr");
+  // A person who both leads a team AND has their own active employment
+  // (does check-ins themselves) can switch between the two experiences.
+  const isDualRole = isManager && session.hasEmployment;
+
+  async function switchView() {
+    await setViewModeAction(viewingAsEmployee ? "manager" : "employee");
+    router.push("/dashboard");
+  }
   // Compose "role · company" from whatever is set; empty for a fresh account.
   const roleCompany = [stats.role, stats.company].filter(Boolean).join(" · ");
   const hasTenure = Boolean(stats.careerTenure) && stats.careerTenure !== "—";
@@ -47,25 +65,29 @@ export function ProfileView({ session, stats }: { session: SessionUser; stats: P
         </div>
       )}
 
-      {/* Activity — streak + best + recent-week dots (no heatmap) */}
-      <Card>
-        <div className="flex items-center justify-between">
-          <p className="text-sm font-bold text-brand">{COPY.profile.activityTitle}</p>
-          <span className="text-xs text-ink-3">
-            {COPY.profile.bestStreak} <span className="font-bold text-brand">🔥 {stats.longestStreak}</span>
-          </span>
-        </div>
-        <div className="mt-3 flex items-center gap-1.5">
-          {stats.recentWeeks.map((on, i) => (
-            <span
-              key={i}
-              className={`h-3 flex-1 rounded-full ${on ? "bg-brand" : "bg-lav-mid"}`}
-              title={on ? "Checked in" : "Missed"}
-            />
-          ))}
-        </div>
-        <p className="mt-2 text-[11px] text-ink-4">{fill(COPY.profile.activitySummary, { weeks: stats.recentWeeks.length, total: stats.totalCheckIns })}</p>
-      </Card>
+      {/* Activity — streak + best + recent-week dots (no heatmap). Only for
+          people who actually do check-ins; a manager with no employment of
+          their own has no activity to show here. */}
+      {session.hasEmployment && (
+        <Card>
+          <div className="flex items-center justify-between">
+            <p className="text-sm font-bold text-brand">{COPY.profile.activityTitle}</p>
+            <span className="text-xs text-ink-3">
+              {COPY.profile.bestStreak} <span className="font-bold text-brand">🔥 {stats.longestStreak}</span>
+            </span>
+          </div>
+          <div className="mt-3 flex items-center gap-1.5">
+            {stats.recentWeeks.map((on, i) => (
+              <span
+                key={i}
+                className={`h-3 flex-1 rounded-full ${on ? "bg-brand" : "bg-lav-mid"}`}
+                title={on ? "Checked in" : "Missed"}
+              />
+            ))}
+          </div>
+          <p className="mt-2 text-[11px] text-ink-4">{fill(COPY.profile.activitySummary, { weeks: stats.recentWeeks.length, total: stats.totalCheckIns })}</p>
+        </Card>
+      )}
 
       {/* Badges */}
       <Card>
@@ -101,19 +123,26 @@ export function ProfileView({ session, stats }: { session: SessionUser; stats: P
       {/* Appearance (mode + persona) */}
       <AppearanceCard session={session} />
 
-      {/* Preferences */}
-      <PreferencesCard session={session} />
+      {/* Preferences — same reasoning as Activity above: notification prefs are
+          about check-in reminders, meaningless without employment. */}
+      {session.hasEmployment && <PreferencesCard session={session} />}
 
-      {/* Switch view — only if also a manager */}
-      {isManager && (
+      {/* Switch view — only for someone who genuinely plays both roles: leads
+          a team AND has their own employment. Toggles which experience
+          (Insights/Inbox) the bottom nav's shared tabs show. */}
+      {isDualRole && (
         <button
           type="button"
-          onClick={() => router.push("/dashboard/manager")}
+          onClick={switchView}
           className="flex w-full items-center justify-between rounded-card bg-white p-4 text-left shadow-card transition active:scale-[0.99]"
         >
           <div>
-            <p className="text-sm font-bold text-ink">{COPY.profile.switchManagerTitle}</p>
-            <p className="mt-0.5 text-xs text-ink-3">{COPY.profile.switchManagerSub}</p>
+            <p className="text-sm font-bold text-ink">
+              {viewingAsEmployee ? COPY.profile.switchManagerTitle : COPY.profile.switchEmployeeTitle}
+            </p>
+            <p className="mt-0.5 text-xs text-ink-3">
+              {viewingAsEmployee ? COPY.profile.switchManagerSub : COPY.profile.switchEmployeeSub}
+            </p>
           </div>
           <span className="text-xl text-ink-4">›</span>
         </button>

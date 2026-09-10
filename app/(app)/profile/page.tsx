@@ -2,6 +2,7 @@ export const runtime = "edge";
 
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth-session";
+import { getViewMode } from "@/lib/view-mode";
 import { getProfileStats } from "@/lib/profile";
 import { ProfileView } from "./ProfileView";
 
@@ -12,6 +13,7 @@ export default async function ProfilePage() {
   if (!session.user.onboardingComplete) redirect("/onboarding");
 
   const stats = await getProfileStats(session.user, session.user.id);
+  const viewMode = (await getViewMode()) ?? "manager";
 
-  return <ProfileView session={session.user} stats={stats} />;
+  return <ProfileView session={session.user} stats={stats} viewingAsEmployee={viewMode === "employee"} />;
 }

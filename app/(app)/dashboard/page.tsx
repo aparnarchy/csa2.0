@@ -1,6 +1,7 @@
 export const runtime = "edge";
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth-session";
+import { getViewMode } from "@/lib/view-mode";
 import type { Role } from "@/lib/types";
 
 const ROLE_ROUTES: Record<Role, string> = {
@@ -21,5 +22,12 @@ export default async function DashboardPage() {
 
   // Pick the highest-priority role this user holds
   const activeRole = ROLE_PRIORITY.find((r) => session.user.roles.includes(r)) ?? "employee";
+
+  // A manager who also has their own active employment (does check-ins
+  // themselves) can switch to see the employee experience instead — see
+  // the Profile screen's "Switch view" button.
+  if (activeRole === "manager" && session.user.hasEmployment && (await getViewMode()) === "employee") {
+    redirect(ROLE_ROUTES.employee);
+  }
   redirect(ROLE_ROUTES[activeRole]);
 }
