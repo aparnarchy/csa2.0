@@ -9,7 +9,7 @@ import {
   SegmentedToggle,
   TrendChart,
 } from "@/components/kit";
-import { PILLARS } from "@/lib/pillars";
+import { PILLARS, STRENGTH_CUTOFF } from "@/lib/pillars";
 import { type Window } from "@/lib/data";
 import { getPillarDetailAction } from "./actions";
 import { HEADER_MASCOT_SIZE, mascotForScore } from "@/lib/mascot";
@@ -38,7 +38,9 @@ export function PillarDetailView({
   }, [pillarId, window]);
 
   const questions = [...(detail?.questions ?? [])].sort((a, b) => b.score - a.score);
-  const shown = tab === "strengths" ? questions.slice(0, 3) : questions.slice(-3).reverse();
+  const strengths = questions.filter((q) => q.score >= STRENGTH_CUTOFF).slice(0, 3);
+  const concerns = questions.filter((q) => q.score < STRENGTH_CUTOFF).reverse().slice(0, 3);
+  const shown = tab === "strengths" ? strengths : concerns;
   const up = (detail?.delta ?? 0) >= 0;
 
   return (
@@ -63,8 +65,6 @@ export function PillarDetailView({
           </div>
         )}
       </GradientHeader>
-
-      <TrendChart data={detail?.trend ?? []} window={window} onWindowChange={setWindow} accent="#7C6FFF" />
 
       <Card>
         <p className="mb-3 text-sm font-bold text-brand">Insights</p>
@@ -91,8 +91,14 @@ export function PillarDetailView({
             onGoToInbox={onGoToInbox}
           />
         ))}
-        {shown.length === 0 && <p className="text-xs text-ink-4">No data for this pillar.</p>}
+        {shown.length === 0 && (
+          <p className="text-xs text-ink-4">
+            {tab === "strengths" ? "Nothing scoring 7+ yet." : "Nothing scoring below 7 — nice."}
+          </p>
+        )}
       </Card>
+
+      <TrendChart data={detail?.trend ?? []} window={window} onWindowChange={setWindow} accent="#7C6FFF" />
     </div>
   );
 }

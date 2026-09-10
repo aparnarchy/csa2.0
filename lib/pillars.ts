@@ -28,3 +28,9 @@ export const PILLAR_ORDER: PillarId[] = [
   "culture",
   "compensation",
 ];
+
+/** A question/pillar score at or above this counts as a strength, below it a
+    concern — used everywhere a screen splits scores into a Strengths/Concerns
+    view instead of just ranking top/bottom regardless of whether they're
+    actually good or bad. */
+export const STRENGTH_CUTOFF = 7;
