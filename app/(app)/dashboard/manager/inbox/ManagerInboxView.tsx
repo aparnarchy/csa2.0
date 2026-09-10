@@ -191,7 +191,10 @@ function ResolvedMeter({ pct, resolved, total }: { pct: number; resolved: number
 
 /** This week's check-in participation — a data-validity signal (how much to
     trust the aggregates above), never tied to who specifically has or hasn't
-    answered. Same tiering as the manager dashboard's confidence chip. */
+    answered. Matches the resolved-meter caption's typography (same weight,
+    same brand colour) so the two read as one cohesive status block against
+    the gradient header, rather than a mismatched colour bolted underneath —
+    the tier only shows up as the small dot. */
 function ParticipationLine({
   respondedCount,
   reporteeCount,
@@ -201,9 +204,10 @@ function ParticipationLine({
   reporteeCount: number;
   participation: number;
 }) {
-  const color = participation >= 80 ? "#059669" : participation >= 50 ? "#B45309" : "#DC2626";
+  const dotColor = participation >= 80 ? "#059669" : participation >= 50 ? "#B45309" : "#DC2626";
   return (
-    <p className="mt-1.5 text-xs font-bold" style={{ color }}>
+    <p className="mt-2 flex items-center gap-1.5 text-xs font-bold text-brand">
+      <span className="h-1.5 w-1.5 flex-shrink-0 rounded-full" style={{ background: dotColor }} />
       {fill(COPY.managerInbox.participationLine, { answered: respondedCount, total: reporteeCount, pct: participation })}
     </p>
   );

@@ -169,21 +169,13 @@ export function ManagerDashboardView({
             </div>
           )}
 
-          {/* Team score + delta + participation */}
+          {/* Team score + delta, then participation as its own full-width row
+              so the confidence indicator always has room to lay out on one
+              line instead of cramming into the narrow column beside the
+              score and wrapping. */}
           <Card>
-            <div className="mb-4 flex items-start justify-between">
-              <div>
-                <BigScore score={data.teamScore} />
-                <div className="mt-1.5 flex items-center gap-1.5">
-                  <span
-                    className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold"
-                    style={{ background: confidence.bg, color: confidence.color }}
-                  >
-                    {confidence.label}
-                  </span>
-                  <span className="text-xs text-ink-3">{fill(COPY.managerDashboard.peopleParticipation, { count: data.reporteeCount, pct: data.participation })}</span>
-                </div>
-              </div>
+            <div className="flex items-start justify-between">
+              <BigScore score={data.teamScore} />
               {data.delta !== null && (
                 <div
                   className="mt-1.5 inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold"
@@ -195,10 +187,25 @@ export function ManagerDashboardView({
               )}
             </div>
 
+            {/* Data-confidence + participation — its own row with full card
+                width, so it never has to squeeze into the column beside the
+                score. A dot instead of a pill avoids the label ever wrapping
+                mid-word. */}
+            <div className="mt-4 flex flex-wrap items-center gap-x-2 gap-y-1 border-t border-lav-mid pt-3">
+              <span className="inline-flex items-center gap-1.5 whitespace-nowrap text-xs font-bold" style={{ color: confidence.color }}>
+                <span className="h-1.5 w-1.5 flex-shrink-0 rounded-full" style={{ background: confidence.color }} />
+                {confidence.label}
+              </span>
+              <span className="text-xs text-ink-3">·</span>
+              <span className="whitespace-nowrap text-xs text-ink-3">
+                {fill(COPY.managerDashboard.peopleParticipation, { count: data.reporteeCount, pct: data.participation })}
+              </span>
+            </div>
+
             {/* Pillar cards — aggregates only, no drill into individuals. Tap
                 through to the team-level pillar detail (same shape as the
                 employee dashboard's). Pillars with no data yet aren't clickable. */}
-            <div className="-mx-1.5 grid grid-cols-4 gap-2">
+            <div className="-mx-1.5 mt-4 grid grid-cols-4 gap-2">
               {data.pillars.map((p) => (
                 <PillarCard
                   key={p.pillarId}
