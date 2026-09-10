@@ -53,6 +53,17 @@ export function ManagerDashboardView({
   const firstName = (session.name || "there").trim().split(/\s+/)[0];
   const up = (data.delta ?? 0) >= 0;
 
+  // Participation is a data-VALIDITY signal, not a performance number — how
+  // much to trust the scores above, never an individual's response. Clearing
+  // the anonymisation floor (enforced server-side) only means there's enough
+  // to show at all; this tiers how solid that "enough" actually is.
+  const confidence =
+    data.participation >= 80
+      ? { label: COPY.managerDashboard.confidenceStrong, color: "#059669", bg: "#E8FBF0" }
+      : data.participation >= 50
+        ? { label: COPY.managerDashboard.confidenceModerate, color: "#B45309", bg: "#FEF3C7" }
+        : { label: COPY.managerDashboard.confidenceLimited, color: "#DC2626", bg: "#FDECEC" };
+
   // Pillars below 7 (and above the floor) get a recommendation, weakest first.
   const lowPillars = data.pillars
     .filter((p) => p.score !== null && p.score < 7)
@@ -163,7 +174,15 @@ export function ManagerDashboardView({
             <div className="mb-4 flex items-start justify-between">
               <div>
                 <BigScore score={data.teamScore} />
-                <p className="mt-1 text-xs text-ink-3">{fill(COPY.managerDashboard.peopleParticipation, { count: data.reporteeCount, pct: data.participation })}</p>
+                <div className="mt-1.5 flex items-center gap-1.5">
+                  <span
+                    className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold"
+                    style={{ background: confidence.bg, color: confidence.color }}
+                  >
+                    {confidence.label}
+                  </span>
+                  <span className="text-xs text-ink-3">{fill(COPY.managerDashboard.peopleParticipation, { count: data.reporteeCount, pct: data.participation })}</span>
+                </div>
               </div>
               {data.delta !== null && (
                 <div

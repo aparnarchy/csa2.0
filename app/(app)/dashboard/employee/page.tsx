@@ -3,6 +3,7 @@ export const runtime = "edge";
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth-session";
 import { getEmployeeScores } from "@/lib/scores";
+import { getEmployeeInsight } from "@/lib/ai";
 import { getDueCheckIns, getUnansweredCheckIns, getReturnCheckIn } from "@/lib/checkins";
 import { AnalysisView } from "./AnalysisView";
 
@@ -27,5 +28,6 @@ export default async function EmployeeDashboard() {
 
   // Nothing due — show the dashboard. (Access-control guards run in the layer.)
   const initial = await getEmployeeScores(session.user, session.user.id, "3M");
-  return <AnalysisView session={session.user} initial={initial} />;
+  const initialInsight = await getEmployeeInsight(session.user.id, "3M", initial);
+  return <AnalysisView session={session.user} initial={initial} initialInsight={initialInsight} />;
 }

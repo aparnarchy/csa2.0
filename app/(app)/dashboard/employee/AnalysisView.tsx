@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { COPY } from "@/lib/copy";
 import {
+  AIInsight,
   BigScore,
   Card,
   GradientHeader,
@@ -17,7 +18,7 @@ import {
   TrendChart,
 } from "@/components/kit";
 import { type EmployeeScores, type Window } from "@/lib/data";
-import { getEmployeeScoresAction, getRootAnalysisAction } from "./actions";
+import { getEmployeeInsightAction, getEmployeeScoresAction, getRootAnalysisAction } from "./actions";
 import { HEADER_MASCOT_SIZE, mascotForScore } from "@/lib/mascot";
 import { STRENGTH_CUTOFF } from "@/lib/pillars";
 import { buildEmployeeInsight } from "@/lib/insight";
@@ -32,13 +33,16 @@ type Tab = "strengths" | "concerns";
 export function AnalysisView({
   session,
   initial,
+  initialInsight,
 }: {
   session: SessionUser;
   initial: EmployeeScores;
+  initialInsight: string | null;
 }) {
   const router = useRouter();
   const [window, setWindow] = useState<Window>("3M");
   const [data, setData] = useState<EmployeeScores>(initial);
+  const [aiText, setAiText] = useState<string | null>(initialInsight);
   const [tab, setTab] = useState<Tab>("strengths");
   const [selectedPillar, setSelectedPillar] = useState<PillarId | null>(null);
   const [showRoot, setShowRoot] = useState(false);
@@ -52,6 +56,7 @@ export function AnalysisView({
   // (real aggregation over the user's own check-ins).
   useEffect(() => {
     getEmployeeScoresAction(window).then(setData);
+    getEmployeeInsightAction(window).then(setAiText);
   }, [window]);
 
   if (selectedPillar) {
@@ -261,6 +266,11 @@ export function AnalysisView({
               ))}
             </div>
           </Card>
+
+          {/* AI insight — same shared card every other dashboard uses, over
+              this person's own data (never an aggregate, so no privacy floor
+              to enforce here). */}
+          <AIInsight text={aiText ?? undefined} />
 
           <Card>
             <p className="mb-3 text-sm font-bold text-brand">Insights</p>

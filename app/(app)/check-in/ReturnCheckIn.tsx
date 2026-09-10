@@ -133,6 +133,7 @@ export function ReturnCheckIn({
               placeholder={t.journalPlaceholder}
               className="mt-2 h-24 w-full resize-none rounded-2xl border border-gray-300 bg-white p-3.5 text-sm text-ink placeholder-ink-4 focus:outline-none focus:ring-2 focus:ring-brand"
             />
+            <p className="mt-1.5 text-[11px] text-ink-4">{t.journalPrivacyNote}</p>
           </div>
         )}
 
