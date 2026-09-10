@@ -9,8 +9,10 @@ import { ManagerDetailView } from "./ManagerDetailView";
 /** A single manager's team detail (CEO/HR only, reached from Insights/All managers). */
 export default async function CeoManagerDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ managerId: string }>;
+  searchParams: Promise<{ from?: string }>;
 }) {
   const session = await getSession();
   if (!session) redirect("/login");
@@ -18,8 +20,9 @@ export default async function CeoManagerDetailPage({
   if (!session.user.roles.includes("ceo_hr")) redirect("/dashboard");
 
   const { managerId } = await params;
+  const { from } = await searchParams;
   const detail = await getReviewingManagerDetail(session.user, managerId, "3M");
   const insight = await getManagerDetailInsight(managerId, "3M", detail);
 
-  return <ManagerDetailView initial={detail} initialInsight={insight} />;
+  return <ManagerDetailView initial={detail} initialInsight={insight} from={from} />;
 }

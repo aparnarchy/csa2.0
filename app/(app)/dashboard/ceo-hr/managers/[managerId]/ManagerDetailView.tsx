@@ -25,11 +25,19 @@ type HighLow = "high" | "low";
 export function ManagerDetailView({
   initial,
   initialInsight,
+  from,
 }: {
   initial: ManagerDetail;
   initialInsight: string | null;
+  /** Where this screen was opened from, so "back" returns there instead of
+      always assuming the All-managers list — it's also entered from Insights. */
+  from?: string;
 }) {
   const router = useRouter();
+  const back =
+    from === "insights"
+      ? { label: "Insights", onClick: () => router.push("/dashboard/ceo-hr/insights") }
+      : { label: "All managers", onClick: () => router.push("/dashboard/ceo-hr/managers") };
   const [window, setWindow] = useState<Window>("3M");
   const [data, setData] = useState<ManagerDetail>(initial);
   const [aiText, setAiText] = useState<string | null>(initialInsight);
@@ -54,7 +62,7 @@ export function ManagerDetailView({
       <GradientHeader
         eyebrow="👥 Team detail"
         title={data.name}
-        back={{ label: "All managers", onClick: () => router.push("/dashboard/ceo-hr/managers") }}
+        back={back}
       />
 
       {!data.enoughData || data.teamScore === null ? (

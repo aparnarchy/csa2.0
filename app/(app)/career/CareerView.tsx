@@ -234,6 +234,19 @@ function CompanyDetailView({ detail, onBack, isCeoHr = false }: { detail: Compan
 
   const up = (detail.delta ?? 0) >= 0;
 
+  // This detail view is local state, not its own URL, so a swipe-back gesture
+  // has no history entry to pop for it — intercept the shared back-intent
+  // event and close it here instead of letting the gesture fall through to
+  // real browser history (which would skip this screen entirely).
+  useEffect(() => {
+    function onBackIntent(e: Event) {
+      e.preventDefault();
+      onBack();
+    }
+    window.addEventListener("app:back-intent", onBackIntent);
+    return () => window.removeEventListener("app:back-intent", onBackIntent);
+  }, [onBack]);
+
   return (
     <ScreenShell active="profile" navItems={isCeoHr ? CEO_NAV : undefined}>
       <BackButton label={COPY.career.backToCareer} onClick={onBack} />

@@ -156,7 +156,7 @@ export function CeoInsightsView({
             <p className="mb-1.5 text-[11px] font-bold uppercase tracking-wide text-good">Top</p>
             <div className="space-y-1.5">
               {top3.map((m) => (
-                <ManagerRow key={m.managerId} manager={m} onOpen={() => router.push(`/dashboard/ceo-hr/managers/${m.managerId}`)} />
+                <ManagerRow key={m.managerId} manager={m} onOpen={() => router.push(`/dashboard/ceo-hr/managers/${m.managerId}?from=insights`)} />
               ))}
             </div>
             {bottom3.length > 0 && (
@@ -164,7 +164,7 @@ export function CeoInsightsView({
                 <p className="mb-1.5 mt-3 text-[11px] font-bold uppercase tracking-wide text-warn">Bottom</p>
                 <div className="space-y-1.5">
                   {bottom3.map((m) => (
-                    <ManagerRow key={m.managerId} manager={m} onOpen={() => router.push(`/dashboard/ceo-hr/managers/${m.managerId}`)} />
+                    <ManagerRow key={m.managerId} manager={m} onOpen={() => router.push(`/dashboard/ceo-hr/managers/${m.managerId}?from=insights`)} />
                   ))}
                 </div>
               </>

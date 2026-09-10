@@ -57,7 +57,16 @@ export function MobileGestures({ children }: { children: React.ReactNode }) {
       const dy = t.clientY - s.y;
 
       if (s.mode === "back") {
-        if (dx > BACK_THRESHOLD && Math.abs(dy) < MAX_VERTICAL_DRIFT) router.back();
+        if (dx > BACK_THRESHOLD && Math.abs(dy) < MAX_VERTICAL_DRIFT) {
+          // Give any screen showing a local-state sub-view (e.g. a detail panel
+          // with no URL of its own) a chance to close that first. Only fall
+          // through to real browser history if nothing handled it — otherwise
+          // swipe-back skips the sub-view and pops whatever page came before
+          // the parent screen in history, landing somewhere unrelated.
+          const intent = new CustomEvent("app:back-intent", { cancelable: true });
+          window.dispatchEvent(intent);
+          if (!intent.defaultPrevented) router.back();
+        }
         return;
       }
       if (s.mode === "pull") {
