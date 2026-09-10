@@ -19,6 +19,7 @@ import {
 import { type EmployeeScores, type Window } from "@/lib/data";
 import { getEmployeeScoresAction, getRootAnalysisAction } from "./actions";
 import { HEADER_MASCOT_SIZE, mascotForScore } from "@/lib/mascot";
+import { STRENGTH_CUTOFF } from "@/lib/pillars";
 import { buildEmployeeInsight } from "@/lib/insight";
 import { buildRootAnalysis, type RootAnalysis } from "@/lib/rca";
 import { chromeFor } from "@/lib/voice";
@@ -65,7 +66,9 @@ export function AnalysisView({
   }
 
   const sortedQs = [...data.questions].sort((a, b) => b.score - a.score);
-  const shownQs = tab === "strengths" ? sortedQs.slice(0, 3) : sortedQs.slice(-3).reverse();
+  const strengthQs = sortedQs.filter((q) => q.score >= STRENGTH_CUTOFF).slice(0, 3);
+  const concernQs = sortedQs.filter((q) => q.score < STRENGTH_CUTOFF).reverse().slice(0, 3);
+  const shownQs = tab === "strengths" ? strengthQs : concernQs;
   const up = (data.delta ?? 0) >= 0;
   // Mode = design only. Play shows the fun look (mascot, blob circles, persona
   // voice); Professional is a plain, serious dashboard with neutral copy.
@@ -283,6 +286,11 @@ export function AnalysisView({
                 onToggle={() => setOpenId((cur) => (cur === q.id ? null : q.id))}
               />
             ))}
+            {shownQs.length === 0 && (
+              <p className="text-xs text-ink-4">
+                {tab === "strengths" ? "Nothing scoring 7+ yet." : "Nothing scoring below 7 — nice."}
+              </p>
+            )}
           </Card>
 
           <TrendChart data={data.trend} window={window} onWindowChange={setWindow} />

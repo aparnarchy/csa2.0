@@ -7,6 +7,7 @@ import {
   BigScore,
   Card,
   GradientHeader,
+  InsightBarRow,
   Mascot,
   NotEnoughData,
   PillarCard,
@@ -39,6 +40,7 @@ export function ManagerDashboardView({
   const [aiText, setAiText] = useState<string | null>(initialInsight);
   const [selectedPillar, setSelectedPillar] = useState<PillarId | null>(null);
   const [scTab, setScTab] = useState<"strengths" | "concerns">("strengths");
+  const [scOpenId, setScOpenId] = useState<string | null>(null);
 
   // Time filter recomputes the whole aggregate via a server action (real D1,
   // privacy-enforced). The team is resolved server-side to the signed-in manager.
@@ -56,6 +58,16 @@ export function ManagerDashboardView({
     .filter((p) => p.score !== null && p.score < 7)
     .sort((a, b) => (a.score ?? 0) - (b.score ?? 0));
 
+  // The real recommendation for each low pillar's weakest question (admin-
+  // authored if one's been written, same generic pillar fallback otherwise —
+  // getSampleRecommendation is that fallback's own source, not a mock we're
+  // bypassing the real data for).
+  const recommendationFor = (pid: PillarId): string => {
+    const qs = data.questions.filter((q) => q.pillarId === pid);
+    const weakest = qs.length ? [...qs].sort((a, b) => a.score - b.score)[0] : null;
+    return weakest?.recommendation ?? getSampleRecommendation(pid).text;
+  };
+
   // Team-level Bright Spot / Watch Out — same pattern as the employee dashboard,
   // just computed from the team's pillar averages instead of one person's.
   const scoredPillars = data.pillars.filter((p) => p.score !== null);
@@ -66,15 +78,13 @@ export function ManagerDashboardView({
     ? [...scoredPillars].sort((a, b) => (a.score ?? 0) - (b.score ?? 0))[0]
     : null;
 
-  // Strengths & Concerns — pillar-level (this dashboard only has 4 pillar
-  // aggregates, not individual questions; question-level detail lives one tap
-  // in, on the pillar drill-down).
-  const scStrengths = [...scoredPillars]
-    .filter((p) => (p.score ?? 0) >= STRENGTH_CUTOFF)
-    .sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
-  const scConcerns = [...scoredPillars]
-    .filter((p) => (p.score ?? 0) < STRENGTH_CUTOFF)
-    .sort((a, b) => (a.score ?? 0) - (b.score ?? 0));
+  // Strengths & Concerns — same question-level shape as every other
+  // dashboard (real per-question team scores, anonymised in getTeamAggregate:
+  // a question only appears once >= the anonymisation floor of distinct
+  // teammates answered it).
+  const scSorted = [...data.questions].sort((a, b) => b.score - a.score);
+  const scStrengths = scSorted.filter((q) => q.score >= STRENGTH_CUTOFF).slice(0, 3);
+  const scConcerns = scSorted.filter((q) => q.score < STRENGTH_CUTOFF).reverse().slice(0, 3);
   const scShown = scTab === "strengths" ? scStrengths : scConcerns;
 
   if (selectedPillar) {
@@ -198,7 +208,7 @@ export function ManagerDashboardView({
                   <RecommendationCard
                     key={p.pillarId}
                     pillarId={p.pillarId}
-                    text={`${fill(COPY.managerDashboard.teamPillarAt, { pillar: PILLARS[p.pillarId].label, score: p.score!.toFixed(1) })} ${getSampleRecommendation(p.pillarId).text}`}
+                    text={`${fill(COPY.managerDashboard.teamPillarAt, { pillar: PILLARS[p.pillarId].label, score: p.score!.toFixed(1) })} ${recommendationFor(p.pillarId)}`}
                   />
                 ))}
               </div>
@@ -212,38 +222,37 @@ export function ManagerDashboardView({
             </Card>
           )}
 
-          {/* Strengths & Concerns — pillar-level, before Trend (same order as
-              every other dashboard). */}
+          {/* Strengths & Concerns — before Trend, same shape as every other
+              dashboard (SegmentedToggle + InsightBarRow over real questions). */}
           <Card>
             <p className="mb-3 text-sm font-bold text-brand">Insights</p>
             <div className="mb-4">
               <SegmentedToggle
                 value={scTab}
-                onChange={setScTab}
+                onChange={(v) => {
+                  setScTab(v);
+                  setScOpenId(null);
+                }}
                 options={[
                   { value: "strengths", label: "💪 Strengths" },
                   { value: "concerns", label: "⚠️ Concerns" },
                 ]}
               />
             </div>
-            <div className="space-y-2">
-              {scShown.map((p) => (
-                <button
-                  key={p.pillarId}
-                  type="button"
-                  onClick={() => setSelectedPillar(p.pillarId)}
-                  className="flex w-full items-center justify-between rounded-2xl bg-lav-soft px-3.5 py-2.5 text-left transition active:scale-[0.99]"
-                >
-                  <span className="text-sm font-semibold text-ink">{PILLARS[p.pillarId].label}</span>
-                  <span className="font-display text-sm font-black text-brand">{p.score!.toFixed(1)}</span>
-                </button>
-              ))}
-              {scShown.length === 0 && (
-                <p className="text-xs text-ink-4">
-                  {scTab === "strengths" ? "Nothing scoring 7+ yet." : "Nothing scoring below 7 — nice."}
-                </p>
-              )}
-            </div>
+            {scShown.map((q) => (
+              <InsightBarRow
+                key={q.id}
+                q={q}
+                isStrength={scTab === "strengths"}
+                open={scOpenId === q.id}
+                onToggle={() => setScOpenId((cur) => (cur === q.id ? null : q.id))}
+              />
+            ))}
+            {scShown.length === 0 && (
+              <p className="text-xs text-ink-4">
+                {scTab === "strengths" ? "Nothing scoring 7+ yet." : "Nothing scoring below 7 — nice."}
+              </p>
+            )}
           </Card>
 
           {/* Trend — team vs org / dept / industry */}

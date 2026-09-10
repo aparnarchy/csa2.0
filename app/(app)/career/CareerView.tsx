@@ -298,8 +298,10 @@ function CompanyDetailView({ detail, onBack, isCeoHr = false }: { detail: Compan
       <AIInsight text={detail.insight ?? undefined} />
 
       {/* Strengths / concerns — the dashboard's accordion. Questionnaire rows
-          have no breakdown, so InsightBarRow renders them as static bars. */}
-      {rows.length > 0 && (
+          have no breakdown, so InsightBarRow renders them as static bars. Shown
+          whenever EITHER tab has something — a real threshold split (>=7) means
+          one tab can legitimately be empty while the other still has data. */}
+      {(detail.strengths.length > 0 || detail.concerns.length > 0) && (
         <Card>
           <p className="mb-3 text-sm font-bold text-brand">{COPY.career.insightsTitle}</p>
           <div className="mb-4">
@@ -324,6 +326,11 @@ function CompanyDetailView({ detail, onBack, isCeoHr = false }: { detail: Compan
               onToggle={() => setOpenId((cur) => (cur === q.id ? null : q.id))}
             />
           ))}
+          {rows.length === 0 && (
+            <p className="text-xs text-ink-4">
+              {tab === "strengths" ? "Nothing scoring 7+ yet." : "Nothing scoring below 7 — nice."}
+            </p>
+          )}
         </Card>
       )}
 

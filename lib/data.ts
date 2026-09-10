@@ -86,6 +86,7 @@ export interface TeamAggregate {
   participation: number;
   reporteeCount: number;
   pillars: PillarScore[];
+  questions: QuestionInsight[];
   trend: TrendPoint[];
 }
 
@@ -297,6 +298,7 @@ export async function getTeamAggregate(
     participation: 0,
     reporteeCount,
     pillars: [],
+    questions: [],
     trend: [],
   };
 
@@ -315,6 +317,7 @@ export async function getTeamAggregate(
     participation: 78,
     reporteeCount,
     pillars: pillarScoresFrom(trend),
+    questions: questionInsights("team-" + teamId),
     trend,
   };
 }

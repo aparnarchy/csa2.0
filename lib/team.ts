@@ -31,6 +31,7 @@ const avg = (xs: number[]) => xs.reduce((a, b) => a + b, 0) / xs.length;
 interface TeamRow {
   weekId: string;
   pillarId: PillarId;
+  questionId: string;
   score: number;
   userId: string;
 }
@@ -52,6 +53,7 @@ export async function getTeamAggregate(
     participation: 0,
     reporteeCount: 0,
     pillars: [],
+    questions: [],
     trend: [],
   };
 
@@ -79,7 +81,7 @@ export async function getTeamAggregate(
   // Team check-ins, scoped to active employment (so only during-employment counts).
   const { results: allRows } = await db
     .prepare(
-      `SELECT c.weekId AS weekId, c.pillarId AS pillarId, c.score AS score, e.userId AS userId
+      `SELECT c.weekId AS weekId, c.pillarId AS pillarId, c.questionId AS questionId, c.score AS score, e.userId AS userId
          FROM checkIns c
          JOIN employment e ON e.id = c.employmentId
         WHERE e.teamId = ? AND e.status = 'active'`,
@@ -153,7 +155,35 @@ export async function getTeamAggregate(
   const rangeResponders = new Set(rows.map((r) => r.userId)).size;
   const participation = Math.min(100, Math.round((rangeResponders / reporteeCount) * 100));
 
-  return { enoughData: true, teamScore, delta, participation, reporteeCount, pillars, trend };
+  // Question-level insights (Strengths & Concerns), same shape and same
+  // anonymisation rule as every other dashboard: a question only appears once
+  // >= ANONYMISATION_FLOOR distinct people answered it in this window — the
+  // team can clear the floor overall while one specific question doesn't.
+  const [{ results: qRows }, recMap] = await Promise.all([
+    db.prepare("SELECT * FROM questions").all<TeamQuestionRow>(),
+    loadRecommendations(),
+  ]);
+  const byQ = new Map<string, number[]>();
+  const respondersByQ = new Map<string, Set<string>>();
+  for (const r of rows) {
+    (byQ.get(r.questionId) ?? byQ.set(r.questionId, []).get(r.questionId)!).push(r.score);
+    (respondersByQ.get(r.questionId) ?? respondersByQ.set(r.questionId, new Set()).get(r.questionId)!).add(r.userId);
+  }
+  const questions: QuestionInsight[] = qRows
+    .filter((q) => (respondersByQ.get(q.id)?.size ?? 0) >= ANONYMISATION_FLOOR)
+    .map((q) => {
+      const scores = byQ.get(q.id)!;
+      return {
+        id: q.id,
+        text: q.text,
+        pillarId: q.pillarId,
+        score: round1(avg(scores)),
+        responses: distribution(scores, q),
+        recommendation: pickRecommendation(recMap, q.id, q.pillarId),
+      };
+    });
+
+  return { enoughData: true, teamScore, delta, participation, reporteeCount, pillars, questions, trend };
 }
 
 interface TeamQuestionRow {
@@ -196,11 +226,9 @@ export interface TeamPillarDetail {
 /**
  * Team-level detail for one pillar (the pillar-detail screen, reached by tapping
  * a pillar card on the manager dashboard — same shape as the employee's, but
- * aggregated). Reuses getTeamAggregate for the score/trend, then re-derives
- * per-question team distributions. Anonymised per-question too: a question is
- * only included if at least ANONYMISATION_FLOOR distinct people answered it —
- * the overall pillar can clear the team floor while one specific question in it
- * doesn't.
+ * aggregated). Reuses getTeamAggregate for everything, including its already-
+ * anonymised, already-windowed question list — just filtered to this pillar,
+ * the same way the employee's getPillarDetail filters getEmployeeScores.
  */
 export async function getTeamPillarDetail(
   session: SessionUser,
@@ -211,65 +239,13 @@ export async function getTeamPillarDetail(
   assertRole(session, "manager", "ceo_hr");
   const agg = await getTeamAggregate(session, teamId, window);
   const p = agg.pillars.find((x) => x.pillarId === pillarId);
-  const empty: TeamPillarDetail = {
+  return {
     pillarId,
     score: p?.score ?? 0,
     delta: p?.delta ?? 0,
     percentile: p?.percentile ?? 0,
     band: p?.band ?? scoreBand(0),
     trend: agg.trend,
-    questions: [],
+    questions: agg.questions.filter((q) => q.pillarId === pillarId),
   };
-  if (!agg.enoughData || p?.score == null) return empty;
-
-  const db = getDB();
-  const elevated = session.roles.includes("ceo_hr");
-  let resolvedTeamId: string | null = teamId;
-  if (teamId === "my-team" || !elevated) {
-    const t = await db
-      .prepare("SELECT id FROM teams WHERE managerId = ? LIMIT 1")
-      .bind(session.id)
-      .first<{ id: string }>();
-    resolvedTeamId = t?.id ?? null;
-  }
-  if (!resolvedTeamId) return empty;
-
-  const [{ results: qRows }, { results: ciRows }, recMap] = await Promise.all([
-    // Not filtered to isActive: a deactivated question's past team answers
-    // still belong in this breakdown, or they silently vanish from it.
-    db.prepare("SELECT * FROM questions WHERE pillarId = ?").bind(pillarId).all<TeamQuestionRow>(),
-    db
-      .prepare(
-        `SELECT c.questionId AS questionId, c.score AS score, e.userId AS userId
-           FROM checkIns c JOIN employment e ON e.id = c.employmentId
-          WHERE e.teamId = ? AND e.status = 'active' AND c.pillarId = ?`,
-      )
-      .bind(resolvedTeamId, pillarId)
-      .all<{ questionId: string; score: number; userId: string }>(),
-    loadRecommendations(),
-  ]);
-
-  const byQ = new Map<string, number[]>();
-  const respondersByQ = new Map<string, Set<string>>();
-  for (const r of ciRows) {
-    (byQ.get(r.questionId) ?? byQ.set(r.questionId, []).get(r.questionId)!).push(r.score);
-    (respondersByQ.get(r.questionId) ?? respondersByQ.set(r.questionId, new Set()).get(r.questionId)!).add(r.userId);
-  }
-
-  const questions: QuestionInsight[] = qRows
-    .filter((q) => (respondersByQ.get(q.id)?.size ?? 0) >= ANONYMISATION_FLOOR)
-    .map((q) => {
-      const scores = byQ.get(q.id)!;
-      const score = round1(avg(scores));
-      return {
-        id: q.id,
-        text: q.text,
-        pillarId: q.pillarId,
-        score,
-        responses: distribution(scores, q),
-        recommendation: pickRecommendation(recMap, q.id, q.pillarId),
-      };
-    });
-
-  return { ...empty, questions };
 }
