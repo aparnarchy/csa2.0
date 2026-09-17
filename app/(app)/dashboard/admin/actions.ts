@@ -38,11 +38,14 @@ import {
   getInvites,
   importInvitesCsv,
   resendInvite,
+  listPeople,
+  setUserRoles,
   type BulkDeleteResult,
   type CsvImportResult,
   type InviteInput,
   type InviteWithMeta,
   type OrgStructure,
+  type PersonRow,
   type QuestionInput,
   type RecommendationRow,
   type TeamInput,
@@ -50,7 +53,7 @@ import {
   type WisdomModuleInput,
   type WisdomModuleWithContent,
 } from "@/lib/admin";
-import type { Question } from "@/lib/types";
+import type { Question, Role } from "@/lib/types";
 
 async function requireAdmin() {
   const session = await getSession();
@@ -230,4 +233,16 @@ export async function importInvitesCsvAction(
   const result = await importInvitesCsv(user, text);
   const invites = await getInvites(user);
   return { result, invites };
+}
+
+// ── People & roles ──────────────────────────────────────────────────────────
+
+export async function listPeopleAction(): Promise<PersonRow[]> {
+  const user = await requireAdmin();
+  return listPeople(user);
+}
+
+export async function setUserRolesAction(userId: string, roles: Role[]): Promise<PersonRow[]> {
+  const user = await requireAdmin();
+  return setUserRoles(user, userId, roles);
 }

@@ -16,6 +16,7 @@ import type {
   Invite,
   PillarId,
   Question,
+  Role,
   SessionUser,
   Team,
   WisdomAudience,
@@ -413,6 +414,104 @@ export async function getOrgStructure(session: SessionUser): Promise<OrgStructur
     teams: teams.results,
     managers: mgrs.results,
   };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// People & roles: the only in-app way to grant/revoke roles. Before this, role
+// changes had to be made directly in the database.
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Every role an admin is allowed to grant or revoke from this screen. */
+const ASSIGNABLE_ROLES: readonly Role[] = ["employee", "manager", "ceo_hr", "admin"];
+
+export interface PersonRow {
+  id: string;
+  name: string;
+  email: string;
+  roles: Role[];
+  teamName: string | null;
+  departmentName: string | null;
+}
+
+interface PersonUserRow {
+  id: string;
+  name: string;
+  email: string;
+  teamName: string | null;
+  departmentName: string | null;
+}
+
+export async function listPeople(session: SessionUser): Promise<PersonRow[]> {
+  assertRole(session, "admin");
+  const db = getDB();
+  const [{ results: users }, { results: roleRows }] = await Promise.all([
+    db
+      .prepare(
+        `SELECT u.id, u.name, u.email, t.name AS teamName, d.name AS departmentName
+           FROM user u
+           LEFT JOIN teams t ON t.id = u.teamId
+           LEFT JOIN departments d ON d.id = t.departmentId
+          ORDER BY u.name`,
+      )
+      .all<PersonUserRow>(),
+    db.prepare("SELECT userId, role FROM user_roles").all<{ userId: string; role: Role }>(),
+  ]);
+
+  const rolesByUser = new Map<string, Role[]>();
+  for (const r of roleRows) {
+    // 'reviewing_manager' is a dead role (removed from the app, still valid in
+    // the old CHECK constraint) — nothing assigns it, so it never surfaces here.
+    if (!ASSIGNABLE_ROLES.includes(r.role)) continue;
+    const arr = rolesByUser.get(r.userId) ?? [];
+    arr.push(r.role);
+    rolesByUser.set(r.userId, arr);
+  }
+
+  return users.map((u) => ({ ...u, roles: rolesByUser.get(u.id) ?? [] }));
+}
+
+/**
+ * Replace a person's full role set. Two guards that only make sense here, not
+ * per-role: a person must keep at least one role (every dashboard route
+ * redirects by role, so zero roles would strand them with nowhere to land),
+ * and the very last admin account can't have admin revoked — that would lock
+ * everyone, including every other admin, out of this screen for good with no
+ * in-app way back.
+ */
+export async function setUserRoles(
+  session: SessionUser,
+  userId: string,
+  roles: Role[],
+): Promise<PersonRow[]> {
+  assertRole(session, "admin");
+  const clean = [...new Set(roles)].filter((r) => ASSIGNABLE_ROLES.includes(r));
+  if (clean.length === 0) throw new Error("A person needs at least one role.");
+
+  const db = getDB();
+  if (!clean.includes("admin")) {
+    const [current, others] = await Promise.all([
+      db
+        .prepare("SELECT 1 AS x FROM user_roles WHERE userId = ? AND role = 'admin'")
+        .bind(userId)
+        .first<{ x: number }>(),
+      db
+        .prepare("SELECT 1 AS x FROM user_roles WHERE role = 'admin' AND userId != ? LIMIT 1")
+        .bind(userId)
+        .first<{ x: number }>(),
+    ]);
+    if (current && !others) {
+      throw new Error("Can't remove admin from the last admin account.");
+    }
+  }
+
+  await db.batch([
+    db.prepare("DELETE FROM user_roles WHERE userId = ?").bind(userId),
+    ...clean.map((r) =>
+      db.prepare("INSERT INTO user_roles (userId, role) VALUES (?, ?)").bind(userId, r),
+    ),
+  ]);
+
+  return listPeople(session);
 }
 
 /** A UNIQUE-index violation from D1 (e.g. a duplicate department/team name),

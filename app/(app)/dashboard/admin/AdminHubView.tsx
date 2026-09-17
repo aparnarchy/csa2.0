@@ -43,6 +43,12 @@ const SECTIONS: Section[] = [
     desc: "Invite managers and individuals; bulk-import from CSV; resend or cancel.",
     href: "/dashboard/admin/invites",
   },
+  {
+    icon: "👥",
+    title: "People & roles",
+    desc: "Grant or revoke employee, manager, CEO/HR and admin access per person.",
+    href: "/dashboard/admin/people",
+  },
 ];
 
 export function AdminHubView({ session }: { session: SessionUser }) {
