@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
-import { BackButton, Card, Modal, ScreenShell } from "@/components/kit";
+import { ADMIN_NAV, BackButton, Card, Modal, ScreenShell } from "@/components/kit";
 import { PILLARS, PILLAR_ORDER } from "@/lib/pillars";
 import type {
   ContentType,
@@ -78,7 +78,7 @@ export function WisdomCmsView({
   const byLevel = LEVELS.map((lvl) => ({ lvl, items: modules.filter((m) => m.level === lvl) }));
 
   return (
-    <ScreenShell wide noNav>
+    <ScreenShell wide active="admin" navItems={ADMIN_NAV}>
       {isPlay ? (
         <div className="rounded-card bg-lav-bg px-5 py-5">
           <BackButton label="Admin" onClick={() => router.push("/dashboard/admin")} />

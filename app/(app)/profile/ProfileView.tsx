@@ -40,6 +40,10 @@ export function ProfileView({
   // own active employment (does check-ins themselves) can switch between
   // that role's view and the plain employee experience.
   const isDualRole = (isManager || isCeoHr || isAdmin) && session.hasEmployment;
+  // Same priority order /dashboard's redirect actually uses (admin > ceo_hr >
+  // manager) — the "switch back" label has to match where the button really
+  // sends them, not just assume "manager" for every elevated account.
+  const elevatedRoleLabel = isAdmin ? "Admin" : isCeoHr ? "CEO/HR" : "Manager";
 
   async function switchView() {
     await setViewModeAction(viewingAsEmployee ? "manager" : "employee");
@@ -151,8 +155,11 @@ export function ProfileView({
 
       {/* Career history link → 2.8. Employee-only: a manager's own work history
           isn't part of the manager surface, so it's hidden once they hold that
-          role, and CEO/HR never sees it either — org-scoped, not personal. */}
-      {!isManager && !isCeoHr && (
+          role, and CEO/HR never sees it either — org-scoped, not personal.
+          Exception: currently viewing as an employee (Switch view) — that IS
+          the personal surface right now, same reasoning as hasEmployment
+          gating Career's own page guard. */}
+      {(!isManager && !isCeoHr) || viewingAsEmployee ? (
         <button
           type="button"
           onClick={() => router.push("/career")}
@@ -166,7 +173,7 @@ export function ProfileView({
           </div>
           <span className="text-xl text-ink-4">›</span>
         </button>
-      )}
+      ) : null}
 
       {/* Appearance (mode + persona) */}
       <AppearanceCard session={session} />
@@ -187,10 +194,14 @@ export function ProfileView({
         >
           <div>
             <p className="text-sm font-bold text-ink">
-              {viewingAsEmployee ? COPY.profile.switchManagerTitle : COPY.profile.switchEmployeeTitle}
+              {viewingAsEmployee
+                ? fill(COPY.profile.switchElevatedTitle, { role: elevatedRoleLabel })
+                : COPY.profile.switchEmployeeTitle}
             </p>
             <p className="mt-0.5 text-xs text-ink-3">
-              {viewingAsEmployee ? COPY.profile.switchManagerSub : COPY.profile.switchEmployeeSub}
+              {viewingAsEmployee
+                ? fill(COPY.profile.switchElevatedSub, { role: elevatedRoleLabel })
+                : COPY.profile.switchEmployeeSub}
             </p>
           </div>
           <span className="text-xl text-ink-4">›</span>

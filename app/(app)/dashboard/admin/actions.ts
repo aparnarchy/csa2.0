@@ -40,6 +40,7 @@ import {
   resendInvite,
   listPeople,
   setUserRoles,
+  setPendingInviteRole,
   type BulkDeleteResult,
   type CsvImportResult,
   type InviteInput,
@@ -245,4 +246,12 @@ export async function listPeopleAction(): Promise<PersonRow[]> {
 export async function setUserRolesAction(userId: string, roles: Role[]): Promise<PersonRow[]> {
   const user = await requireAdmin();
   return setUserRoles(user, userId, roles);
+}
+
+export async function setPendingInviteRoleAction(
+  inviteId: string,
+  role: "manager" | "employee",
+): Promise<PersonRow[]> {
+  const user = await requireAdmin();
+  return setPendingInviteRole(user, inviteId, role);
 }

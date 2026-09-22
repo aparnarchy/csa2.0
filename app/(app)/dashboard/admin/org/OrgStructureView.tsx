@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useMemo, useState, useTransition } from "react";
-import { BackButton, Card, Modal, ScreenShell } from "@/components/kit";
+import { ADMIN_NAV, BackButton, Card, Modal, ScreenShell } from "@/components/kit";
 import type { SessionUser } from "@/lib/types";
 import type { OrgStructure, TeamInput } from "@/lib/admin";
 import {
@@ -68,7 +68,7 @@ export function OrgStructureView({
   }
 
   return (
-    <ScreenShell wide noNav>
+    <ScreenShell wide active="admin" navItems={ADMIN_NAV}>
       {isPlay ? (
         <div className="rounded-card bg-lav-bg px-5 py-5">
           <BackButton label="Admin" onClick={() => router.push("/dashboard/admin")} />

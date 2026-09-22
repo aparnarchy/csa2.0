@@ -2,10 +2,10 @@
 
 import { useRouter } from "next/navigation";
 import { useMemo, useState, useTransition } from "react";
-import { BackButton, Modal, ScreenShell } from "@/components/kit";
+import { ADMIN_NAV, BackButton, Modal, ScreenShell } from "@/components/kit";
 import type { PersonRow } from "@/lib/admin";
 import type { Role, SessionUser } from "@/lib/types";
-import { setUserRolesAction } from "../actions";
+import { setPendingInviteRoleAction, setUserRolesAction } from "../actions";
 
 const ROLE_ORDER: Role[] = ["employee", "manager", "ceo_hr", "admin"];
 
@@ -64,13 +64,25 @@ export function PeopleView({
     setEditing({ ...editing, roles: next });
   }
 
+  /** Pending invites only support manager vs. employee — a single choice,
+   *  not independent checkboxes (see setPendingInviteRole's doc comment). */
+  function pickPendingRole(role: "manager" | "employee") {
+    if (!editing) return;
+    setEditing({
+      ...editing,
+      roles: new Set(role === "manager" ? (["employee", "manager"] as Role[]) : (["employee"] as Role[])),
+    });
+  }
+
   function save() {
     if (!editing) return;
     setError(null);
     const { person, roles } = editing;
     startTransition(async () => {
       try {
-        const next = await setUserRolesAction(person.id, [...roles]);
+        const next = person.isPending
+          ? await setPendingInviteRoleAction(person.id, roles.has("manager") ? "manager" : "employee")
+          : await setUserRolesAction(person.id, [...roles]);
         setPeople(next);
         setEditing(null);
       } catch (e) {
@@ -80,7 +92,7 @@ export function PeopleView({
   }
 
   return (
-    <ScreenShell wide noNav>
+    <ScreenShell wide active="admin" navItems={ADMIN_NAV}>
       {isPlay ? (
         <div className="rounded-card bg-lav-bg px-5 py-5">
           <BackButton label="Admin" onClick={() => router.push("/dashboard/admin")} />
@@ -153,11 +165,16 @@ export function PeopleView({
               <tr key={p.id} className="border-b border-lav-light/70 align-top last:border-0">
                 <td className="px-3 py-2.5">
                   <p className="font-semibold leading-snug text-ink">
-                    {p.name}
+                    {p.isPending ? p.email : p.name}
                     {p.id === currentUserId && (
                       <span className="ml-1.5 text-[10px] font-bold text-ink-4">(you)</span>
                     )}
                   </p>
+                  {p.isPending && (
+                    <span className="mt-0.5 inline-block rounded-full bg-gray-100 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-ink-4">
+                      Pending — hasn&apos;t signed up
+                    </span>
+                  )}
                 </td>
                 <td className="px-3 py-2.5 text-ink-2">{p.email}</td>
                 <td className="px-3 py-2.5 text-ink-2">
@@ -167,7 +184,7 @@ export function PeopleView({
                   )}
                 </td>
                 <td className="px-3 py-2.5">
-                  <div className="flex flex-wrap gap-1">
+                  <div className={`flex flex-wrap gap-1 ${p.isPending ? "opacity-50" : ""}`}>
                     {p.roles.length === 0 && <span className="text-ink-4">No roles</span>}
                     {p.roles.map((r) => (
                       <span
@@ -202,30 +219,64 @@ export function PeopleView({
 
       {editing && (
         <Modal title={`Roles for ${editing.person.name}`} onClose={() => setEditing(null)}>
-          <p className="mt-2 text-xs text-ink-3">
-            A person can hold more than one role at once — e.g. a manager who is also an admin.
-          </p>
-          <div className="mt-3 space-y-2">
-            {ROLE_ORDER.map((r) => (
-              <label
-                key={r}
-                className="flex items-center gap-3 rounded-xl border border-lav-mid px-3 py-2.5"
-              >
-                <input
-                  type="checkbox"
-                  checked={editing.roles.has(r)}
-                  onChange={() => toggleRole(r)}
-                  className="h-4 w-4 accent-brand"
-                />
-                <span
-                  className="rounded-full px-2 py-0.5 text-[10px] font-black"
-                  style={{ background: `${ROLE_HEX[r]}1A`, color: ROLE_HEX[r] }}
-                >
-                  {ROLE_LABEL[r]}
-                </span>
-              </label>
-            ))}
-          </div>
+          {editing.person.isPending ? (
+            <>
+              <p className="mt-2 text-xs text-ink-3">
+                This person hasn&apos;t signed up yet — only manager vs. employee can be pre-set
+                for them. CEO/HR and admin can be granted once they&apos;ve created their own
+                account, from this same screen.
+              </p>
+              <div className="mt-3 space-y-2">
+                {(["employee", "manager"] as const).map((r) => (
+                  <label
+                    key={r}
+                    className="flex items-center gap-3 rounded-xl border border-lav-mid px-3 py-2.5"
+                  >
+                    <input
+                      type="radio"
+                      name="pendingRole"
+                      checked={r === "manager" ? editing.roles.has("manager") : !editing.roles.has("manager")}
+                      onChange={() => pickPendingRole(r)}
+                      className="h-4 w-4 accent-brand"
+                    />
+                    <span
+                      className="rounded-full px-2 py-0.5 text-[10px] font-black"
+                      style={{ background: `${ROLE_HEX[r]}1A`, color: ROLE_HEX[r] }}
+                    >
+                      {ROLE_LABEL[r]}
+                    </span>
+                  </label>
+                ))}
+              </div>
+            </>
+          ) : (
+            <>
+              <p className="mt-2 text-xs text-ink-3">
+                A person can hold more than one role at once — e.g. a manager who is also an admin.
+              </p>
+              <div className="mt-3 space-y-2">
+                {ROLE_ORDER.map((r) => (
+                  <label
+                    key={r}
+                    className="flex items-center gap-3 rounded-xl border border-lav-mid px-3 py-2.5"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={editing.roles.has(r)}
+                      onChange={() => toggleRole(r)}
+                      className="h-4 w-4 accent-brand"
+                    />
+                    <span
+                      className="rounded-full px-2 py-0.5 text-[10px] font-black"
+                      style={{ background: `${ROLE_HEX[r]}1A`, color: ROLE_HEX[r] }}
+                    >
+                      {ROLE_LABEL[r]}
+                    </span>
+                  </label>
+                ))}
+              </div>
+            </>
+          )}
 
           {error && (
             <p className="mt-3 rounded-xl bg-red-50 px-3 py-2 text-xs font-semibold text-red-600">

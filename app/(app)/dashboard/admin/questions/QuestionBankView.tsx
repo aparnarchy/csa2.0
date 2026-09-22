@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useMemo, useRef, useState, useTransition } from "react";
-import { BackButton, Modal, ScreenShell } from "@/components/kit";
+import { ADMIN_NAV, BackButton, Modal, ScreenShell } from "@/components/kit";
 import { PILLARS, PILLAR_ORDER } from "@/lib/pillars";
 import type { PillarId, Question, SessionUser } from "@/lib/types";
 import type { BulkDeleteResult, CsvImportResult, QuestionInput } from "@/lib/admin";
@@ -169,7 +169,7 @@ export function QuestionBankView({
   }
 
   return (
-    <ScreenShell wide noNav>
+    <ScreenShell wide active="admin" navItems={ADMIN_NAV}>
       {/* Header — mode-aware, with a back link to the admin hub. */}
       {isPlay ? (
         <div className="rounded-card bg-lav-bg px-5 py-5">

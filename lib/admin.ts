@@ -431,6 +431,11 @@ export interface PersonRow {
   roles: Role[];
   teamName: string | null;
   departmentName: string | null;
+  /** True for someone who hasn't signed up yet — this row is their pending
+   *  invite, not a real account. `id` is the invite id in that case, and
+   *  `roles` reflects what WILL be granted the moment they sign up (see
+   *  applyPendingInvite in lib/auth.ts), not something already in effect. */
+  isPending: boolean;
 }
 
 interface PersonUserRow {
@@ -444,7 +449,7 @@ interface PersonUserRow {
 export async function listPeople(session: SessionUser): Promise<PersonRow[]> {
   assertRole(session, "admin");
   const db = getDB();
-  const [{ results: users }, { results: roleRows }] = await Promise.all([
+  const [{ results: users }, { results: roleRows }, { results: pending }] = await Promise.all([
     db
       .prepare(
         `SELECT u.id, u.name, u.email, t.name AS teamName, d.name AS departmentName
@@ -455,6 +460,20 @@ export async function listPeople(session: SessionUser): Promise<PersonRow[]> {
       )
       .all<PersonUserRow>(),
     db.prepare("SELECT userId, role FROM user_roles").all<{ userId: string; role: Role }>(),
+    // Pending invites — someone the admin has already assigned a role/team to,
+    // but who hasn't created their own account yet (open self-signup means the
+    // app never creates one for them). Listed here too so there's one screen
+    // for "who can do what," not two, regardless of signup status.
+    db
+      .prepare(
+        `SELECT i.id, i.email, i.role, t.name AS teamName, d.name AS departmentName
+           FROM invites i
+           LEFT JOIN teams t ON t.id = i.teamId
+           LEFT JOIN departments d ON d.id = t.departmentId
+          WHERE i.status = 'pending'
+          ORDER BY i.email`,
+      )
+      .all<{ id: string; email: string; role: "manager" | "employee"; teamName: string | null; departmentName: string | null }>(),
   ]);
 
   const rolesByUser = new Map<string, Role[]>();
@@ -467,7 +486,43 @@ export async function listPeople(session: SessionUser): Promise<PersonRow[]> {
     rolesByUser.set(r.userId, arr);
   }
 
-  return users.map((u) => ({ ...u, roles: rolesByUser.get(u.id) ?? [] }));
+  const existing: PersonRow[] = users.map((u) => ({
+    ...u,
+    roles: rolesByUser.get(u.id) ?? [],
+    isPending: false,
+  }));
+  const pendingRows: PersonRow[] = pending.map((p) => ({
+    id: p.id,
+    name: p.email, // no name until they sign up
+    email: p.email,
+    roles: p.role === "manager" ? ["employee", "manager"] : ["employee"],
+    teamName: p.teamName,
+    departmentName: p.departmentName,
+    isPending: true,
+  }));
+
+  return [...existing, ...pendingRows].sort((a, b) => a.name.localeCompare(b.name));
+}
+
+/**
+ * Change what a still-pending invite (someone who hasn't signed up yet)
+ * promises — just manager vs. employee, matching what invites actually
+ * support today. Unlike setUserRoles this can't touch ceo_hr/admin: those
+ * aren't part of the invite model, so pre-assigning them before someone
+ * exists as a real account isn't possible yet — grant those via this same
+ * screen after the person has signed up instead.
+ */
+export async function setPendingInviteRole(
+  session: SessionUser,
+  inviteId: string,
+  role: "manager" | "employee",
+): Promise<PersonRow[]> {
+  assertRole(session, "admin");
+  await getDB()
+    .prepare("UPDATE invites SET role = ? WHERE id = ? AND status = 'pending'")
+    .bind(role, inviteId)
+    .run();
+  return listPeople(session);
 }
 
 /**
