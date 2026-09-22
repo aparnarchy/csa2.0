@@ -32,10 +32,12 @@ export function AnalysisView({
   session,
   initial,
   initialInsight,
+  hasCareerHistory,
 }: {
   session: SessionUser;
   initial: EmployeeScores;
   initialInsight: string | null;
+  hasCareerHistory: boolean;
 }) {
   const router = useRouter();
   const [window, setWindow] = useState<Window>("3M");
@@ -200,6 +202,15 @@ export function AnalysisView({
               the current scores — never an aggregate, so no privacy floor
               to enforce here). */}
           <AIInsight text={aiText ?? undefined} />
+          {!hasCareerHistory && (
+            <button
+              type="button"
+              onClick={() => router.push("/career")}
+              className="-mt-1.5 px-1 text-left text-[11px] font-semibold italic text-brand active:opacity-70"
+            >
+              {COPY.shared.aiInsightCareerNudge}
+            </button>
+          )}
 
           <Card>
             <p className="mb-3 text-sm font-bold text-brand">Insights</p>

@@ -175,7 +175,12 @@ export async function getEmployeeInsight(
   window: Window,
   scores: EmployeeScores,
 ): Promise<string | null> {
-  if (!scores.enoughData || scores.overall === null) return null;
+  // Needs at least 3 answered check-ins of their own before an AI read is
+  // meaningful — 1-2 data points isn't a pattern, it's noise. Below that,
+  // returning null here falls through to AIInsight's own fallback copy
+  // ("...once enough check-ins are in"), so the card still explains why
+  // there's nothing yet rather than looking broken or empty.
+  if (!scores.enoughData || scores.overall === null || scores.responseCount < 3) return null;
 
   const facts = await gatherEmployeeInsightFacts(session, userId);
   if (!facts.enough) return null;

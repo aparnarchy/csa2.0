@@ -54,11 +54,15 @@ export function CatchUpFlow({
   }
   useEffect(() => () => clearTimers(), []);
 
-  function transitionTo(step: () => void) {
+  // `staysOnScreen` — see the identical note in CheckInFlow.tsx: false means
+  // this step is about to unmount the whole flow (finishing on the last
+  // card), so the card must NOT glide back in first, or it double-motions
+  // before the hand-off to the done screen.
+  function transitionTo(step: () => void, staysOnScreen: boolean) {
     clearTimers();
     setLeaving(true);
     leave.current = window.setTimeout(() => {
-      setLeaving(false);
+      if (staysOnScreen) setLeaving(false);
       step();
     }, LEAVE_MS);
   }
@@ -70,17 +74,18 @@ export function CatchUpFlow({
     // glide to the next unanswered one; on the last card, stay (Done finishes).
     if (idx + 1 < total) {
       clearTimers();
-      beat.current = window.setTimeout(() => transitionTo(() => setIdx(idx + 1)), HIGHLIGHT_MS);
+      beat.current = window.setTimeout(() => transitionTo(() => setIdx(idx + 1), true), HIGHLIGHT_MS);
     }
   }
 
   function skip() {
     if (leaving) return;
     pending.current.push(skipCheckInAction(q.assignmentId)); // retire it from the pending list
+    const isLast = idx + 1 >= total;
     transitionTo(() => {
-      if (idx + 1 < total) setIdx(idx + 1);
+      if (!isLast) setIdx(idx + 1);
       else void finish();
-    });
+    }, !isLast);
   }
 
   return (
@@ -176,7 +181,7 @@ export function CatchUpFlow({
           <NavArrow
             dir="prev"
             disabled={idx === 0 || leaving}
-            onClick={() => transitionTo(() => setIdx(idx - 1))}
+            onClick={() => transitionTo(() => setIdx(idx - 1), true)}
           />
           <span className="text-xs font-semibold text-ink-3">
             {idx + 1} of {total}
@@ -184,7 +189,7 @@ export function CatchUpFlow({
           <NavArrow
             dir="next"
             disabled={idx + 1 >= total || leaving}
-            onClick={() => transitionTo(() => setIdx(idx + 1))}
+            onClick={() => transitionTo(() => setIdx(idx + 1), true)}
           />
         </div>
       </div>

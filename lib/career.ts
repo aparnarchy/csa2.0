@@ -240,6 +240,19 @@ export async function deleteCareerCompany(
     .run();
 }
 
+/** Cheap existence check for the dashboard's career nudge — true once they've
+ *  added at least one past company via the career questionnaire. Deliberately
+ *  ignores the auto-populated current employment (name/role from onboarding):
+ *  that's not something they filled in on the Career tab itself. */
+export async function hasAnyCareerHistory(session: SessionUser, userId: string): Promise<boolean> {
+  assertOwner(session, userId);
+  const row = await getDB()
+    .prepare("SELECT 1 AS x FROM careerCompanies WHERE userId = ? LIMIT 1")
+    .bind(userId)
+    .first<{ x: number }>();
+  return Boolean(row);
+}
+
 export async function getCareerHistory(
   session: SessionUser,
   userId: string,

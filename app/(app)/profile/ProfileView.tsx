@@ -52,7 +52,11 @@ export function ProfileView({
   return (
     <ScreenShell
       active="profile"
-      navItems={isAdmin ? ADMIN_NAV : isCeoHr ? CEO_NAV : undefined}
+      // Currently viewing as a plain employee (via Switch view)? Show the
+      // standard employee nav (Profile/Insights/Wisdom/Inbox) — jumping back
+      // to the Admin or CEO/HR nav here would silently pull them out of the
+      // employee context they just switched into, which reads as broken.
+      navItems={viewingAsEmployee ? undefined : isAdmin ? ADMIN_NAV : isCeoHr ? CEO_NAV : undefined}
     >
       {/* Header — matches the dashboard look (mascot only in Play). CEO/HR
           gets no personal stat row here — their numbers are org-wide and

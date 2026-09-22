@@ -109,7 +109,8 @@ export const COPY = {
   },
   "shared": {
     "aiInsightTitle": "AI insight",
-    "aiInsightFallback": "No AI summary right now — the scores above are live, and a fresh summary will appear once enough check-ins are in."
+    "aiInsightFallback": "No AI summary right now — the scores above are live, and a fresh summary will appear once enough check-ins are in.",
+    "aiInsightCareerNudge": "Add your career history for even more accurate insights."
   },
   "inbox": {
     "eyebrow": "📥 Inbox",

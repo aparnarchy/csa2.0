@@ -51,12 +51,20 @@ export function CheckInFlow({
   }
   useEffect(() => () => clearTimers(), []);
 
-  /** Play the slide-out, then run the step (advance / go back / finish). */
-  function transitionTo(step: () => void) {
+  /**
+   * Play the slide-out, then run the step (advance / go back / finish).
+   * `staysOnScreen` controls whether this card comes back with the q-enter
+   * animation once the slide-out finishes — true for moving to another
+   * question in this same flow, false when the step is about to unmount the
+   * whole thing (finishing the last question). Without that distinction the
+   * last card would glide out, glide back in again, and THEN get swapped for
+   * the done screen — a double-motion glitch, not a smooth hand-off.
+   */
+  function transitionTo(step: () => void, staysOnScreen: boolean) {
     clearTimers();
     setLeaving(true);
     leave.current = window.setTimeout(() => {
-      setLeaving(false);
+      if (staysOnScreen) setLeaving(false);
       step();
     }, LEAVE_MS);
   }
@@ -75,7 +83,8 @@ export function CheckInFlow({
     setAnswers((a) => ({ ...a, [q.assignmentId]: optionKey }));
     pendingSubmit.current = submitCheckInAction(q.assignmentId, score);
     clearTimers();
-    beat.current = window.setTimeout(() => transitionTo(nextStep), HIGHLIGHT_MS);
+    const isLast = index + 1 >= total;
+    beat.current = window.setTimeout(() => transitionTo(nextStep, !isLast), HIGHLIGHT_MS);
   }
 
   return (
@@ -85,12 +94,16 @@ export function CheckInFlow({
         <NavArrow
           dir="prev"
           disabled={index === 0 || leaving}
-          onClick={() => transitionTo(() => setIndex(index - 1))}
+          onClick={() => transitionTo(() => setIndex(index - 1), true)}
         />
         <span className="text-xs font-bold text-ink-3">
           {index + 1} of {total}
         </span>
-        <NavArrow dir="next" disabled={!selected || leaving} onClick={() => transitionTo(nextStep)} />
+        <NavArrow
+          dir="next"
+          disabled={!selected || leaving}
+          onClick={() => transitionTo(nextStep, index + 1 < total)}
+        />
       </div>
 
       {/* greeting + question, vertically centred — glides in/out on change */}
