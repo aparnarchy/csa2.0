@@ -94,6 +94,21 @@ async function applyPendingInvite(db: D1Database, userId: string, email: string)
   await db.prepare("UPDATE invites SET status = 'accepted' WHERE id = ?").bind(invite.id).run();
 }
 
+/**
+ * If any team was pre-named to be led by this email (set when a team is
+ * created for someone who hasn't signed up yet — see migration 0015), make
+ * them that team's real manager now and clear the placeholder. Independent of
+ * applyPendingInvite: someone can be a pending team manager without also
+ * having a personal invite (e.g. they're already a member of another team via
+ * a different route), so this always runs, not only on an invite match.
+ */
+async function resolvePendingTeamManager(db: D1Database, userId: string, email: string): Promise<void> {
+  await db
+    .prepare("UPDATE teams SET managerId = ?, pendingManagerEmail = NULL WHERE lower(pendingManagerEmail) = lower(?)")
+    .bind(userId, email)
+    .run();
+}
+
 export function createAuth(db: D1Database) {
   const kysely = new Kysely({ dialect: new D1Dialect({ database: db }) });
 
@@ -149,6 +164,7 @@ export function createAuth(db: D1Database) {
               .bind(user.id)
               .run();
             await applyPendingInvite(db, user.id, user.email);
+            await resolvePendingTeamManager(db, user.id, user.email);
           },
         },
       },
