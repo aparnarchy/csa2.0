@@ -23,10 +23,17 @@ export default async function DashboardPage() {
   // Pick the highest-priority role this user holds
   const activeRole = ROLE_PRIORITY.find((r) => session.user.roles.includes(r)) ?? "employee";
 
-  // A manager who also has their own active employment (does check-ins
-  // themselves) can switch to see the employee experience instead — see
-  // the Profile screen's "Switch view" button.
-  if (activeRole === "manager" && session.user.hasEmployment && (await getViewMode()) === "employee") {
+  // Anyone whose highest-privilege role outranks plain employee, but who ALSO
+  // has their own active employment (does check-ins themselves), can switch
+  // to see the employee experience instead — see the Profile screen's
+  // "Switch view" button. Not just managers: an admin or CEO/HR account with
+  // real employment (e.g. the owner's own account) needs this too, or the
+  // switch silently does nothing for them.
+  if (
+    activeRole !== "employee" &&
+    session.user.hasEmployment &&
+    (await getViewMode()) === "employee"
+  ) {
     redirect(ROLE_ROUTES.employee);
   }
   redirect(ROLE_ROUTES[activeRole]);

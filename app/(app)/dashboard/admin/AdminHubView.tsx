@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { Card, GradientHeader, Mascot, ScreenShell } from "@/components/kit";
+import { ADMIN_NAV, Card, GradientHeader, Mascot, ScreenShell } from "@/components/kit";
 import { HEADER_MASCOT_SIZE } from "@/lib/mascot";
 import type { SessionUser } from "@/lib/types";
 
@@ -57,7 +57,7 @@ export function AdminHubView({ session }: { session: SessionUser }) {
   const firstName = (session.name || "there").trim().split(/\s+/)[0];
 
   return (
-    <ScreenShell wide noNav>
+    <ScreenShell wide active="admin" navItems={ADMIN_NAV}>
       {/* Header — Play: lavender + mascot; Professional: gradient, no mascot. */}
       {isPlay ? (
         <GradientHeader

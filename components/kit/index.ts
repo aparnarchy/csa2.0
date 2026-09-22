@@ -1,6 +1,6 @@
 /** Barrel export for the shared mobile-first component kit. */
 export { Card } from "./Card";
-export { ScreenShell, CEO_NAV, type NavItem } from "./ScreenShell";
+export { ScreenShell, CEO_NAV, ADMIN_NAV, type NavItem } from "./ScreenShell";
 export { GradientHeader } from "./GradientHeader";
 export { BackButton } from "./BackButton";
 export { Avatar } from "./Avatar";

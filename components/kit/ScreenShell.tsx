@@ -25,6 +25,16 @@ export const CEO_NAV: NavItem[] = [
   { key: "insights",  label: "Insights",  href: "/dashboard/ceo-hr/insights", icon: "📊" },
 ];
 
+/** Admin's nav — just a way back to Profile and to the Admin hub itself.
+    Deeper admin subpages (Questions, Org, Wisdom, Invites, People,
+    Recommendations) stay noNav with their own "← Admin" back link, matching
+    the existing console pattern; this only puts the hub itself one tap from
+    Profile instead of stranding admins in a nav-less area. */
+export const ADMIN_NAV: NavItem[] = [
+  { key: "profile", label: "Profile", href: "/profile",        icon: "👤" },
+  { key: "admin",   label: "Admin",   href: "/dashboard/admin", icon: "⚙️" },
+];
+
 /**
  * Mobile-first page frame: optional sticky header, scrollable content on the
  * lavender background, fixed bottom nav. Screens with their own gradient header

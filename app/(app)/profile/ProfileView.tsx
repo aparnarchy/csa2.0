@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
-import { BigScore, Card, CEO_NAV, GradientHeader, Mascot, ScreenShell } from "@/components/kit";
+import { ADMIN_NAV, BigScore, Card, CEO_NAV, GradientHeader, Mascot, ScreenShell } from "@/components/kit";
 import { HEADER_MASCOT_SIZE } from "@/lib/mascot";
 import { COPY, fill } from "@/lib/copy";
 import { setViewModeAction } from "@/lib/view-mode";
@@ -35,9 +35,11 @@ export function ProfileView({
   const firstName = (session.name || "there").trim().split(/\s+/)[0];
   const isManager = session.roles.includes("manager");
   const isCeoHr = session.roles.includes("ceo_hr");
-  // A person who both leads a team AND has their own active employment
-  // (does check-ins themselves) can switch between the two experiences.
-  const isDualRole = isManager && session.hasEmployment;
+  const isAdmin = session.roles.includes("admin");
+  // Anyone who holds an elevated role (manager/CEO-HR/admin) AND has their
+  // own active employment (does check-ins themselves) can switch between
+  // that role's view and the plain employee experience.
+  const isDualRole = (isManager || isCeoHr || isAdmin) && session.hasEmployment;
 
   async function switchView() {
     await setViewModeAction(viewingAsEmployee ? "manager" : "employee");
@@ -48,7 +50,10 @@ export function ProfileView({
   const hasTenure = Boolean(stats.careerTenure) && stats.careerTenure !== "—";
 
   return (
-    <ScreenShell active="profile" navItems={isCeoHr ? CEO_NAV : undefined}>
+    <ScreenShell
+      active="profile"
+      navItems={isAdmin ? ADMIN_NAV : isCeoHr ? CEO_NAV : undefined}
+    >
       {/* Header — matches the dashboard look (mascot only in Play). CEO/HR
           gets no personal stat row here — their numbers are org-wide and
           live in the dashboard-style card below, not blended into the
