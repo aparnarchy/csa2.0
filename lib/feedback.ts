@@ -166,7 +166,7 @@ export async function getManagerInbox(
       .prepare("SELECT * FROM managerActions WHERE teamId = ?")
       .bind(team)
       .all<ActionRow>(),
-    loadRecommendations(),
+    loadRecommendations("manager"),
   ]);
 
   const responders = new Set(ciRows.map((r) => r.userId)).size;
@@ -310,7 +310,7 @@ export async function submitManagerAction(
 
   const week = (await activeWeek(db)) ?? "";
   const id = `ma-${team}-${pid}`; // one action per pillar per team (idempotent)
-  const rec = pickRecommendation(await loadRecommendations(), questionId, pid);
+  const rec = pickRecommendation(await loadRecommendations("manager"), questionId, pid);
 
   if (input.decision === "yes") {
     const now = new Date();

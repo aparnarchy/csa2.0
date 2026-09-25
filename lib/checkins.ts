@@ -141,7 +141,7 @@ export async function getDueCheckIns(
     )
     .bind(userId, week)
     .all<AssignedQuestionRow>();
-  const recMap = await loadRecommendations();
+  const recMap = await loadRecommendations("employee");
   return results.map((r) => toCheckInQuestion(r, false, recMap));
 }
 
@@ -170,7 +170,7 @@ export async function getUnansweredCheckIns(
     )
     .bind(userId, week.weekId)
     .all<AssignedQuestionRow>();
-  const recMap = await loadRecommendations();
+  const recMap = await loadRecommendations("employee");
   return results.map((r) => toCheckInQuestion(r, true, recMap));
 }
 
@@ -297,7 +297,7 @@ export async function getLatestCheckIn(
   if (!row) return null;
   const isLow = row.score < 7;
   const recommendation = isLow
-    ? pickRecommendation(await loadRecommendations(), row.questionId, row.pillarId)
+    ? pickRecommendation(await loadRecommendations("employee"), row.questionId, row.pillarId)
     : null;
   return {
     questionText: row.questionText,
@@ -335,7 +335,7 @@ export async function getOpenRecommendation(
     questionId: row.questionId,
     pillarId: row.pillarId,
     questionText: row.questionText,
-    recommendation: pickRecommendation(await loadRecommendations(), row.questionId, row.pillarId),
+    recommendation: pickRecommendation(await loadRecommendations("employee"), row.questionId, row.pillarId),
     weekLabel: await weekLabel(db, row.weekId),
   };
 }
@@ -397,7 +397,7 @@ export async function getOpenRecommendations(
     )
     .bind(userId)
     .all<{ questionId: string; pillarId: PillarId; weekId: string; questionText: string }>();
-  const recMap = await loadRecommendations();
+  const recMap = await loadRecommendations("employee");
   const out: OpenRecommendationItem[] = [];
   for (const r of results) {
     out.push({
@@ -440,7 +440,7 @@ export async function getRecommendationHistory(
       followUpAt: string | null;
       questionText: string;
     }>();
-  const recMap = await loadRecommendations();
+  const recMap = await loadRecommendations("employee");
   const out: RecommendationHistoryItem[] = [];
   for (const r of results) {
     out.push({

@@ -196,7 +196,7 @@ export async function getCeoDashboard(
   // ANONYMISATION_FLOOR distinct people answered it in this scope+window.
   const [{ results: qRows }, recMap] = await Promise.all([
     db.prepare("SELECT * FROM questions").all<ScopeQuestionRow>(),
-    loadRecommendations(),
+    loadRecommendations("manager"),
   ]);
   const byQ = new Map<string, number[]>();
   const respondersByQ = new Map<string, Set<string>>();

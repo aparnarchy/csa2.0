@@ -71,7 +71,7 @@ async function computeAggregate(userId: string, window: Window): Promise<Employe
       weekId: string;
       startDate: string;
     }>(),
-    loadRecommendations(),
+    loadRecommendations("employee"),
   ]);
 
   const streak = sRes?.currentStreak ?? 0;

@@ -167,7 +167,7 @@ export async function getTeamAggregate(
   // team can clear the floor overall while one specific question doesn't.
   const [{ results: qRows }, recMap] = await Promise.all([
     db.prepare("SELECT * FROM questions").all<TeamQuestionRow>(),
-    loadRecommendations(),
+    loadRecommendations("manager"),
   ]);
   const byQ = new Map<string, number[]>();
   const respondersByQ = new Map<string, Set<string>>();

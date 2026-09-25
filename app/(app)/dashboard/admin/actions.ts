@@ -49,6 +49,7 @@ import {
   type PersonRow,
   type QuestionInput,
   type RecommendationRow,
+  type RecommendationAudience,
   type TeamInput,
   type WisdomContentInput,
   type WisdomModuleInput,
@@ -108,15 +109,19 @@ export async function getRecommendationsAction(): Promise<RecommendationRow[]> {
 
 export async function upsertRecommendationAction(
   questionId: string,
+  audience: RecommendationAudience,
   text: string,
 ): Promise<RecommendationRow[]> {
   const user = await requireAdmin();
-  return upsertRecommendation(user, questionId, text);
+  return upsertRecommendation(user, questionId, audience, text);
 }
 
-export async function clearRecommendationAction(questionId: string): Promise<RecommendationRow[]> {
+export async function clearRecommendationAction(
+  questionId: string,
+  audience: RecommendationAudience,
+): Promise<RecommendationRow[]> {
   const user = await requireAdmin();
-  return clearRecommendation(user, questionId);
+  return clearRecommendation(user, questionId, audience);
 }
 
 // ── Org structure ─────────────────────────────────────────────────────────────

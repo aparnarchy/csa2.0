@@ -10,6 +10,8 @@
 import { Resend } from "resend";
 import { getDB } from "@/lib/db";
 import { assertRole } from "@/lib/access-control";
+import type { RecommendationAudience } from "@/lib/recommendations";
+export type { RecommendationAudience } from "@/lib/recommendations";
 import type {
   ContentType,
   Department,
@@ -292,12 +294,15 @@ export async function importQuestionsCsv(
 // so the app never breaks while these are still being filled in.
 // ─────────────────────────────────────────────────────────────────────────────
 
-/** One question plus whatever recommendation text is on file for it, if any. */
+/** One question plus whatever recommendation text is on file for it, if any —
+ *  separately for each audience (the employee reading their own low score vs
+ *  the manager coaching a team member on it). */
 export interface RecommendationRow {
   questionId: string;
   questionText: string;
   pillarId: PillarId;
-  text: string | null;
+  employeeText: string | null;
+  managerText: string | null;
 }
 
 interface QuestionForRecRow {
@@ -306,30 +311,35 @@ interface QuestionForRecRow {
   pillarId: PillarId;
 }
 
-/** Every question, each paired with its recommendation text (or null if the
- *  admin hasn't written one yet). Admin only. */
+/** Every question, each paired with its employee and manager recommendation
+ *  text (or null if the admin hasn't written one yet). Admin only. */
 export async function getRecommendationsCms(session: SessionUser): Promise<RecommendationRow[]> {
   assertRole(session, "admin");
   const db = getDB();
   const [{ results: qRows }, { results: recRows }] = await Promise.all([
     db.prepare("SELECT id, text, pillarId FROM questions").all<QuestionForRecRow>(),
-    db.prepare("SELECT questionId, text FROM recommendations").all<{ questionId: string; text: string }>(),
+    db
+      .prepare("SELECT questionId, audience, text FROM recommendations")
+      .all<{ questionId: string; audience: RecommendationAudience; text: string }>(),
   ]);
-  const recByQ = new Map(recRows.map((r) => [r.questionId, r.text]));
+  const employeeByQ = new Map(recRows.filter((r) => r.audience === "employee").map((r) => [r.questionId, r.text]));
+  const managerByQ = new Map(recRows.filter((r) => r.audience === "manager").map((r) => [r.questionId, r.text]));
   return qRows
     .map((q) => ({
       questionId: q.id,
       questionText: q.text,
       pillarId: q.pillarId,
-      text: recByQ.get(q.id) ?? null,
+      employeeText: employeeByQ.get(q.id) ?? null,
+      managerText: managerByQ.get(q.id) ?? null,
     }))
     .sort((a, b) => PILLAR_RANK[a.pillarId] - PILLAR_RANK[b.pillarId] || a.questionId.localeCompare(b.questionId));
 }
 
-/** Write (or overwrite) the recommendation for one question. Admin only. */
+/** Write (or overwrite) one audience's recommendation for one question. Admin only. */
 export async function upsertRecommendation(
   session: SessionUser,
   questionId: string,
+  audience: RecommendationAudience,
   text: string,
 ): Promise<RecommendationRow[]> {
   assertRole(session, "admin");
@@ -341,32 +351,36 @@ export async function upsertRecommendation(
     .first<{ pillarId: PillarId }>();
   if (!q) throw new Error("Unknown question.");
   const existing = await db
-    .prepare("SELECT id FROM recommendations WHERE questionId = ?")
-    .bind(questionId)
+    .prepare("SELECT id FROM recommendations WHERE questionId = ? AND audience = ?")
+    .bind(questionId, audience)
     .first<{ id: string }>();
   if (existing) {
     await db.prepare("UPDATE recommendations SET text = ? WHERE id = ?").bind(text.trim(), existing.id).run();
   } else {
     await db
       .prepare(
-        `INSERT INTO recommendations (id, questionId, pillarId, scoreBandMin, scoreBandMax, text)
-         VALUES (?, ?, ?, 0, 6, ?)`,
+        `INSERT INTO recommendations (id, questionId, pillarId, scoreBandMin, scoreBandMax, text, audience)
+         VALUES (?, ?, ?, 0, 6, ?, ?)`,
       )
-      .bind(`rec-${questionId}`, questionId, q.pillarId, text.trim())
+      .bind(`rec-${questionId}-${audience}`, questionId, q.pillarId, text.trim(), audience)
       .run();
   }
   return getRecommendationsCms(session);
 }
 
-/** Remove a question's recommendation, reverting it to the generic pillar
- *  placeholder. Admin only. */
+/** Remove one audience's recommendation for a question, reverting it to the
+ *  generic pillar placeholder. Admin only. */
 export async function clearRecommendation(
   session: SessionUser,
   questionId: string,
+  audience: RecommendationAudience,
 ): Promise<RecommendationRow[]> {
   assertRole(session, "admin");
   const db = getDB();
-  await db.prepare("DELETE FROM recommendations WHERE questionId = ?").bind(questionId).run();
+  await db
+    .prepare("DELETE FROM recommendations WHERE questionId = ? AND audience = ?")
+    .bind(questionId, audience)
+    .run();
   return getRecommendationsCms(session);
 }
 

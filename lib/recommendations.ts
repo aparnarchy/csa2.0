@@ -11,10 +11,18 @@ import { getDB } from "@/lib/db";
 import { getSampleRecommendation } from "@/lib/data";
 import type { PillarId } from "@/lib/types";
 
-/** All admin-set recommendation texts, keyed by questionId. */
-export async function loadRecommendations(): Promise<Map<string, string>> {
+export type RecommendationAudience = "employee" | "manager";
+
+/** All admin-set recommendation texts for one audience, keyed by questionId.
+ *  Employee and manager read different coaching text for the same question
+ *  (one addressed to them, one addressed to their manager about them), so
+ *  every caller must say which audience it's rendering for. */
+export async function loadRecommendations(
+  audience: RecommendationAudience,
+): Promise<Map<string, string>> {
   const { results } = await getDB()
-    .prepare("SELECT questionId, text FROM recommendations")
+    .prepare("SELECT questionId, text FROM recommendations WHERE audience = ?")
+    .bind(audience)
     .all<{ questionId: string; text: string }>();
   return new Map(results.map((r) => [r.questionId, r.text]));
 }
