@@ -18,6 +18,7 @@
  */
 
 import { getDB } from "./db";
+import { DAILY_QUESTIONS } from "./testing-mode";
 
 type DB = ReturnType<typeof getDB>;
 
@@ -33,6 +34,10 @@ const QUESTIONS_PER_WEEK = 2;
 const WORK_START_HOUR = 9; // 9am
 const WORK_END_HOUR = 18; // 6pm (exclusive) — releases land in [9:00, 17:59]
 const WORK_DAYS = 5; // Mon–Fri (week starts Monday, so day offsets 0..4)
+
+// Testing mode (lib/testing-mode.ts): one question every day, Mon–Sun, released
+// at 03:30 UTC = 9:00am India time. Today's is released immediately.
+const DAILY_RELEASE_MS = 3 * 3_600_000 + 30 * 60_000;
 
 export interface ActiveWeek {
   weekId: string;
@@ -115,6 +120,7 @@ export async function ensureActiveWeek(db: DB, now: Date = new Date()): Promise<
  * logged-in user always has at least one live question rather than an empty week.
  */
 async function assignForUser(db: DB, userId: string, week: ActiveWeek, now: Date): Promise<number> {
+  if (DAILY_QUESTIONS) return assignDailyForUser(db, userId, week, now);
   const existing = await db
     .prepare("SELECT COUNT(*) AS n FROM checkInAssignments WHERE userId = ? AND weekId = ?")
     .bind(userId, week.weekId)
@@ -155,6 +161,58 @@ async function assignForUser(db: DB, userId: string, week: ActiveWeek, now: Date
          VALUES (?, ?, ?, ?, ?, 'pending')`,
       )
       .bind(id, userId, qid, week.weekId, isoDateTime(slots[i]))
+      .run();
+    if (res.meta.changes) created++;
+  }
+  return created;
+}
+
+/**
+ * Testing-mode variant of assignForUser: make sure every day from today to
+ * Sunday has one question for this user. Days that already have one (e.g. a
+ * question from the normal 2-per-week schedule) are left alone; past days are
+ * never back-filled. Same candidate rules (active, not already this week,
+ * last week's last) and same idempotent ids as the weekly path.
+ */
+async function assignDailyForUser(db: DB, userId: string, week: ActiveWeek, now: Date): Promise<number> {
+  const todayOffset = Math.floor((now.getTime() - week.mondayMs) / DAY_MS);
+  const { results: existing } = await db
+    .prepare("SELECT substr(releaseAt, 1, 10) AS day FROM checkInAssignments WHERE userId = ? AND weekId = ?")
+    .bind(userId, week.weekId)
+    .all<{ day: string }>();
+  const coveredDays = new Set(existing.map((r) => r.day));
+
+  const emptyDays: number[] = [];
+  for (let d = Math.max(0, todayOffset); d < 7; d++) {
+    if (!coveredDays.has(isoDate(week.mondayMs + d * DAY_MS))) emptyDays.push(d);
+  }
+  if (emptyDays.length === 0) return 0;
+
+  const prevWeekId = weekIdForMonday(week.mondayMs - WEEK_MS);
+  const { results } = await db
+    .prepare(
+      `SELECT id FROM questions
+        WHERE isActive = 1
+          AND id NOT IN (SELECT questionId FROM checkInAssignments WHERE userId = ? AND weekId = ?)
+        ORDER BY
+          (id IN (SELECT questionId FROM checkInAssignments WHERE userId = ? AND weekId = ?)) ASC,
+          RANDOM()
+        LIMIT ?`,
+    )
+    .bind(userId, week.weekId, userId, prevWeekId, emptyDays.length)
+    .all<{ id: string }>();
+
+  let created = 0;
+  for (let i = 0; i < results.length; i++) {
+    const d = emptyDays[i];
+    const releaseMs = d === todayOffset ? now.getTime() : week.mondayMs + d * DAY_MS + DAILY_RELEASE_MS;
+    const qid = results[i].id;
+    const res = await db
+      .prepare(
+        `INSERT OR IGNORE INTO checkInAssignments (id, userId, questionId, weekId, releaseAt, status)
+         VALUES (?, ?, ?, ?, ?, 'pending')`,
+      )
+      .bind(`asg-${week.weekId}-${userId}-${qid}`, userId, qid, week.weekId, isoDateTime(releaseMs))
       .run();
     if (res.meta.changes) created++;
   }

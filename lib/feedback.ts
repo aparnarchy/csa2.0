@@ -24,9 +24,10 @@ import type {
 } from "./data";
 import { PILLARS, PILLAR_ORDER } from "./pillars";
 import { ANONYMISATION_FLOOR } from "./scoring";
+import { MANAGER_ACTION_DELAY_WEEKS } from "./testing-mode";
 import type { PillarId, SessionUser } from "./types";
 
-const DELAY_DAYS = 28; // 4 weeks
+const DELAY_DAYS = MANAGER_ACTION_DELAY_WEEKS * 7; // 4 weeks (1 in testing mode)
 
 function round1(n: number): number {
   return Math.round(n * 10) / 10;

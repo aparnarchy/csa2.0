@@ -16,6 +16,9 @@ import type { SessionUser } from "@/lib/types";
 
 type Tab = "open" | "resolved";
 
+/** "1 week" / "4 weeks" — the delay as shown in the footnote and warning. */
+const DELAY_LABEL = `${MANAGER_ACTION_DELAY_WEEKS} ${MANAGER_ACTION_DELAY_WEEKS === 1 ? "week" : "weeks"}`;
+
 /** "Visible to team from <Month YYYY>", MANAGER_ACTION_DELAY_WEEKS from now. */
 function visibleFromLabel(): string {
   const d = new Date();
@@ -174,7 +177,7 @@ export function ManagerInboxView({ session, initial }: { session: SessionUser; i
           )}
 
           <p className="pb-2 text-center text-[11px] text-ink-4">
-            {fill(COPY.managerInbox.footnote, { weeks: MANAGER_ACTION_DELAY_WEEKS })}
+            {fill(COPY.managerInbox.footnote, { weeks: DELAY_LABEL })}
           </p>
         </>
       )}
@@ -305,7 +308,7 @@ function OpenActionCard({
             className="w-full resize-none rounded-2xl border border-lav-mid bg-white p-3 text-sm text-ink outline-none placeholder:text-ink-4 focus:border-brand"
           />
           <p className="mt-2 text-[11px] leading-snug text-warn">
-            {fill(COPY.managerInbox.delayWarning, { weeks: MANAGER_ACTION_DELAY_WEEKS })}
+            {fill(COPY.managerInbox.delayWarning, { weeks: DELAY_LABEL })}
           </p>
           <div className="mt-2 flex gap-2">
             <button

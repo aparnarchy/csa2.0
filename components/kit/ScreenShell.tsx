@@ -13,7 +13,7 @@ const NAV: NavItem[] = [
   // Route through the role-router (same as login) so managers land on the
   // manager dashboard, CEO/HR on theirs, etc. — not always the employee one.
   { key: "insights", label: "Insights", href: "/dashboard",          icon: "📊" },
-  { key: "wisdom",   label: "Wisdom",   href: "/wisdom",             icon: "📚" },
+  // Wisdom tab hidden for now (pages still exist at /wisdom); re-add this line to restore.
   { key: "inbox",    label: "Inbox",    href: "/inbox",              icon: "📥" },
 ];
 

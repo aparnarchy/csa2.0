@@ -1208,8 +1208,9 @@ export async function submitManagerAction(
   void input;
 }
 
-/** Weeks of delay before a submitted manager action becomes visible to employees. */
-export const MANAGER_ACTION_DELAY_WEEKS = 4;
+/** Weeks of delay before a submitted manager action becomes visible to employees
+    (4 normally, 1 in testing mode — see lib/testing-mode.ts). */
+export { MANAGER_ACTION_DELAY_WEEKS } from "./testing-mode";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Reviewing Manager (Phase 4.1 / 4.2): a senior leader reviews the managers who
