@@ -68,7 +68,20 @@ export async function getTeamAggregate(
       .first<{ id: string }>();
     resolvedTeamId = t?.id ?? null;
   }
-  if (!resolvedTeamId) return empty;
+  if (!resolvedTeamId) {
+    return {
+      ...empty,
+      reason:
+        "You're not linked to a team yet. Once your admin makes you a team's manager, its results will show here.",
+    };
+  }
+
+  // Say exactly what's missing, so an empty dashboard doesn't look broken.
+  // Counts only — never who — so this stays within the anonymity rules (the
+  // same headcount already shows on the dashboard and inbox once data exists).
+  const whose = teamId === "my-team" || !elevated ? "Your team" : "This team";
+  const privacy = "This keeps everyone's answers anonymous.";
+  const people = (n: number) => `${n} ${n === 1 ? "person" : "people"}`;
 
   // Reportees = active employments on the team.
   const memRes = await db
@@ -76,7 +89,13 @@ export async function getTeamAggregate(
     .bind(resolvedTeamId)
     .first<{ n: number }>();
   const reporteeCount = memRes?.n ?? 0;
-  if (reporteeCount < ANONYMISATION_FLOOR) return { ...empty, reporteeCount };
+  if (reporteeCount < ANONYMISATION_FLOOR) {
+    return {
+      ...empty,
+      reporteeCount,
+      reason: `${whose} has ${people(reporteeCount)} in the app so far. Results appear once at least ${ANONYMISATION_FLOOR} have joined and checked in. ${privacy}`,
+    };
+  }
 
   // Team check-ins, scoped to active employment (so only during-employment
   // counts). Reads this team's full history — can't bound this to the
@@ -98,7 +117,11 @@ export async function getTeamAggregate(
   // Anonymisation floor on responses: need >=3 responses from >=3 distinct people.
   const distinctResponders = new Set(allRows.map((r) => r.userId)).size;
   if (allRows.length < ANONYMISATION_FLOOR || distinctResponders < ANONYMISATION_FLOOR) {
-    return { ...empty, reporteeCount };
+    return {
+      ...empty,
+      reporteeCount,
+      reason: `${whose} has ${people(reporteeCount)}, and ${distinctResponders} ${distinctResponders === 1 ? "has" : "have"} checked in so far. Results appear once at least ${ANONYMISATION_FLOOR} have. ${privacy}`,
+    };
   }
 
   // Restrict to the most recent N weeks that have responses.
