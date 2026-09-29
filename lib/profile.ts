@@ -52,7 +52,9 @@ export async function getProfileStats(
       db.prepare("SELECT badge FROM user_badges WHERE userId = ?").bind(userId).all<{ badge: string }>(),
       db.prepare("SELECT weekId FROM weeklyWindows ORDER BY startDate DESC LIMIT 10").all<{ weekId: string }>(),
       db.prepare("SELECT DISTINCT weekId FROM checkIns WHERE userId = ?").bind(userId).all<{ weekId: string }>(),
-      db.prepare("SELECT COUNT(*) AS n FROM weeklyWindows").first<{ n: number }>(),
+      db
+        .prepare("SELECT weekId, startDate, endDate FROM weeklyWindows")
+        .all<{ weekId: string; startDate: string; endDate: string }>(),
       db
         .prepare("SELECT startDate, endDate FROM careerCompanies WHERE userId = ?")
         .bind(userId)
@@ -63,7 +65,20 @@ export async function getProfileStats(
 
   const answered = new Set(answeredRes.results.map((r) => r.weekId));
   const recentWeeks = winRes.results.map((w) => answered.has(w.weekId)).reverse(); // oldest → newest
-  const participationPct = totalWin?.n ? Math.round((answered.size / totalWin.n) * 100) : 0;
+  // Participation counts only the weeks since this person was around — from
+  // their job's start or their first check-in, whichever is earlier — up to
+  // today. Counting every week the app has ever had made a new joiner who
+  // never missed a week look like they'd barely taken part.
+  const today = new Date().toISOString().slice(0, 10);
+  const startById = new Map(totalWin.results.map((w) => [w.weekId, w.startDate]));
+  const firstCheckIn = [...answered].map((wk) => startById.get(wk)).filter(Boolean).sort()[0];
+  const since = [emp?.startedAt?.slice(0, 10), firstCheckIn].filter(Boolean).sort()[0] as string | undefined;
+  const eligibleWeeks = since
+    ? totalWin.results.filter((w) => w.endDate >= since && w.startDate <= today).length
+    : 0;
+  const participationPct = eligibleWeeks
+    ? Math.min(100, Math.round((answered.size / eligibleWeeks) * 100))
+    : 0;
 
   const tenureMonths =
     monthsBetween(emp?.startedAt ?? null, null) +
@@ -73,6 +88,7 @@ export async function getProfileStats(
     role: emp?.designation ?? null,
     company: emp?.companyName ?? null,
     overallScore: scores.overall ?? 0,
+    hasScore: scores.enoughData && scores.overall !== null,
     delta: scores.delta ?? 0,
     streak: streak?.currentStreak ?? 0,
     longestStreak: streak?.longestStreak ?? 0,

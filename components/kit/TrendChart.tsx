@@ -47,7 +47,8 @@ function LegendDot({ color, dashed, label }: { color: string; dashed?: boolean; 
 }
 
 /**
- * Trend card: area-gradient line with Org/Dept/Industry reference lines, plus
+ * Trend card: area-gradient line (with Org/Dept/Industry reference lines once
+ * real benchmarks exist; a week with no answers for a pillar is a gap), plus
  * pillar + time filters. The TIME filter is controlled by the parent (so it can
  * refresh score + pillars + chart together); the PILLAR filter is local.
  */
@@ -92,11 +93,12 @@ export function TrendChart({
             <YAxis domain={[0, 10]} ticks={[0, 5, 10]} tick={{ fontSize: 10, fill: "#C8C8DC" }} tickLine={false} axisLine={false} />
             <Tooltip
               contentStyle={{ borderRadius: 12, border: "1px solid #EDE8FF", fontSize: 12 }}
-              formatter={(v) => [Number(v).toFixed(1), meta.label]}
+              formatter={(v) => [v == null ? "No answers" : Number(v).toFixed(1), meta.label]}
             />
-            {last && <ReferenceLine y={last.orgAvg} stroke="#C4BCFF" strokeDasharray="4 3" />}
-            {last && <ReferenceLine y={last.deptAvg} stroke="#7EC8A4" strokeDasharray="3 4" />}
-            {last && <ReferenceLine y={last.industryAvg} stroke="#F0B429" strokeDasharray="2 5" />}
+            {/* Benchmark lines only once real benchmarks exist (null until then). */}
+            {last?.orgAvg != null && <ReferenceLine y={last.orgAvg} stroke="#C4BCFF" strokeDasharray="4 3" />}
+            {last?.deptAvg != null && <ReferenceLine y={last.deptAvg} stroke="#7EC8A4" strokeDasharray="3 4" />}
+            {last?.industryAvg != null && <ReferenceLine y={last.industryAvg} stroke="#F0B429" strokeDasharray="2 5" />}
             <Area
               type="monotone"
               dataKey={series}
@@ -112,9 +114,11 @@ export function TrendChart({
 
       <div className="mt-2.5 flex flex-wrap gap-2.5">
         <LegendDot color={color} label="Your score" />
-        <LegendDot color="#C4BCFF" dashed label={`Org (${last?.orgAvg ?? "–"})`} />
-        <LegendDot color="#7EC8A4" dashed label={`Dept (${last?.deptAvg ?? "–"})`} />
-        <LegendDot color="#F0B429" dashed label={`Industry (${last?.industryAvg ?? "–"})`} />
+        {last?.orgAvg != null && <LegendDot color="#C4BCFF" dashed label={`Org (${last.orgAvg})`} />}
+        {last?.deptAvg != null && <LegendDot color="#7EC8A4" dashed label={`Dept (${last.deptAvg})`} />}
+        {last?.industryAvg != null && (
+          <LegendDot color="#F0B429" dashed label={`Industry (${last.industryAvg})`} />
+        )}
       </div>
     </div>
   );

@@ -1,3 +1,4 @@
+import { COPY } from "@/lib/copy";
 import { PILLARS } from "@/lib/pillars";
 import type { PillarScore } from "@/lib/data";
 
@@ -12,8 +13,9 @@ function ordinal(n: number): string {
 /**
  * A pillar tile for the single-row 4-across grid — uniform pastel-lavender chip
  * with purple text (the score colour bands are intentionally not applied here,
- * per the owner's design direction). Below the floor (`score === null`) it shows
- * "not enough data", not a 0.
+ * per the owner's design direction). With no data (`score === null` — no
+ * answers yet, or a team below the anonymity floor) it shows 0.0 in grey with
+ * "No data yet", never a coloured score.
  *
  * Mobile-only: at 375px the row leaves ~72px per tile, so type is small, content
  * is centred, and both the label and "47th percentile" wrap to two lines. The
@@ -43,10 +45,10 @@ export function PillarCard({
         onClick={onClick}
         className="flex w-full flex-col items-center rounded-2xl bg-lav-soft px-2 pb-2.5 pt-2.5"
       >
-        <p className="font-display text-[21px] font-extrabold leading-none text-brand/30">—</p>
+        <p className="font-display text-[21px] font-extrabold leading-none text-ink-4/50">0.0</p>
         {label}
         <p className="mt-0.5 text-center text-[8px] leading-[1.25] text-ink-4">
-          Not enough data
+          {COPY.mood.pillarEmpty}
         </p>
       </button>
     );

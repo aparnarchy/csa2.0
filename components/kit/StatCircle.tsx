@@ -1,3 +1,5 @@
+import { scoreLevel } from "@/lib/mood";
+
 /**
  * A wavy, gently morphing "blob" score circle — Bright Spot / Watch Out. Two
  * softer blobs float + morph behind it. Both labels curve (icon-led title along
@@ -15,8 +17,13 @@ export function StatCircle({
   score: number;
   pillar: string;
 }) {
-  const titleColor = kind === "bright" ? "#FFD36B" : "#FF9E9E";
-  const icon = kind === "bright" ? "☀️" : "❗";
+  // Icon and colour follow the score's own level (lib/mood.ts), not just which
+  // slot it's in: the sun is for a genuinely good pillar, the red "!" for a
+  // genuinely low one. A so-so highest pillar or a good lowest one gets a
+  // neutral look, matching its "Strongest area" / "Lowest area" label.
+  const good = scoreLevel(score) === "good";
+  const titleColor = kind === "bright" ? (good ? "#FFD36B" : "#FFFFFF") : good ? "#FFFFFF" : "#FF9E9E";
+  const icon = kind === "bright" ? (good ? "☀️" : "💪") : good ? "🔎" : "❗";
   const arcId = `arc-${kind}`;
 
   // The pillar sits on a fixed-length arc — roughly 91 units of this 100-wide

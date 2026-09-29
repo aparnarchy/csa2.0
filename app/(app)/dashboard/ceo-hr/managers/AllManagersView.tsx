@@ -118,8 +118,12 @@ function ManagerRow({
             <p className="truncate font-display text-base font-black text-ink">{manager.name}</p>
           </div>
           <p className="mt-0.5 text-[11px] text-ink-3">
-            {manager.percentile}th percentile
-            {manager.resolutionPct != null && ` · ${manager.resolutionPct}% actions resolved`}
+            {[
+              manager.percentile != null && `${manager.percentile}th percentile`,
+              manager.resolutionPct != null && `${manager.resolutionPct}% actions resolved`,
+            ]
+              .filter(Boolean)
+              .join(" · ")}
           </p>
         </div>
         <span className="flex-shrink-0 text-brand-light">→</span>

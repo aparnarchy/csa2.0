@@ -6,11 +6,11 @@ import {
   AIInsight,
   BigScore,
   Card,
+  EmptyScoreCard,
   GradientHeader,
   InsightBarRow,
   LeaverNote,
   Mascot,
-  NotEnoughData,
   PillarCard,
   RecommendationCard,
   ScoreCircles,
@@ -23,6 +23,8 @@ import { COPY, fill } from "@/lib/copy";
 import { getTeamAggregateAction, getTeamInsightAction } from "./actions";
 import { HEADER_MASCOT_SIZE, mascotForScore } from "@/lib/mascot";
 import { PILLARS, STRENGTH_CUTOFF } from "@/lib/pillars";
+import { buildInsight } from "@/lib/insight";
+import { ANONYMISATION_FLOOR } from "@/lib/scoring";
 import type { PillarId, SessionUser } from "@/lib/types";
 import { TeamPillarDetailView } from "./TeamPillarDetailView";
 
@@ -80,15 +82,13 @@ export function ManagerDashboardView({
     return weakest?.recommendation ?? getSampleRecommendation(pid).text;
   };
 
-  // Team-level Bright Spot / Watch Out — same pattern as the employee dashboard,
-  // just computed from the team's pillar averages instead of one person's.
-  const scoredPillars = data.pillars.filter((p) => p.score !== null);
-  const brightPillar = scoredPillars.length
-    ? [...scoredPillars].sort((a, b) => (b.score ?? 0) - (a.score ?? 0))[0]
-    : null;
-  const watchPillar = scoredPillars.length
-    ? [...scoredPillars].sort((a, b) => (a.score ?? 0) - (b.score ?? 0))[0]
-    : null;
+  // Team-level highest / lowest pillar — same rules as the employee dashboard
+  // (lib/insight.ts), so a low team pillar is never labelled a bright spot.
+  const { brightSpot: brightPillar, watchOut: watchPillar } = buildInsight(
+    data.enoughData ? data.teamScore : null,
+    data.delta,
+    data.pillars,
+  );
 
   // Strengths & Concerns — same question-level shape as every other
   // dashboard (real per-question team scores, anonymised in getTeamAggregate:
@@ -145,7 +145,9 @@ export function ManagerDashboardView({
       )}
 
       {!data.enoughData || data.teamScore === null ? (
-        <NotEnoughData message={data.reason} />
+        // Starting state: 0.0 in grey plus exactly what's missing (who needs
+        // to join / check in) — no mood, no spots, until there's real data.
+        <EmptyScoreCard message={data.reason ?? fill(COPY.mood.noDataTeam, { floor: ANONYMISATION_FLOOR })} />
       ) : (
         <>
           {/* Bright Spot / Watch Out — Play: the same animated wavy blobs as the
@@ -154,19 +156,7 @@ export function ManagerDashboardView({
               only shows this in Play). */}
           {isPlay && brightPillar && watchPillar && (
             <div className="mb-7 pt-4">
-              <ScoreCircles
-                bright={{
-                  score: brightPillar.score!,
-                  pillar: PILLARS[brightPillar.pillarId].label,
-                  pillarId: brightPillar.pillarId,
-                }}
-                watch={{
-                  score: watchPillar.score!,
-                  pillar: PILLARS[watchPillar.pillarId].label,
-                  pillarId: watchPillar.pillarId,
-                }}
-                onSelect={setSelectedPillar}
-              />
+              <ScoreCircles bright={brightPillar} watch={watchPillar} onSelect={setSelectedPillar} />
             </div>
           )}
 

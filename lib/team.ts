@@ -154,7 +154,7 @@ export async function getTeamAggregate(
     const overall = round1(avg(wkRows.map((r) => r.score)));
     const pillarAvg = (pid: PillarId) => {
       const ps = wkRows.filter((r) => r.pillarId === pid).map((r) => r.score);
-      return ps.length ? round1(avg(ps)) : overall;
+      return ps.length ? round1(avg(ps)) : null;
     };
     return {
       weekId: wk,
@@ -164,9 +164,10 @@ export async function getTeamAggregate(
       growth: pillarAvg("growth"),
       culture: pillarAvg("culture"),
       compensation: pillarAvg("compensation"),
-      orgAvg: 6.7,
-      deptAvg: 6.9,
-      industryAvg: 6.2,
+      // No real benchmarks yet — hidden, not invented.
+      orgAvg: null,
+      deptAvg: null,
+      industryAvg: null,
     };
   });
 
@@ -184,9 +185,9 @@ export async function getTeamAggregate(
     return {
       pillarId: pid,
       score,
-      delta: prev ? round1(last[pid] - prev[pid]) : null,
+      delta: prev && last[pid] !== null && prev[pid] !== null ? round1(last[pid]! - prev[pid]!) : null,
       band: scoreBand(score),
-      percentile: Math.max(20, Math.min(98, Math.round(score * 10 + 4))), // sample derivation
+      percentile: null, // no real benchmark yet
       responseCount: ps.length,
     };
   });
@@ -265,10 +266,12 @@ function distribution(scores: number[], q: TeamQuestionRow): QuestionInsight["re
 
 export interface TeamPillarDetail {
   pillarId: PillarId;
-  score: number;
-  delta: number;
-  percentile: number;
-  band: ReturnType<typeof scoreBand>;
+  /** null = no answers for this pillar yet (or below the anonymity floor). */
+  score: number | null;
+  delta: number | null;
+  /** null until there's a real benchmark to compare against. */
+  percentile: number | null;
+  band: ReturnType<typeof scoreBand> | null;
   trend: TrendPoint[];
   questions: QuestionInsight[];
 }
@@ -291,10 +294,10 @@ export async function getTeamPillarDetail(
   const p = agg.pillars.find((x) => x.pillarId === pillarId);
   return {
     pillarId,
-    score: p?.score ?? 0,
-    delta: p?.delta ?? 0,
-    percentile: p?.percentile ?? 0,
-    band: p?.band ?? scoreBand(0),
+    score: p?.score ?? null,
+    delta: p?.delta ?? null,
+    percentile: p?.percentile ?? null,
+    band: p?.band ?? null,
     trend: agg.trend,
     questions: agg.questions.filter((q) => q.pillarId === pillarId),
   };

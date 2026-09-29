@@ -8,6 +8,8 @@ import {
   Mascot,
   SegmentedToggle,
   TrendChart,
+  PillarScoreBlock,
+  emptyInsightLine,
 } from "@/components/kit";
 import { PILLARS, STRENGTH_CUTOFF } from "@/lib/pillars";
 import { type Window } from "@/lib/data";
@@ -41,7 +43,6 @@ export function PillarDetailView({
   const strengths = questions.filter((q) => q.score >= STRENGTH_CUTOFF).slice(0, 3);
   const concerns = questions.filter((q) => q.score < STRENGTH_CUTOFF).reverse().slice(0, 3);
   const shown = tab === "strengths" ? strengths : concerns;
-  const up = (detail?.delta ?? 0) >= 0;
 
   return (
     <div className="screen-enter space-y-3.5">
@@ -49,21 +50,9 @@ export function PillarDetailView({
         eyebrow="Pillar"
         title={meta.label}
         back={{ label: "Dashboard", onClick: onBack }}
-        avatar={detail ? <Mascot state={mascotForScore(detail.score, true)} size={HEADER_MASCOT_SIZE} /> : undefined}
+        avatar={detail ? <Mascot state={mascotForScore(detail.score, detail.score !== null)} size={HEADER_MASCOT_SIZE} /> : undefined}
       >
-        {detail && (
-          <div className="mt-3 flex items-end gap-3.5">
-            <span className="font-display text-[56px] font-black leading-none text-[#8B82F6]">
-              {detail.score.toFixed(1)}
-            </span>
-            <div className="pb-2.5">
-              <div className="text-sm font-bold text-ink-2">
-                {up ? "↑" : "↓"} {Math.abs(detail.delta ?? 0).toFixed(1)}
-              </div>
-              <div className="mt-0.5 text-xs text-ink-3">{detail.percentile}th percentile</div>
-            </div>
-          </div>
-        )}
+        {detail && <PillarScoreBlock score={detail.score} delta={detail.delta} />}
       </GradientHeader>
 
       <Card>
@@ -93,7 +82,7 @@ export function PillarDetailView({
         ))}
         {shown.length === 0 && (
           <p className="text-xs text-ink-4">
-            {tab === "strengths" ? "Nothing scoring 7+ yet." : "Nothing scoring below 7 — nice."}
+            {emptyInsightLine(questions.length > 0, tab)}
           </p>
         )}
       </Card>

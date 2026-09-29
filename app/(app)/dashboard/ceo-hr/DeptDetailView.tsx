@@ -10,7 +10,7 @@ import {
   InsightBarRow,
   Mascot,
   LeaverNote,
-  NotEnoughData,
+  EmptyScoreCard,
   PillarCard,
   ScreenShell,
   SegmentedToggle,
@@ -18,6 +18,8 @@ import {
   CEO_NAV,
 } from "@/components/kit";
 import { type CeoDashboard, type Window } from "@/lib/data";
+import { COPY, fill } from "@/lib/copy";
+import { ANONYMISATION_FLOOR } from "@/lib/scoring";
 import { getCeoDashboardAction, getCeoInsightAction } from "./actions";
 import { HEADER_MASCOT_SIZE, mascotForScore } from "@/lib/mascot";
 import { STRENGTH_CUTOFF } from "@/lib/pillars";
@@ -99,7 +101,7 @@ export function DeptDetailView({
       />
 
       {!data.enoughData || data.score === null ? (
-        <NotEnoughData message={data.reason} />
+        <EmptyScoreCard message={data.reason ?? fill(COPY.mood.noDataTeam, { floor: ANONYMISATION_FLOOR })} />
       ) : (
         <>
           <Card>
@@ -107,7 +109,8 @@ export function DeptDetailView({
               <div>
                 <BigScore score={data.score} caption={`${data.scopeLabel} score`} />
                 <p className="mt-1 text-xs text-ink-3">
-                  {data.peopleCount} people · {data.percentile}th percentile
+                  {data.peopleCount} people
+                  {data.percentile != null && ` · ${data.percentile}th percentile`}
                 </p>
                 <LeaverNote count={data.leaverCount} />
               </div>

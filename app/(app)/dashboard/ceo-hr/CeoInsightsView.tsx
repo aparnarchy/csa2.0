@@ -10,7 +10,7 @@ import {
   getDepartmentScoresAction,
   getManagerRankingsAction,
 } from "./actions";
-import { PILLARS } from "@/lib/pillars";
+import { PILLARS, STRENGTH_CUTOFF } from "@/lib/pillars";
 import type { PillarId, SessionUser } from "@/lib/types";
 import { CeoPillarDetailView } from "./CeoPillarDetailView";
 
@@ -63,9 +63,15 @@ export function CeoInsightsView({
   const isPlay = session.themeMode === "play";
   const dropdownOptions = scoped.options.map((o) => [o.value, o.label] as [string, string]);
 
+  // Strengths = pillars actually scoring 7+; Watch-outs = pillars below 7 —
+  // the same cut-off as every Strengths / Concerns list, so a good pillar is
+  // never listed as a watch-out just because it's the lowest of four.
   const ranked = useMemo(() => {
     const withScore = scoped.pillars.filter((p) => p.score !== null);
-    return [...withScore].sort((a, b) =>
+    const inTab = withScore.filter((p) =>
+      highLow === "high" ? p.score! >= STRENGTH_CUTOFF : p.score! < STRENGTH_CUTOFF,
+    );
+    return inTab.sort((a, b) =>
       highLow === "high" ? (b.score ?? 0) - (a.score ?? 0) : (a.score ?? 0) - (b.score ?? 0),
     );
   }, [scoped.pillars, highLow]);
@@ -197,6 +203,11 @@ export function CeoInsightsView({
             {ranked.map((p) => (
               <PillarRankRow key={p.pillarId} pillarId={p.pillarId} score={p.score!} onClick={() => setSelectedPillar(p.pillarId)} />
             ))}
+            {ranked.length === 0 && (
+              <p className="text-xs text-ink-4">
+                {highLow === "high" ? "No pillar scoring 7+ yet." : "Nothing scoring below 7 — nice."}
+              </p>
+            )}
           </div>
         )}
       </Card>
@@ -224,7 +235,9 @@ function ManagerRow({ manager, onOpen }: { manager: ManagerSummary; onOpen: () =
       </div>
       <div className="min-w-0 flex-1">
         <p className="truncate text-[13px] font-bold text-ink">{manager.name}</p>
-        <p className="text-[11px] text-ink-3">{manager.percentile}th percentile</p>
+        {manager.percentile != null && (
+          <p className="text-[11px] text-ink-3">{manager.percentile}th percentile</p>
+        )}
       </div>
       <span className="flex-shrink-0 text-brand-light">→</span>
     </button>

@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { BigScore, Card, CustomDropdown, GradientHeader, LeaverNote, Mascot, NotEnoughData, PillarCard, CEO_NAV, ScreenShell } from "@/components/kit";
 import { type CeoDashboard, type Window } from "@/lib/data";
+import { COPY, fill } from "@/lib/copy";
+import { ANONYMISATION_FLOOR } from "@/lib/scoring";
 import { getCeoDashboardAction, getDepartmentScoresAction } from "./actions";
 import type { DepartmentScore } from "@/lib/ceo";
 import { HEADER_MASCOT_SIZE, mascotForScore } from "@/lib/mascot";
@@ -94,7 +96,12 @@ export function OrgDashboardView({
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0 flex-1">
             {!org.enoughData || org.score === null ? (
-              <p className="text-xs text-ink-3">{org.reason}</p>
+              <>
+                <BigScore score={null} />
+                <p className="mt-1 text-[11px] leading-snug text-ink-4">
+                  {org.reason ?? fill(COPY.mood.noDataTeam, { floor: ANONYMISATION_FLOOR })}
+                </p>
+              </>
             ) : (
               <BigScore score={org.score} />
             )}
@@ -109,7 +116,8 @@ export function OrgDashboardView({
         {org.enoughData && org.score !== null && (
           <>
             <p className="mt-1 text-xs text-ink-3">
-              {org.peopleCount} people · {org.percentile}th percentile
+              {org.peopleCount} people
+              {org.percentile != null && ` · ${org.percentile}th percentile`}
             </p>
             <LeaverNote count={org.leaverCount} />
             {/* Pillar grid — org-wide aggregates, same shape as the employee

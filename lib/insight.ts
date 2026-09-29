@@ -1,69 +1,64 @@
 /**
  * Deterministic, human-sounding dashboard copy built from the numbers we already
- * compute — so the screen reads "insight-first" and scannable today. In Phase 5
- * the AI slot can replace this copy with richer LLM prose; the shape stays.
+ * compute — so the screen reads "insight-first" and scannable. Every word is
+ * chosen from the score's own level (lib/mood.ts), so the copy can never
+ * disagree with the number beside it.
  */
-import { type EmployeeScores } from "./data";
+import { type PillarScore } from "./data";
 import { PILLARS } from "./pillars";
 import type { Persona, PillarId } from "./types";
-import { voicedHeadline, type Trend } from "./voice";
+import { bottomLabel, moodHeadline, topLabel } from "./mood";
+
+export interface InsightSpot {
+  /** The pillar's name, e.g. "Growth". */
+  pillar: string;
+  /** "Bright spot" / "Strongest area" or "Watch out" / "Lowest area". */
+  label: string;
+  score: number;
+  pillarId: PillarId;
+}
 
 export interface EmployeeInsight {
   headline: string; // short, punchy hero phrase
-  emoji: string;
-  brightSpot: { label: string; score: number; pillarId: PillarId } | null;
-  watchOut: { label: string; score: number; pillarId: PillarId } | null;
-  comparison: string | null; // e.g. "Happier than 91% of your org"
+  brightSpot: InsightSpot | null;
+  watchOut: InsightSpot | null;
 }
 
-export function buildEmployeeInsight(data: EmployeeScores, persona?: Persona): EmployeeInsight {
-  if (!data.enoughData || data.overall === null) {
-    return {
-      headline: "Let's get to know you",
-      emoji: "👋",
-      brightSpot: null,
-      watchOut: null,
-      comparison: "Answer a few check-ins to unlock your insights",
-    };
-  }
+/**
+ * Headline + highest/lowest pillar for any dashboard (employee, team, org).
+ * Both spots need at least two pillars with real scores — with one, "highest"
+ * and "lowest" would be the same pillar.
+ */
+export function buildInsight(
+  overall: number | null,
+  delta: number | null,
+  pillars: PillarScore[],
+  persona?: Persona,
+): EmployeeInsight {
+  const headline = moodHeadline(overall, delta, persona);
+  const scored = pillars.filter((p): p is PillarScore & { score: number } => p.score !== null);
+  if (overall === null || scored.length < 2) return { headline, brightSpot: null, watchOut: null };
 
-  const scored = data.pillars.filter((p) => p.score !== null);
-  const sorted = [...scored].sort((a, b) => (b.score as number) - (a.score as number));
+  const sorted = [...scored].sort((a, b) => b.score - a.score);
   const top = sorted[0];
   const bottom = sorted[sorted.length - 1];
-
-  const delta = data.delta;
-  let trend: Trend;
-  let emoji: string;
-  if (delta !== null && delta >= 0.2) {
-    trend = "up";
-    emoji = "💜";
-  } else if (delta !== null && delta <= -0.2) {
-    trend = "down";
-    emoji = "💪";
-  } else {
-    trend = "steady";
-    emoji = "🙂";
-  }
-  const NEUTRAL_HEADLINE: Record<Trend, string> = {
-    up: "Things are looking up",
-    down: "A little dip this month",
-    steady: "You're holding steady",
-  };
-  const headline = persona ? voicedHeadline(persona, trend) : NEUTRAL_HEADLINE[trend];
-
-  const pct = data.percentiles?.org ?? data.percentile;
-
+  const spot = (p: PillarScore & { score: number }, label: string): InsightSpot => ({
+    pillar: PILLARS[p.pillarId].label,
+    label,
+    score: p.score,
+    pillarId: p.pillarId,
+  });
   return {
     headline,
-    emoji,
-    brightSpot: top
-      ? { label: PILLARS[top.pillarId].label, score: top.score as number, pillarId: top.pillarId }
-      : null,
-    watchOut:
-      bottom && bottom.pillarId !== top?.pillarId
-        ? { label: PILLARS[bottom.pillarId].label, score: bottom.score as number, pillarId: bottom.pillarId }
-        : null,
-    comparison: pct ? `Happier than ${pct}% of your org` : null,
+    brightSpot: spot(top, topLabel(top.score)),
+    watchOut: bottom.pillarId !== top.pillarId ? spot(bottom, bottomLabel(bottom.score)) : null,
   };
+}
+
+/** The employee dashboard's insight (own scores). */
+export function buildEmployeeInsight(
+  data: { enoughData: boolean; overall: number | null; delta: number | null; pillars: PillarScore[] },
+  persona?: Persona,
+): EmployeeInsight {
+  return buildInsight(data.enoughData ? data.overall : null, data.delta, data.pillars, persona);
 }

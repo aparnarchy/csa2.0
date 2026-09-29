@@ -2,19 +2,18 @@
  * Persona voice layer. Under "Play" mode the user picks a character (Spiderman /
  * Batman) and the app's *dynamic* copy is re-voiced in that character — so the
  * whole dashboard reads as if the character is talking to (and as) the user:
- * the greeting, the section labels, the headline, and the full Find-the-Root
+ * the greeting, the section labels and the full Find-the-Root
  * narrative (symptom, factor, root, actions, payoff, feelings). Professional
  * mode (no persona) uses the neutral copy.
  *
  * This is the "personality surface": form labels and buttons stay neutral; only
  * the diagnosis/encouragement prose changes voice. Same shapes as the neutral
- * copy, so `buildEmployeeInsight` / `buildRootAnalysis` stay unchanged in shape.
+ * copy. The hero HEADLINE is not here: it depends on the score's level as well
+ * as its direction, so it lives with the other mood copy in copy.html and is
+ * picked by lib/mood.ts.
  */
 import type { Persona, PillarId } from "./types";
 import type { PillarRca } from "./rca-knowledge";
-
-/** Which way the score moved this period — drives the hero headline. */
-export type Trend = "up" | "down" | "steady";
 
 /** The persona-voiced "furniture" around the numbers (header + labels). */
 export interface Chrome {
@@ -27,7 +26,6 @@ export interface Chrome {
 
 interface PersonaVoice {
   chrome: Chrome;
-  headline: Record<Trend, string>;
   rca: Record<PillarId, PillarRca>;
 }
 
@@ -46,11 +44,6 @@ const SPIDERMAN: PersonaVoice = {
     tryLabel: "Your move this week",
     feelingsLead: "Spider-sense says you're feeling",
     cta: "Let's find out why →",
-  },
-  headline: {
-    up: "Look at you swinging high",
-    down: "Every hero hits a rough patch",
-    steady: "Holding the line, friendly neighbour",
   },
   rca: {
     meaningful_work: {
@@ -116,11 +109,6 @@ const BATMAN: PersonaVoice = {
     feelingsLead: "The read on you:",
     cta: "Find the root →",
   },
-  headline: {
-    up: "The city's a little safer tonight",
-    down: "Even Gotham has its dark nights",
-    steady: "Holding the line. Stay vigilant",
-  },
   rca: {
     meaningful_work: {
       symptom: "The work has started to feel like routine patrol",
@@ -185,11 +173,6 @@ const VOICES: Record<Persona, PersonaVoice> = {
 /** Persona-voiced header + labels (neutral when no persona / Professional). */
 export function chromeFor(persona?: Persona): Chrome {
   return persona ? VOICES[persona].chrome : NEUTRAL_CHROME;
-}
-
-/** The persona's hero headline for this period's trend. */
-export function voicedHeadline(persona: Persona, trend: Trend): string {
-  return VOICES[persona].headline[trend];
 }
 
 /** The persona's full root-cause narrative for a pillar (same shape as neutral). */

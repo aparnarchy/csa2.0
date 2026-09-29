@@ -1,9 +1,12 @@
 import type { ReactNode } from "react";
+import { scoreTagline } from "@/lib/mood";
 import { CountUp } from "./CountUp";
 
 /**
- * The large animated overall score numeral. `score === null` is handled by the
- * caller (show NotEnoughData) — this component assumes a real number.
+ * The large animated overall score numeral. `score === null` means no data yet:
+ * it shows 0.0 in grey with the "no check-ins yet" line (never a red score or
+ * an encouraging/discouraging tagline that data doesn't back up). The tagline
+ * comes from lib/mood.ts so it always matches the number's level.
  *
  * `trailing` renders beside the numeral, bottom-aligned to it — used for the
  * delta badge. Passing it here rather than letting the caller float the badge
@@ -19,7 +22,7 @@ export function BigScore({
   caption,
   trailing,
 }: {
-  score: number;
+  score: number | null;
   caption?: string;
   trailing?: ReactNode;
 }) {
@@ -29,13 +32,19 @@ export function BigScore({
         {caption ?? "Overall Happiness"}
       </p>
       <div className="mt-1 flex items-end gap-2.5">
-        <span className="block font-display text-[68px] font-black leading-[0.85] tracking-tight text-[#8B82F6]">
-          <CountUp target={score} />
-        </span>
+        {score === null ? (
+          <span className="block font-display text-[68px] font-black leading-[0.85] tracking-tight text-ink-4/50">
+            0.0
+          </span>
+        ) : (
+          <span className="block font-display text-[68px] font-black leading-[0.85] tracking-tight text-[#8B82F6]">
+            <CountUp target={score} />
+          </span>
+        )}
         {trailing && <div className="mb-1">{trailing}</div>}
       </div>
-      <p className="mt-2 text-xs font-semibold text-ink-2">
-        {score >= 7 ? "😊 YAY! Keep it up" : "🙁 Let’s work on this"}
+      <p className={`mt-2 text-xs font-semibold ${score === null ? "text-ink-4" : "text-ink-2"}`}>
+        {scoreTagline(score)}
       </p>
     </div>
   );

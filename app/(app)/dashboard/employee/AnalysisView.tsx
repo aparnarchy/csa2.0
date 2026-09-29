@@ -7,10 +7,10 @@ import {
   AIInsight,
   BigScore,
   Card,
+  EmptyScoreCard,
   GradientHeader,
   InsightBarRow,
   Mascot,
-  NotEnoughData,
   PillarCard,
   ScoreCircles,
   ScreenShell,
@@ -22,6 +22,7 @@ import { getEmployeeInsightAction, getEmployeeScoresAction } from "./actions";
 import { HEADER_MASCOT_SIZE, mascotForScore } from "@/lib/mascot";
 import { STRENGTH_CUTOFF } from "@/lib/pillars";
 import { buildEmployeeInsight } from "@/lib/insight";
+import { earlyReadNote } from "@/lib/mood";
 import { chromeFor } from "@/lib/voice";
 import type { PillarId, SessionUser } from "@/lib/types";
 import { PillarDetailView } from "./PillarDetailView";
@@ -98,11 +99,9 @@ export function AnalysisView({
           }
           className="flex min-h-[212px] flex-col justify-center"
         >
-          {data.enoughData && data.overall !== null && (
-            <p className="mt-3 font-display text-lg font-black leading-tight text-brand">
-              {insight.headline}.
-            </p>
-          )}
+          <p className="mt-3 font-display text-lg font-black leading-tight text-brand">
+            {insight.headline}.
+          </p>
         </GradientHeader>
       ) : (
         <div
@@ -113,16 +112,16 @@ export function AnalysisView({
           <h1 className="mt-1 font-display text-[34px] font-black leading-tight text-brand">
             {chrome.greeting(firstName)}
           </h1>
-          {data.enoughData && data.overall !== null && (
-            <p className="mt-2 font-display text-base font-black leading-snug text-brand-light">
-              {insight.headline}.
-            </p>
-          )}
+          <p className="mt-2 font-display text-base font-black leading-snug text-brand-light">
+            {insight.headline}.
+          </p>
         </div>
       )}
 
       {!data.enoughData || data.overall === null ? (
-        <NotEnoughData />
+        // Starting state: the same score card, at 0.0 in grey, saying plainly
+        // that scores arrive with the first check-in — no mood, no spots.
+        <EmptyScoreCard message={COPY.mood.noDataEmployee} />
       ) : (
         <>
           {/* Bright Spot / Watch Out — Play: animated wavy blobs. Professional:
@@ -131,8 +130,8 @@ export function AnalysisView({
             isPlay ? (
               <div className="mb-7 pt-4">
                 <ScoreCircles
-                  bright={{ score: insight.brightSpot.score, pillar: insight.brightSpot.label, pillarId: insight.brightSpot.pillarId }}
-                  watch={{ score: insight.watchOut.score, pillar: insight.watchOut.label, pillarId: insight.watchOut.pillarId }}
+                  bright={insight.brightSpot}
+                  watch={insight.watchOut}
                   onSelect={setSelectedPillar}
                 />
               </div>
@@ -143,22 +142,24 @@ export function AnalysisView({
                   onClick={() => setSelectedPillar(insight.brightSpot!.pillarId)}
                   className="rounded-card bg-lav-soft p-4 text-left shadow-card transition active:scale-[0.98]"
                 >
-                  <p className="text-[11px] font-semibold uppercase tracking-wide text-brand">☀️ Bright spot</p>
+                  <p className="text-[11px] font-semibold uppercase tracking-wide text-brand">☀️ {insight.brightSpot.label}</p>
                   <p className="mt-1 font-display text-3xl font-black leading-none text-brand">
                     {insight.brightSpot.score.toFixed(1)}
                   </p>
-                  <p className="mt-1 text-xs text-brand/70">{insight.brightSpot.label}</p>
+                  <p className="mt-1 text-xs text-brand/70">{insight.brightSpot.pillar}</p>
                 </button>
                 <button
                   type="button"
                   onClick={() => setSelectedPillar(insight.watchOut!.pillarId)}
                   className="rounded-card bg-lav-soft p-4 text-left shadow-card transition active:scale-[0.98]"
                 >
-                  <p className="text-[11px] font-semibold uppercase tracking-wide text-brand">⚠️ Watch out</p>
+                  <p className="text-[11px] font-semibold uppercase tracking-wide text-brand">
+                    {insight.watchOut.label === COPY.mood.watchOut ? "⚠️" : "🔎"} {insight.watchOut.label}
+                  </p>
                   <p className="mt-1 font-display text-3xl font-black leading-none text-brand">
                     {insight.watchOut.score.toFixed(1)}
                   </p>
-                  <p className="mt-1 text-xs text-brand/70">{insight.watchOut.label}</p>
+                  <p className="mt-1 text-xs text-brand/70">{insight.watchOut.pillar}</p>
                 </button>
               </div>
             )
@@ -184,6 +185,9 @@ export function AnalysisView({
                   ) : undefined
                 }
               />
+              {earlyReadNote(data.responseCount) && (
+                <p className="mt-1 text-[11px] text-ink-4">{earlyReadNote(data.responseCount)}</p>
+              )}
             </div>
 
             <div className="-mx-1.5 grid grid-cols-4 gap-2">

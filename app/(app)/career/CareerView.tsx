@@ -20,11 +20,13 @@ import { COPY, fill } from "@/lib/copy";
 import { type CareerHistory, type CompanyDetail } from "@/lib/data";
 import { deleteCareerCompanyAction, getCompanyDetailAction } from "./actions";
 import { AddCompanyFlow } from "./AddCompanyFlow";
+import { scoreBand } from "@/lib/scoring";
 
+/** Same locked bands as every other score (lib/scoring.ts): 7+ green,
+ *  4–6.9 amber, below 4 red. */
 function scoreColor(score: number) {
-  if (score >= 7.5) return "text-good";
-  if (score >= 6) return "text-brand";
-  return "text-bad";
+  const band = scoreBand(score);
+  return band === "green" ? "text-good" : band === "amber" ? "text-warn" : "text-bad";
 }
 
 export function CareerView({ history, isCeoHr = false }: { history: CareerHistory; isCeoHr?: boolean }) {
@@ -122,7 +124,11 @@ export function CareerView({ history, isCeoHr = false }: { history: CareerHistor
                 <p className="text-[11px] text-ink-4">{c.period} · {c.tenure}</p>
               </div>
               <div className="flex items-center gap-2 pl-2">
-                <span className={`font-display text-xl font-black ${scoreColor(c.overallScore)}`}>
+                {/* 0 only ever means "no check-ins yet" (answers score 1+), so
+                    it's grey, not a red score. */}
+                <span
+                  className={`font-display text-xl font-black ${c.overallScore > 0 ? scoreColor(c.overallScore) : "text-ink-4/60"}`}
+                >
                   {c.overallScore.toFixed(1)}
                 </span>
                 <span className="text-xl text-ink-4">›</span>
@@ -271,7 +277,7 @@ function CompanyDetailView({ detail, onBack, isCeoHr = false }: { detail: Compan
       <Card>
         <div className="mb-4">
           <BigScore
-            score={detail.overallScore}
+            score={detail.overallScore > 0 ? detail.overallScore : null}
             caption={COPY.career.scoreCaption}
             trailing={
               detail.delta !== null ? (

@@ -42,10 +42,11 @@ export interface QuestionInsight {
 }
 
 /** The three percentile lenses the score pill cycles through. */
+/** Benchmark percentiles — null until there's real data to compare against. */
 export interface Percentiles {
-  org: number;
-  dept: number;
-  industry: number;
+  org: number | null;
+  dept: number | null;
+  industry: number | null;
 }
 
 /** One point on a trend chart (overall + each pillar + reference lines). */
@@ -53,13 +54,15 @@ export interface TrendPoint {
   weekId: string;
   label: string;
   overall: number;
-  meaningful_work: number;
-  growth: number;
-  culture: number;
-  compensation: number;
-  orgAvg: number;
-  deptAvg: number;
-  industryAvg: number;
+  /** null for a week with no answers in that pillar (a gap, not a made-up value). */
+  meaningful_work: number | null;
+  growth: number | null;
+  culture: number | null;
+  compensation: number | null;
+  /** Benchmark reference lines — null (hidden) until real benchmarks exist. */
+  orgAvg: number | null;
+  deptAvg: number | null;
+  industryAvg: number | null;
 }
 
 /** Everything the employee analysis screen needs. */
@@ -148,8 +151,8 @@ function pillarScoresFrom(trend: TrendPoint[]): PillarScore[] {
   const last = trend[trend.length - 1];
   const prev = trend.length > 1 ? trend[trend.length - 2] : null;
   return PILLAR_ORDER.map((pillarId) => {
-    const score = last[pillarId];
-    const delta = prev ? round1(score - prev[pillarId]) : null;
+    const score = last[pillarId] as number; // sample trends always fill every pillar
+    const delta = prev ? round1(score - (prev[pillarId] as number)) : null;
     return {
       pillarId,
       score,
@@ -259,7 +262,7 @@ export async function getPillarDetail(
   assertOwner(session, userId);
   const points = Math.min(weeksIn(window), RECENT_WEEKS.length);
   const trend = buildTrend(userId + pillarId, 6.8, points);
-  const score = trend[trend.length - 1][pillarId];
+  const score = trend[trend.length - 1][pillarId] as number; // sample trends fill every pillar
   const prior = trend.length > 1 ? trend[trend.length - 2][pillarId] : null;
 
   return {
@@ -548,6 +551,8 @@ export interface ProfileStats {
   role: string | null;
   company: string | null;
   overallScore: number;
+  /** False until the first check-in — the 0 above is then "no data", not a score. */
+  hasScore: boolean;
   delta: number;
   streak: number;
   longestStreak: number;
@@ -570,6 +575,7 @@ export async function getProfileStats(
     role: "Product Designer",
     company: "Kissflow",
     overallScore: 7.2,
+    hasScore: true,
     delta: 0.4,
     streak: 4,
     longestStreak: 12,

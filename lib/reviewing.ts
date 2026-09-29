@@ -21,9 +21,6 @@ import type { SessionUser } from "./types";
 function round1(n: number): number {
   return Math.round(n * 10) / 10;
 }
-function pctFromScore(score: number): number {
-  return Math.max(20, Math.min(98, Math.round(score * 10 + 4)));
-}
 
 /** Resolution % from real manager actions for a team; null until any exist. */
 async function teamResolutionPct(
@@ -78,7 +75,7 @@ export async function getReviewingManagerList(
         name: t.name,
         teamScore: agg.teamScore,
         delta: agg.delta,
-        percentile: pctFromScore(agg.teamScore),
+        percentile: null, // no real benchmark yet — hidden, not invented
         resolutionPct: await teamResolutionPct(db, t.teamId),
         band: scoreBand(agg.teamScore),
         enoughData: true,
@@ -152,7 +149,7 @@ export async function getReviewingManagerDetail(
     enoughData: true,
     teamScore: agg.teamScore,
     delta: agg.delta,
-    percentile: pctFromScore(agg.teamScore),
+    percentile: null, // no real benchmark yet — hidden, not invented
     resolutionPct: await teamResolutionPct(db, team.teamId),
     pillars: agg.pillars,
     trend: agg.trend,

@@ -8,7 +8,7 @@ import {
   Card,
   GradientHeader,
   LeaverNote,
-  NotEnoughData,
+  EmptyScoreCard,
   PillarCard,
   CEO_NAV,
   ScreenShell,
@@ -16,6 +16,8 @@ import {
   TrendChart,
 } from "@/components/kit";
 import { type ManagerDetail, type Window } from "@/lib/data";
+import { COPY, fill } from "@/lib/copy";
+import { ANONYMISATION_FLOOR } from "@/lib/scoring";
 import { getManagerDetailAction, getManagerDetailInsightAction } from "../../actions";
 import { PILLARS } from "@/lib/pillars";
 import type { PillarId } from "@/lib/types";
@@ -67,7 +69,10 @@ export function ManagerDetailView({
       />
 
       {!data.enoughData || data.teamScore === null ? (
-        <NotEnoughData message={data.reason} />
+        <EmptyScoreCard
+          caption="Team score"
+          message={data.reason ?? fill(COPY.mood.noDataTeam, { floor: ANONYMISATION_FLOOR })}
+        />
       ) : (
         <>
           <Card>
@@ -75,8 +80,12 @@ export function ManagerDetailView({
               <div>
                 <BigScore score={data.teamScore} caption="Team score" />
                 <p className="mt-1 text-xs text-ink-3">
-                  {data.percentile}th percentile
-                  {data.resolutionPct != null && ` · ${data.resolutionPct}% actions resolved`}
+                  {[
+                    data.percentile != null && `${data.percentile}th percentile`,
+                    data.resolutionPct != null && `${data.resolutionPct}% actions resolved`,
+                  ]
+                    .filter(Boolean)
+                    .join(" · ")}
                 </p>
                 <LeaverNote count={data.leaverCount} />
               </div>

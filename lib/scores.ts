@@ -8,8 +8,8 @@
  *
  * Real: overall, per-pillar scores + deltas + response counts, the weekly trend
  * lines, per-question insights, response count and streak — all from this user's
- * own check-ins. Still sample (no source data yet): the org/dept/industry
- * benchmark lines, percentiles and participation — clearly marked below.
+ * own check-ins. Benchmarks (org/dept/industry lines, percentiles) have no real
+ * source yet, so they're returned as null and hidden rather than invented.
  */
 
 import { getDB } from "./db";
@@ -86,11 +86,12 @@ async function computeAggregate(userId: string, window: Window): Promise<Employe
   const inRange = new Set(rangeWeeks);
   const rows = ciRes.results.filter((r) => inRange.has(r.weekId));
 
-  // Sample-only fields (no benchmark/expected-response source yet).
+  // No benchmark / expected-response source yet — null, so screens hide these
+  // instead of showing invented numbers.
   const sampleTail = {
-    percentile: 72,
-    percentiles: { org: 91, dept: 88, industry: 78 },
-    participation: 86,
+    percentile: null,
+    percentiles: { org: null, dept: null, industry: null },
+    participation: 0,
   };
 
   if (rows.length === 0) {
@@ -121,7 +122,7 @@ async function computeAggregate(userId: string, window: Window): Promise<Employe
     const overall = round1(avg(wkRows.map((r) => r.score)));
     const pillarAvg = (pid: PillarId) => {
       const ps = wkRows.filter((r) => r.pillarId === pid).map((r) => r.score);
-      return ps.length ? round1(avg(ps)) : overall;
+      return ps.length ? round1(avg(ps)) : null;
     };
     return {
       weekId: wk,
@@ -131,10 +132,10 @@ async function computeAggregate(userId: string, window: Window): Promise<Employe
       growth: pillarAvg("growth"),
       culture: pillarAvg("culture"),
       compensation: pillarAvg("compensation"),
-      // Benchmarks aren't real yet — steady sample reference lines.
-      orgAvg: 6.7,
-      deptAvg: 6.9,
-      industryAvg: 6.2,
+      // Benchmarks aren't real yet — hidden rather than shown as fake lines.
+      orgAvg: null,
+      deptAvg: null,
+      industryAvg: null,
     };
   });
 
@@ -152,9 +153,9 @@ async function computeAggregate(userId: string, window: Window): Promise<Employe
     return {
       pillarId: pid,
       score,
-      delta: prev ? round1(last[pid] - prev[pid]) : null,
+      delta: prev && last[pid] !== null && prev[pid] !== null ? round1(last[pid]! - prev[pid]!) : null,
       band: scoreBand(score),
-      percentile: Math.max(20, Math.min(98, Math.round(score * 10 + 4))), // sample derivation
+      percentile: null, // no real benchmark yet
       responseCount: ps.length,
     };
   });
@@ -207,10 +208,12 @@ export async function getEmployeeScores(
 
 export interface PillarDetail {
   pillarId: PillarId;
-  score: number;
-  delta: number;
-  percentile: number;
-  band: ReturnType<typeof scoreBand>;
+  /** null = no answers for this pillar yet (or below the anonymity floor). */
+  score: number | null;
+  delta: number | null;
+  /** null until there's a real benchmark to compare against. */
+  percentile: number | null;
+  band: ReturnType<typeof scoreBand> | null;
   trend: TrendPoint[];
   questions: QuestionInsight[];
 }
@@ -227,10 +230,10 @@ export async function getPillarDetail(
   const p = agg.pillars.find((x) => x.pillarId === pillarId);
   return {
     pillarId,
-    score: p?.score ?? 0,
-    delta: p?.delta ?? 0,
-    percentile: p?.percentile ?? 0,
-    band: p?.band ?? scoreBand(0),
+    score: p?.score ?? null,
+    delta: p?.delta ?? null,
+    percentile: p?.percentile ?? null,
+    band: p?.band ?? null,
     trend: agg.trend,
     questions: agg.questions.filter((q) => q.pillarId === pillarId),
   };

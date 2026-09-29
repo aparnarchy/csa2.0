@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
 import { ADMIN_NAV, BigScore, Card, CEO_NAV, GradientHeader, Mascot, ScreenShell } from "@/components/kit";
-import { HEADER_MASCOT_SIZE } from "@/lib/mascot";
+import { HEADER_MASCOT_SIZE, mascotForScore } from "@/lib/mascot";
 import { COPY, fill } from "@/lib/copy";
 import { setViewModeAction } from "@/lib/view-mode";
 import type { CeoDashboard, ProfileStats } from "@/lib/data";
@@ -73,7 +73,14 @@ export function ProfileView({
         <GradientHeader
           eyebrow={isCeoHr ? "🏢 CEO / HR" : roleCompany || undefined}
           title={session.name}
-          avatar={<Mascot state="happy" size={HEADER_MASCOT_SIZE} float={false} sparkle={false} />}
+          avatar={
+            <Mascot
+              state={isCeoHr ? "welcome" : mascotForScore(stats.overallScore, stats.hasScore)}
+              size={HEADER_MASCOT_SIZE}
+              float={false}
+              sparkle={false}
+            />
+          }
           below={isCeoHr ? undefined : <HeaderStats stats={stats} hasEmployment={session.hasEmployment} />}
         />
       ) : (
@@ -254,7 +261,11 @@ function HeaderStats({ stats, hasEmployment }: { stats: ProfileStats; hasEmploym
   return (
     <div className={hasEmployment ? "flex gap-2" : "flex gap-3"}>
       <div className={`flex-1 rounded-2xl bg-white/60 text-center ${hasEmployment ? "px-3 py-2" : "px-4 py-3"}`}>
-        <p className="font-display text-xl font-black leading-none text-brand">{stats.overallScore.toFixed(1)}</p>
+        <p
+          className={`font-display text-xl font-black leading-none ${stats.hasScore ? "text-brand" : "text-ink-4/60"}`}
+        >
+          {stats.overallScore.toFixed(1)}
+        </p>
         <p className="mt-1 text-[10px] font-semibold text-ink-3">{COPY.profile.statHappiness}</p>
       </div>
       {hasEmployment && (
