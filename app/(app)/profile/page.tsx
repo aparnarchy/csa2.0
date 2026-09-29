@@ -2,6 +2,7 @@ export const runtime = "edge";
 
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth-session";
+import { getDB } from "@/lib/db";
 import { getViewMode } from "@/lib/view-mode";
 import { getProfileStats } from "@/lib/profile";
 import { getCeoDashboard, getOrgParticipation } from "@/lib/ceo";
@@ -17,6 +18,11 @@ export default async function ProfilePage() {
 
   const stats = await getProfileStats(session.user, session.user.id);
   const viewMode = (await getViewMode()) ?? "manager";
+  // Own record only — the session user's id, never a parameter.
+  const own = await getDB()
+    .prepare("SELECT personalEmail FROM user WHERE id = ?")
+    .bind(session.user.id)
+    .first<{ personalEmail: string | null }>();
 
   const isCeoHr = session.user.roles.includes("ceo_hr");
   const org = isCeoHr
@@ -30,6 +36,7 @@ export default async function ProfilePage() {
       viewingAsEmployee={viewMode === "employee"}
       orgScore={org ? org[0] : null}
       orgParticipation={org ? org[1] : null}
+      personalEmail={own?.personalEmail ?? null}
     />
   );
 }

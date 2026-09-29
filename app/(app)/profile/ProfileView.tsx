@@ -21,6 +21,7 @@ export function ProfileView({
   viewingAsEmployee,
   orgScore,
   orgParticipation,
+  personalEmail,
 }: {
   session: SessionUser;
   stats: ProfileStats;
@@ -29,6 +30,8 @@ export function ProfileView({
   /** CEO/HR only — org-wide happiness score, "dashboard style". */
   orgScore: CeoDashboard | null;
   orgParticipation: { respondedCount: number; peopleCount: number; participation: number } | null;
+  /** Optional personal email the person has saved (never shown to anyone else). */
+  personalEmail: string | null;
 }) {
   const router = useRouter();
   const isPlay = session.themeMode === "play";
@@ -182,6 +185,10 @@ export function ProfileView({
           about check-in reminders, meaningless without employment (and, same
           as Activity/Badges/Career, never shown on the CEO/HR profile). */}
       {session.hasEmployment && !isCeoHr && <PreferencesCard session={session} />}
+
+      {/* Personal email — optional, one small note, no nudging (testing phase).
+          Anyone with a job record, since that's who has a work inbox to lose. */}
+      {session.hasEmployment && <PersonalEmailCard initial={personalEmail} />}
 
       {/* Switch view — only for someone who genuinely plays both roles: leads
           a team AND has their own employment. Toggles which experience
@@ -340,6 +347,61 @@ function AppearanceCard({ session }: { session: SessionUser }) {
           </div>
         </div>
       )}
+    </Card>
+  );
+}
+
+// ── Personal email (optional; saved to the user's own record only) ──────────
+function PersonalEmailCard({ initial }: { initial: string | null }) {
+  const [value, setValue] = useState(initial ?? "");
+  const [saved, setSaved] = useState(initial ?? "");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [justSaved, setJustSaved] = useState(false);
+  const dirty = value.trim().toLowerCase() !== saved;
+
+  async function save() {
+    setSaving(true);
+    setError(null);
+    const res = await fetch("/api/preferences/personal-email", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ personalEmail: value }),
+    });
+    const body = (await res.json().catch(() => ({}))) as { error?: string; personalEmail?: string | null };
+    setSaving(false);
+    if (!res.ok) {
+      setError(body.error ?? "Couldn't save. Please try again.");
+      return;
+    }
+    setSaved(body.personalEmail ?? "");
+    setValue(body.personalEmail ?? "");
+    setJustSaved(true);
+    setTimeout(() => setJustSaved(false), 2000);
+  }
+
+  return (
+    <Card>
+      <p className="text-sm font-bold text-brand">{COPY.profile.personalEmailTitle}</p>
+      <p className="mt-1 text-[11px] leading-snug text-ink-3">{COPY.profile.personalEmailNote}</p>
+      <div className="mt-3 flex gap-2">
+        <input
+          type="email"
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          placeholder="you@gmail.com"
+          className="min-w-0 flex-1 rounded-xl border border-lav-mid bg-lav-light px-3 py-2 text-sm text-ink focus:border-brand focus:outline-none"
+        />
+        <button
+          type="button"
+          onClick={save}
+          disabled={saving || !dirty}
+          className="flex-shrink-0 rounded-xl bg-brand px-4 py-2 text-xs font-bold text-white active:scale-[0.98] disabled:opacity-40"
+        >
+          {justSaved ? COPY.profile.personalEmailSaved : COPY.profile.personalEmailSave}
+        </button>
+      </div>
+      {error && <p className="mt-2 text-[11px] font-semibold text-red-600">{error}</p>}
     </Card>
   );
 }
