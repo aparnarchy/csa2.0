@@ -27,6 +27,23 @@ import type {
   WisdomModule,
 } from "@/lib/types";
 
+/** One append-only audit entry for an admin change (who, what, when). Returned
+ *  as a statement so callers can put it in the same batch as the change. */
+function auditStmt(
+  db: D1Database,
+  actorId: string,
+  action: string,
+  targetType: string,
+  targetId: string | null,
+  detail: Record<string, unknown>,
+): D1PreparedStatement {
+  return db
+    .prepare(
+      "INSERT INTO adminAuditLog (id, actorId, action, targetType, targetId, detail) VALUES (?, ?, ?, ?, ?, ?)",
+    )
+    .bind(`aud-${crypto.randomUUID()}`, actorId, action, targetType, targetId, JSON.stringify(detail));
+}
+
 /** The editable fields of a question (everything except its id). */
 export interface QuestionInput {
   text: string;
@@ -1189,6 +1206,7 @@ const ROSTER_COLUMNS = {
     "reporting manager",
     "reporting manager email",
   ],
+  employeeId: ["employee id", "emp id", "employee_id", "empid", "employee code", "emp code", "employee no", "employee number"],
   role: ["role"],
 } as const;
 
@@ -1197,7 +1215,8 @@ type RosterCol = keyof typeof ROSTER_COLUMNS;
 /**
  * Bulk-import from raw CSV text. Two formats, told apart by the header row:
  *
- * - **Roster** (any of name / department / grade / manager email columns):
+ * - **Roster** (any of employee id / name / department / grade / manager
+ *   email columns):
  *   the org's people list, which the app turns into teams, departments,
  *   managers and memberships on its own — see importRoster.
  * - **Legacy** (`email, role, team`, header optional): one invite per row,
@@ -1223,9 +1242,13 @@ export async function importInvitesCsv(
   const firstCells = splitCsvLine(lines[0]).map((c) => c.trim().toLowerCase());
   const colOf = (key: RosterCol) =>
     firstCells.findIndex((c) => (ROSTER_COLUMNS[key] as readonly string[]).includes(c));
-  if (colOf("email") >= 0 && (["name", "department", "grade", "manager"] as const).some((k) => colOf(k) >= 0)) {
+  if (
+    colOf("email") >= 0 &&
+    (["name", "department", "grade", "manager", "employeeId"] as const).some((k) => colOf(k) >= 0)
+  ) {
     return importRoster(session, lines.slice(1), {
       email: colOf("email"),
+      employeeId: colOf("employeeId"),
       name: colOf("name"),
       team: colOf("team"),
       department: colOf("department"),
@@ -1301,6 +1324,7 @@ export async function importInvitesCsv(
 interface RosterRow {
   rowNo: number;
   email: string;
+  employeeId: string; // "" = not given
   name: string;
   team: string; // as typed; "" = none
   department: string;
@@ -1333,6 +1357,9 @@ interface RosterTeam {
  * - People who already have an account are placed straight away; everyone else
  *   gets a quiet pending invite (nobody is emailed) and is placed on signup.
  * - New leaders wait for admin approval (see nameTeamLeader).
+ * - People are matched by employee ID first, then email (emails change, IDs
+ *   don't). Anyone active in the app but missing from the file is listed, not
+ *   removed — the admin decides whether they've left.
  *
  * All writes go in one batch, so a failed upload changes nothing.
  */
@@ -1356,6 +1383,7 @@ async function importRoster(
   // ── 1. Parse and validate rows ────────────────────────────────────────────
   const rows: RosterRow[] = [];
   const seen = new Set<string>();
+  const seenIds = new Set<string>();
   lines.forEach((line, idx) => {
     const rowNo = idx + 2; // header is row 1
     const cells = splitCsvLine(line);
@@ -1370,7 +1398,14 @@ async function importRoster(
       result.errors.push(`Row ${rowNo} (${email}): appears more than once — kept the first row.`);
       return;
     }
+    const employeeId = cell(cells, cols.employeeId);
+    if (employeeId && seenIds.has(employeeId.toLowerCase())) {
+      result.skipped++;
+      result.errors.push(`Row ${rowNo} (${email}): employee ID ${employeeId} is used by an earlier row — skipped.`);
+      return;
+    }
     seen.add(email);
+    if (employeeId) seenIds.add(employeeId.toLowerCase());
     let manager = cell(cells, cols.manager).toLowerCase();
     if (manager && !EMAIL_RE.test(manager)) {
       result.errors.push(`Row ${rowNo} (${email}): manager “${manager}” isn't an email — ignored.`);
@@ -1383,6 +1418,7 @@ async function importRoster(
     rows.push({
       rowNo,
       email,
+      employeeId,
       name: cell(cells, cols.name),
       team: cell(cells, cols.team),
       department: cell(cells, cols.department),
@@ -1452,8 +1488,13 @@ async function importRoster(
   }
 
   // ── 3. Load what already exists ───────────────────────────────────────────
-  const [{ results: deptRows }, { results: teamRows }, { results: userRows }, { results: inviteRows }] =
-    await Promise.all([
+  const [
+    { results: deptRows },
+    { results: teamRows },
+    { results: userRows },
+    { results: inviteRows },
+    { results: activeJobs },
+  ] = await Promise.all([
       db.prepare("SELECT id, name FROM departments").all<{ id: string; name: string }>(),
       db
         .prepare("SELECT id, name, managerId, departmentId, pendingManagerEmail FROM teams")
@@ -1466,14 +1507,29 @@ async function importRoster(
         )
         .all<{ id: string; email: string; isManager: number }>(),
       db
-        .prepare("SELECT id, lower(email) AS email FROM invites WHERE status = 'pending'")
-        .all<{ id: string; email: string }>(),
+        .prepare("SELECT id, lower(email) AS email, lower(employeeId) AS employeeId, name FROM invites WHERE status = 'pending'")
+        .all<{ id: string; email: string; employeeId: string | null; name: string | null }>(),
+      db
+        .prepare(
+          `SELECT e.userId, lower(e.employeeId) AS employeeId, u.name
+             FROM employment e JOIN user u ON u.id = e.userId
+            WHERE e.status = 'active'`,
+        )
+        .all<{ userId: string; employeeId: string | null; name: string }>(),
     ]);
   const deptId = new Map(deptRows.map((d) => [d.name.trim().toLowerCase(), d.id]));
   const teamByName = new Map(teamRows.map((t) => [t.name.trim().toLowerCase(), t]));
   const userByEmail = new Map(userRows.map((u) => [u.email, u]));
   const userById = new Map(userRows.map((u) => [u.id, u]));
   const inviteByEmail = new Map(inviteRows.map((i) => [i.email, i.id]));
+  const userIdByEmployeeId = new Map(
+    activeJobs.filter((j) => j.employeeId).map((j) => [j.employeeId!, j.userId]),
+  );
+  const inviteByEmployeeId = new Map(
+    inviteRows.filter((i) => i.employeeId).map((i) => [i.employeeId!, i.id]),
+  );
+  const matchedUsers = new Set<string>();
+  const matchedInvites = new Set<string>();
 
   const stmts: D1PreparedStatement[] = [];
 
@@ -1544,45 +1600,99 @@ async function importRoster(
     const tId = key ? teamId.get(key)! : null;
     // The person's own department column wins; otherwise they take their team's.
     const dId = ensureDept(r.department) || (key ? ensureDept(teams.get(key)!.department) : null);
-    const user = userByEmail.get(r.email);
-    if (user) {
-      const empId = `emp-${user.id.slice(0, 8)}`;
+    // Match by employee ID first (it survives an email change), then email.
+    // If the two point at different people, the file contradicts itself —
+    // skip the row rather than guess.
+    const idKey = r.employeeId.toLowerCase();
+    const byIdUser = idKey ? userIdByEmployeeId.get(idKey) : undefined;
+    const byEmailUser = userByEmail.get(r.email)?.id;
+    const byIdInvite = idKey ? inviteByEmployeeId.get(idKey) : undefined;
+    const byEmailInvite = inviteByEmail.get(r.email);
+    if ((byIdUser && byEmailUser && byIdUser !== byEmailUser) || (byIdInvite && byEmailInvite && byIdInvite !== byEmailInvite)) {
+      result.skipped++;
+      result.errors.push(
+        `Row ${r.rowNo} (${r.email}): employee ID ${r.employeeId} already belongs to someone else in the app — skipped.`,
+      );
+      continue;
+    }
+    const userId = byIdUser ?? byEmailUser;
+    if (userId) {
+      matchedUsers.add(userId);
+      // Update their CURRENT job in place (existing rows can have any id, so
+      // match on userId); only create one if they have no active job at all.
       stmts.push(
         db
           .prepare(
-            `INSERT INTO employment (id, userId, teamId, departmentId, grade, status, startedAt, workEmail, workEmailVerified)
-             VALUES (?, ?, ?, ?, ?, 'active', ?, ?, 1)
-             ON CONFLICT(id) DO UPDATE SET teamId = excluded.teamId, departmentId = excluded.departmentId,
-                                            grade = excluded.grade, status = 'active'`,
+            `UPDATE employment SET teamId = ?, departmentId = ?, grade = ?,
+                    employeeId = COALESCE(?, employeeId)
+              WHERE userId = ? AND status = 'active'`,
           )
-          .bind(empId, user.id, tId, dId, r.grade || null, today, r.email),
-        db.prepare("UPDATE user SET teamId = ?, departmentId = ? WHERE id = ?").bind(tId, dId, user.id),
+          .bind(tId, dId, r.grade || null, r.employeeId || null, userId),
+        db
+          .prepare(
+            `INSERT INTO employment (id, userId, teamId, departmentId, grade, employeeId, status, startedAt, workEmail, workEmailVerified)
+             SELECT ?, ?, ?, ?, ?, ?, 'active', ?, ?, 1
+              WHERE NOT EXISTS (SELECT 1 FROM employment WHERE userId = ? AND status = 'active')
+             ON CONFLICT(id) DO UPDATE SET teamId = excluded.teamId, departmentId = excluded.departmentId,
+                                            grade = excluded.grade, employeeId = excluded.employeeId,
+                                            status = 'active', endedAt = NULL`,
+          )
+          .bind(`emp-${userId.slice(0, 8)}`, userId, tId, dId, r.grade || null, r.employeeId || null, today, r.email, userId),
+        db.prepare("UPDATE user SET teamId = ?, departmentId = ? WHERE id = ?").bind(tId, dId, userId),
       );
+      if (byIdUser && byEmailUser === undefined) {
+        notes.push(`${r.name || r.email}: matched by employee ID; the email in the file differs from the one they sign in with.`);
+      }
       result.linked!++;
       continue;
     }
     const role = leaders.has(r.email) ? "manager" : "employee";
-    const existingInvite = inviteByEmail.get(r.email);
+    const existingInvite = byIdInvite ?? byEmailInvite;
     if (existingInvite) {
+      matchedInvites.add(existingInvite);
       stmts.push(
         db
           .prepare(
-            "UPDATE invites SET name = ?, grade = ?, role = ?, teamId = ?, departmentId = ?, createdAt = datetime('now') WHERE id = ?",
+            `UPDATE invites SET email = ?, name = ?, grade = ?, role = ?, teamId = ?, departmentId = ?,
+                    employeeId = COALESCE(?, employeeId), createdAt = datetime('now')
+              WHERE id = ?`,
           )
-          .bind(r.name || null, r.grade || null, role, tId, dId, existingInvite),
+          .bind(r.email, r.name || null, r.grade || null, role, tId, dId, r.employeeId || null, existingInvite),
       );
       result.updated++;
     } else {
       stmts.push(
         db
           .prepare(
-            `INSERT INTO invites (id, email, name, grade, role, invitedBy, teamId, departmentId, status)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending')`,
+            `INSERT INTO invites (id, email, name, grade, employeeId, role, invitedBy, teamId, departmentId, status)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')`,
           )
-          .bind(`inv-${crypto.randomUUID().slice(0, 8)}`, r.email, r.name || null, r.grade || null, role, session.id, tId, dId),
+          .bind(
+            `inv-${crypto.randomUUID().slice(0, 8)}`,
+            r.email,
+            r.name || null,
+            r.grade || null,
+            r.employeeId || null,
+            role,
+            session.id,
+            tId,
+            dId,
+          ),
       );
       result.created++;
     }
+  }
+
+  // Listed, never removed: whether they've left is the admin's call.
+  const missing = [
+    ...activeJobs.filter((j) => !matchedUsers.has(j.userId)).map((j) => j.name),
+    ...inviteRows.filter((i) => !matchedInvites.has(i.id)).map((i) => i.name || i.email),
+  ];
+  if (missing.length > 0) {
+    const shown = missing.slice(0, 10).join(", ");
+    notes.push(
+      `In the app but not in this file (${missing.length}): ${shown}${missing.length > 10 ? ", …" : ""}. Nothing was changed for them — mark them as resigned in People if they've left.`,
+    );
   }
 
   // A person the file names as leading two teams only sees one on their
@@ -1594,6 +1704,14 @@ async function importRoster(
     }
   }
 
+  stmts.push(
+    auditStmt(db, session.id, "roster_upload", "roster", null, {
+      added: result.created,
+      updated: result.updated,
+      linked: result.linked,
+      skipped: result.skipped,
+    }),
+  );
   await db.batch(stmts);
   return result;
 }

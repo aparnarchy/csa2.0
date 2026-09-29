@@ -55,10 +55,16 @@ function resolveTrustedOrigins(): string[] {
 async function applyPendingInvite(db: D1Database, userId: string, email: string): Promise<void> {
   const invite = await db
     .prepare(
-      "SELECT id, teamId, departmentId, grade FROM invites WHERE lower(email) = lower(?) AND status = 'pending' ORDER BY createdAt DESC LIMIT 1",
+      "SELECT id, teamId, departmentId, grade, employeeId FROM invites WHERE lower(email) = lower(?) AND status = 'pending' ORDER BY createdAt DESC LIMIT 1",
     )
     .bind(email)
-    .first<{ id: string; teamId: string | null; departmentId: string | null; grade: string | null }>();
+    .first<{
+      id: string;
+      teamId: string | null;
+      departmentId: string | null;
+      grade: string | null;
+      employeeId: string | null;
+    }>();
   if (!invite) return;
 
   // The department the roster gave this person wins; otherwise they take
@@ -76,12 +82,12 @@ async function applyPendingInvite(db: D1Database, userId: string, email: string)
   const empId = `emp-${userId.slice(0, 8)}`;
   await db
     .prepare(
-      `INSERT INTO employment (id, userId, teamId, departmentId, grade, status, startedAt, workEmail, workEmailVerified)
-       VALUES (?, ?, ?, ?, ?, 'active', ?, ?, 1)
+      `INSERT INTO employment (id, userId, teamId, departmentId, grade, employeeId, status, startedAt, workEmail, workEmailVerified)
+       VALUES (?, ?, ?, ?, ?, ?, 'active', ?, ?, 1)
        ON CONFLICT(id) DO UPDATE SET teamId = excluded.teamId, departmentId = excluded.departmentId,
-                                      grade = excluded.grade, status = 'active'`,
+                                      grade = excluded.grade, employeeId = excluded.employeeId, status = 'active'`,
     )
-    .bind(empId, userId, invite.teamId, departmentId, invite.grade, today, email)
+    .bind(empId, userId, invite.teamId, departmentId, invite.grade, invite.employeeId, today, email)
     .run();
 
   // Keep the cached user.teamId/departmentId columns (used for display
