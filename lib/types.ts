@@ -51,10 +51,15 @@ export interface Department {
 export interface Invite {
   id: string;
   email: string;
+  name: string | null;
+  grade: string | null;
   role: 'manager' | 'employee';
   invitedBy: string;
   teamId: string | null;
+  departmentId: string | null;
   status: InviteStatus;
+  /** Whether a signup link was actually emailed (invites are quiet by default). */
+  emailStatus: 'not_sent' | 'sent' | 'failed';
   createdAt: string;
 }
 

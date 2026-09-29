@@ -40,13 +40,16 @@ import {
   resendInvite,
   listPeople,
   setUserRoles,
-  setPendingInviteRole,
+  listPendingManagers,
+  approvePendingManager,
+  rejectPendingManager,
   type BulkDeleteResult,
   type CsvImportResult,
   type InviteInput,
   type InviteWithMeta,
   type OrgStructure,
   type PersonRow,
+  type PendingManager,
   type QuestionInput,
   type RecommendationRow,
   type RecommendationAudience,
@@ -253,10 +256,25 @@ export async function setUserRolesAction(userId: string, roles: Role[]): Promise
   return setUserRoles(user, userId, roles);
 }
 
-export async function setPendingInviteRoleAction(
-  inviteId: string,
-  role: "manager" | "employee",
-): Promise<PersonRow[]> {
+/** People & roles screen data: everyone, plus team leads awaiting approval. */
+export interface PeopleData {
+  people: PersonRow[];
+  pendingManagers: PendingManager[];
+}
+
+async function peopleData(user: Awaited<ReturnType<typeof requireAdmin>>): Promise<PeopleData> {
+  const [people, pendingManagers] = await Promise.all([listPeople(user), listPendingManagers(user)]);
+  return { people, pendingManagers };
+}
+
+export async function approvePendingManagerAction(teamId: string): Promise<PeopleData> {
   const user = await requireAdmin();
-  return setPendingInviteRole(user, inviteId, role);
+  await approvePendingManager(user, teamId);
+  return peopleData(user);
+}
+
+export async function rejectPendingManagerAction(teamId: string): Promise<PeopleData> {
+  const user = await requireAdmin();
+  await rejectPendingManager(user, teamId);
+  return peopleData(user);
 }

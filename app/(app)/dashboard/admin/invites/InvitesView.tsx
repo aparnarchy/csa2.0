@@ -34,17 +34,28 @@ export function InvitesView({
   const [pending, startTransition] = useTransition();
   const [filter, setFilter] = useState<"all" | "pending" | "accepted">("all");
   const [search, setSearch] = useState("");
+  const [copied, setCopied] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const query = search.trim().toLowerCase();
   const shown = invites.filter(
-    (iv) => (filter === "all" || iv.status === filter) && (!query || iv.email.toLowerCase().includes(query)),
+    (iv) =>
+      (filter === "all" || iv.status === filter) &&
+      (!query || iv.email.toLowerCase().includes(query) || (iv.name ?? "").toLowerCase().includes(query)),
   );
   const countPending = invites.filter((iv) => iv.status === "pending").length;
   const countAccepted = invites.filter((iv) => iv.status === "accepted").length;
 
-  const teamName = (id: string | null) =>
-    (id && teams.find((t) => t.id === id)?.name) || null;
+  /** Invites are quiet, so the admin shares the signup link themselves. */
+  async function copyLink(id: string) {
+    try {
+      await navigator.clipboard.writeText(`${window.location.origin}/signup`);
+      setCopied(id);
+      setTimeout(() => setCopied((c) => (c === id ? null : c)), 2000);
+    } catch {
+      setError(`Couldn't copy — the link is ${window.location.origin}/signup`);
+    }
+  }
 
   function run(fn: () => Promise<InviteWithMeta[]>, onDone?: () => void) {
     setError(null);
@@ -122,7 +133,7 @@ export function InvitesView({
           disabled={pending}
           className="flex-1 rounded-2xl bg-lav-mid py-3 font-display text-sm font-black text-brand active:scale-[0.98] disabled:opacity-50"
         >
-          {pending ? "Working…" : "Upload CSV"}
+          {pending ? "Working…" : "Upload people list"}
         </button>
         <input
           ref={fileRef}
@@ -132,9 +143,15 @@ export function InvitesView({
           className="hidden"
         />
       </div>
-      <p className="px-1 text-[11px] text-ink-4">
-        CSV columns: <span className="font-semibold text-ink-3">email, role, team</span> — role is
-        “manager” or “individual”; team is optional and matched by name.
+      <p className="px-1 text-[11px] leading-snug text-ink-4">
+        CSV columns:{" "}
+        <span className="font-semibold text-ink-3">
+          email, name, team, department, grade, manager email
+        </span>
+        . The app works out who manages which team from the manager email, creates any missing
+        teams and departments, and places people automatically when they sign up. Nobody is
+        emailed — share the signup link yourself. New managers need your approval in People &amp;
+        roles.
       </p>
 
       {/* CSV import summary */}
@@ -153,10 +170,25 @@ export function InvitesView({
           <p className="mt-1 text-xs text-ink-2">
             <span className="font-bold text-good">{summary.created} added</span>
             {" · "}
+            {summary.linked !== undefined && (
+              <>
+                <span className="font-bold text-good">{summary.linked} already signed up</span>
+                {" · "}
+              </>
+            )}
             <span className="font-bold text-brand">{summary.updated} refreshed</span>
             {" · "}
             <span className="font-bold text-bad">{summary.skipped} skipped</span>
           </p>
+          {summary.notes && summary.notes.length > 0 && (
+            <ul className="mt-2 space-y-1">
+              {summary.notes.map((msg, i) => (
+                <li key={i} className="text-[11px] leading-snug text-ink-2">
+                  • {msg}
+                </li>
+              ))}
+            </ul>
+          )}
           {summary.errors.length > 0 && (
             <ul className="mt-2 space-y-1">
               {summary.errors.map((msg, i) => (
@@ -192,7 +224,7 @@ export function InvitesView({
         type="search"
         value={search}
         onChange={(e) => setSearch(e.target.value)}
-        placeholder="Search by email…"
+        placeholder="Search by name or email…"
         className="w-full rounded-xl border border-lav-mid bg-white px-3 py-2 text-sm text-ink placeholder-ink-4 focus:border-brand focus:outline-none"
       />
 
@@ -201,10 +233,12 @@ export function InvitesView({
         <table className="w-full min-w-[720px] border-collapse text-left text-xs">
           <thead>
             <tr className="border-b border-lav-mid text-[10px] uppercase tracking-wide text-ink-3">
-              <Th className="min-w-[200px]">Email</Th>
-              <Th>Role</Th>
+              <Th className="min-w-[200px]">Person</Th>
               <Th>Team</Th>
+              <Th>Leads</Th>
+              <Th>Grade</Th>
               <Th>Status</Th>
+              <Th>Email</Th>
               <Th>Date invited</Th>
               <Th>Actions</Th>
             </tr>
@@ -212,7 +246,7 @@ export function InvitesView({
           <tbody>
             {shown.length === 0 && (
               <tr>
-                <td colSpan={6} className="px-3 py-6 text-center text-[11px] text-ink-4">
+                <td colSpan={8} className="px-3 py-6 text-center text-[11px] text-ink-4">
                   {query
                     ? "No invites match that search."
                     : `No ${filter === "all" ? "" : `${filter} `}invites yet.`}
@@ -221,13 +255,23 @@ export function InvitesView({
             )}
             {shown.map((iv) => (
               <tr key={iv.id} className="border-b border-lav-light/70 last:border-0">
-                <td className="px-3 py-2.5 font-semibold text-ink">{iv.email}</td>
-                <td className="px-3 py-2.5 text-ink-2">
-                  {iv.role === "manager" ? "Manager" : "Individual"}
+                <td className="px-3 py-2.5">
+                  <p className="font-semibold text-ink">{iv.name || iv.email}</p>
+                  {iv.name && <p className="text-[10px] text-ink-4">{iv.email}</p>}
                 </td>
-                <td className="px-3 py-2.5 text-ink-2">{teamName(iv.teamId) ?? "—"}</td>
+                <td className="px-3 py-2.5 text-ink-2">
+                  {iv.teamName ?? "—"}
+                  {iv.departmentName && (
+                    <span className="block text-[10px] text-ink-4">{iv.departmentName}</span>
+                  )}
+                </td>
+                <td className="px-3 py-2.5 text-ink-2">{iv.leadsTeamName ?? "—"}</td>
+                <td className="px-3 py-2.5 text-ink-2">{iv.grade || "—"}</td>
                 <td className="px-3 py-2.5">
                   <StatusBadge status={iv.status} />
+                </td>
+                <td className="px-3 py-2.5">
+                  <EmailBadge status={iv.emailStatus} />
                 </td>
                 <td className="px-3 py-2.5 whitespace-nowrap text-ink-2">
                   {String(iv.createdAt).slice(0, 10)}
@@ -235,14 +279,23 @@ export function InvitesView({
                 <td className="px-3 py-2.5">
                   <div className="flex gap-2">
                     {iv.status === "pending" && (
-                      <button
-                        type="button"
-                        onClick={() => run(() => resendInviteAction(iv.id))}
-                        disabled={pending}
-                        className="rounded-xl bg-lav-mid px-3 py-1.5 text-[11px] font-bold text-brand active:scale-[0.98] disabled:opacity-50"
-                      >
-                        Resend
-                      </button>
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => copyLink(iv.id)}
+                          className="whitespace-nowrap rounded-xl bg-lav-mid px-3 py-1.5 text-[11px] font-bold text-brand active:scale-[0.98]"
+                        >
+                          {copied === iv.id ? "Copied ✓" : "Copy link"}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => run(() => resendInviteAction(iv.id))}
+                          disabled={pending}
+                          className="whitespace-nowrap rounded-xl bg-lav-mid px-3 py-1.5 text-[11px] font-bold text-brand active:scale-[0.98] disabled:opacity-50"
+                        >
+                          Email link
+                        </button>
+                      </>
                     )}
                     <button
                       type="button"
@@ -300,7 +353,7 @@ export function InvitesView({
               <option value="manager">Manager</option>
             </select>
           </Field>
-          <Field label="Team (optional)">
+          <Field label={edit.input.role === "manager" ? "Team they lead (optional)" : "Team (optional)"}>
             <select
               value={edit.input.teamId ?? ""}
               onChange={(e) => setEdit({ input: { ...edit.input, teamId: e.target.value || null } })}
@@ -333,6 +386,21 @@ function StatusBadge({ status }: { status: "pending" | "accepted" }) {
       }`}
     >
       {accepted ? "Accepted" : "Pending"}
+    </span>
+  );
+}
+
+function EmailBadge({ status }: { status: InviteWithMeta["emailStatus"] }) {
+  const style = {
+    not_sent: { label: "Not emailed", cls: "bg-gray-100 text-ink-4" },
+    sent: { label: "Emailed", cls: "bg-green-50 text-good" },
+    failed: { label: "Didn't deliver", cls: "bg-red-50 text-red-600" },
+  }[status];
+  return (
+    <span
+      className={`whitespace-nowrap rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide ${style.cls}`}
+    >
+      {style.label}
     </span>
   );
 }
@@ -390,7 +458,7 @@ function Sheet({
             disabled={pending}
             className="flex-1 rounded-2xl bg-brand py-3 font-display text-sm font-black text-white active:scale-[0.98] disabled:opacity-50"
           >
-            {pending ? "Saving…" : "Send invite"}
+            {pending ? "Saving…" : "Add person"}
           </button>
         </div>
     </Modal>

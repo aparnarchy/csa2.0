@@ -160,10 +160,15 @@ export function OrgStructureView({
                   {deptName(t.departmentId)} ·{" "}
                   {t.managerId ? (
                     mgrName(t.managerId)
-                  ) : (
+                  ) : t.pendingManagerEmail ? null : (
                     <span className="font-bold text-warn">⚠️ No manager</span>
                   )}
                 </p>
+                {t.pendingManagerEmail && (
+                  <p className="truncate text-[11px] font-semibold text-brand">
+                    ⏳ {t.pendingManagerEmail} — awaiting approval
+                  </p>
+                )}
               </div>
               <RowButtons
                 pending={pending}
@@ -171,7 +176,7 @@ export function OrgStructureView({
                   setError(null);
                   setTeamEdit({
                     id: t.id,
-                    input: { name: t.name, departmentId: t.departmentId, managerId: t.managerId },
+                    input: { name: t.name, departmentId: t.departmentId, managerId: t.managerId, leaderEmail: "" },
                   });
                 }}
                 onDelete={() => {
@@ -285,6 +290,24 @@ export function OrgStructureView({
                 </option>
               ))}
             </select>
+          </Field>
+          <Field label="…or a new manager's email">
+            <input
+              type="email"
+              value={teamEdit.input.leaderEmail ?? ""}
+              onChange={(e) =>
+                setTeamEdit({
+                  ...teamEdit,
+                  input: { ...teamEdit.input, leaderEmail: e.target.value },
+                })
+              }
+              className={inputCls}
+              placeholder="e.g. raj@company.com"
+            />
+            <p className="mt-1 text-[10px] leading-snug text-ink-4">
+              For someone not in the list yet (including people who haven&apos;t signed up). They
+              take over once you approve them in People &amp; roles.
+            </p>
           </Field>
         </Sheet>
       )}

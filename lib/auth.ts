@@ -36,35 +36,35 @@ function resolveTrustedOrigins(): string[] {
  * Open self-signup (locked decision — no invite-only gate) means anyone can
  * create an account before an admin's invite for them is ever looked at. This
  * closes that gap the other way round: the moment a new account is created, if
- * an admin already invited that email, apply what the invite promised —
- * the manager role (on top of the default employee one) and, if the invite
- * named a team, an immediately-active employment row scoped to that team (and
- * its department, looked up from the team). Without a real employment row here,
- * this person would be invisible to every team/department aggregate until they
- * separately filled in the onboarding form — which nothing requires them to do
- * before using the app. An invite with no team still gets an active employment
- * row (teamId null) so their own check-ins/scores work immediately; an admin
- * can assign them to a team later. No matching invite → unchanged prior
- * behaviour (plain employee, no employment row until onboarding).
+ * an admin already invited that email, place them where the invite (or roster
+ * upload) put them — an immediately-active employment row on their team, its
+ * department and their grade. Without a real employment row here, this person
+ * would be invisible to every team/department aggregate until they separately
+ * filled in the onboarding form — which nothing requires them to do before
+ * using the app. No matching invite → plain employee, no employment row until
+ * onboarding.
+ *
+ * Deliberately does NOT grant the manager role. Signup doesn't prove someone
+ * owns the email they typed (the email service can't deliver to arbitrary
+ * inboxes yet), so anyone could sign up as a manager's address first. Leading
+ * a team is recorded on teams.pendingManagerEmail instead, and only takes
+ * effect when an admin approves it (approvePendingManager in lib/admin.ts).
+ * Being on a team is low-risk by comparison: members only ever see their own
+ * data.
  */
 async function applyPendingInvite(db: D1Database, userId: string, email: string): Promise<void> {
   const invite = await db
     .prepare(
-      "SELECT id, role, teamId FROM invites WHERE lower(email) = lower(?) AND status = 'pending' ORDER BY createdAt DESC LIMIT 1",
+      "SELECT id, teamId, departmentId, grade FROM invites WHERE lower(email) = lower(?) AND status = 'pending' ORDER BY createdAt DESC LIMIT 1",
     )
     .bind(email)
-    .first<{ id: string; role: "manager" | "employee"; teamId: string | null }>();
+    .first<{ id: string; teamId: string | null; departmentId: string | null; grade: string | null }>();
   if (!invite) return;
 
-  if (invite.role === "manager") {
-    await db
-      .prepare("INSERT OR IGNORE INTO user_roles (userId, role) VALUES (?, 'manager')")
-      .bind(userId)
-      .run();
-  }
-
-  let departmentId: string | null = null;
-  if (invite.teamId) {
+  // The department the roster gave this person wins; otherwise they take
+  // their team's.
+  let departmentId: string | null = invite.departmentId;
+  if (!departmentId && invite.teamId) {
     const team = await db
       .prepare("SELECT departmentId FROM teams WHERE id = ?")
       .bind(invite.teamId)
@@ -76,12 +76,12 @@ async function applyPendingInvite(db: D1Database, userId: string, email: string)
   const empId = `emp-${userId.slice(0, 8)}`;
   await db
     .prepare(
-      `INSERT INTO employment (id, userId, teamId, departmentId, status, startedAt, workEmail, workEmailVerified)
-       VALUES (?, ?, ?, ?, 'active', ?, ?, 1)
+      `INSERT INTO employment (id, userId, teamId, departmentId, grade, status, startedAt, workEmail, workEmailVerified)
+       VALUES (?, ?, ?, ?, ?, 'active', ?, ?, 1)
        ON CONFLICT(id) DO UPDATE SET teamId = excluded.teamId, departmentId = excluded.departmentId,
-                                      status = 'active'`,
+                                      grade = excluded.grade, status = 'active'`,
     )
-    .bind(empId, userId, invite.teamId, departmentId, today, email)
+    .bind(empId, userId, invite.teamId, departmentId, invite.grade, today, email)
     .run();
 
   // Keep the cached user.teamId/departmentId columns (used for display
@@ -92,21 +92,6 @@ async function applyPendingInvite(db: D1Database, userId: string, email: string)
     .run();
 
   await db.prepare("UPDATE invites SET status = 'accepted' WHERE id = ?").bind(invite.id).run();
-}
-
-/**
- * If any team was pre-named to be led by this email (set when a team is
- * created for someone who hasn't signed up yet — see migration 0015), make
- * them that team's real manager now and clear the placeholder. Independent of
- * applyPendingInvite: someone can be a pending team manager without also
- * having a personal invite (e.g. they're already a member of another team via
- * a different route), so this always runs, not only on an invite match.
- */
-async function resolvePendingTeamManager(db: D1Database, userId: string, email: string): Promise<void> {
-  await db
-    .prepare("UPDATE teams SET managerId = ?, pendingManagerEmail = NULL WHERE lower(pendingManagerEmail) = lower(?)")
-    .bind(userId, email)
-    .run();
 }
 
 export function createAuth(db: D1Database) {
@@ -164,7 +149,8 @@ export function createAuth(db: D1Database) {
               .bind(user.id)
               .run();
             await applyPendingInvite(db, user.id, user.email);
-            await resolvePendingTeamManager(db, user.id, user.email);
+            // A team this email was named to lead stays pending here — an
+            // admin approves it (see applyPendingInvite's comment for why).
           },
         },
       },
