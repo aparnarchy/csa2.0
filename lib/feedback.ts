@@ -159,7 +159,7 @@ export async function getManagerInbox(
       .prepare(
         `SELECT c.questionId AS questionId, c.pillarId AS pillarId, c.score AS score, e.userId AS userId
            FROM checkIns c JOIN employment e ON e.id = c.employmentId
-          WHERE e.teamId = ? AND e.status = 'active'`,
+          WHERE e.teamId = ? AND e.status IN ('active','ended')`,
       )
       .bind(team)
       .all<{ questionId: string; pillarId: PillarId; score: number; userId: string }>(),
@@ -297,7 +297,7 @@ export async function submitManagerAction(
     .prepare(
       `SELECT c.questionId AS questionId, c.score AS score
          FROM checkIns c JOIN employment e ON e.id = c.employmentId
-        WHERE e.teamId = ? AND e.status = 'active' AND c.pillarId = ?`,
+        WHERE e.teamId = ? AND e.status IN ('active','ended') AND c.pillarId = ?`,
     )
     .bind(team, pid)
     .all<{ questionId: string; score: number }>();

@@ -37,6 +37,13 @@ interface Row {
   questionId: string;
   score: number;
   userId: string;
+  jobStatus: "active" | "ended";
+}
+
+/** How many distinct people behind `rows` have since left (ended job, no current one). */
+function countLeavers(rows: { userId: string; jobStatus: "active" | "ended" }[]): number {
+  const active = new Set(rows.filter((r) => r.jobStatus === "active").map((r) => r.userId));
+  return new Set(rows.filter((r) => r.jobStatus === "ended" && !active.has(r.userId)).map((r) => r.userId)).size;
 }
 
 export async function getCeoDashboard(
@@ -122,10 +129,11 @@ export async function getCeoDashboard(
   // scan, which was the actual source of excessive D1 reads.
   const { results: allRows } = await db
     .prepare(
-      `SELECT c.weekId AS weekId, c.pillarId AS pillarId, c.questionId AS questionId, c.score AS score, e.userId AS userId
+      `SELECT c.weekId AS weekId, c.pillarId AS pillarId, c.questionId AS questionId, c.score AS score,
+              e.userId AS userId, e.status AS jobStatus
          FROM checkIns c
          JOIN employment e ON e.id = c.employmentId
-        WHERE e.status = 'active'${scopeSql}`,
+        WHERE e.status IN ('active','ended')${scopeSql}`,
     )
     .bind(...params)
     .all<Row>();
@@ -228,6 +236,7 @@ export async function getCeoDashboard(
     delta,
     percentile: Math.max(20, Math.min(98, Math.round(score * 10 + 4))), // sample derivation
     peopleCount,
+    leaverCount: countLeavers(rows),
     pillars,
     questions,
     trend,

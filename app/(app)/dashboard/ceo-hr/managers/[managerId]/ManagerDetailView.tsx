@@ -7,6 +7,7 @@ import {
   BigScore,
   Card,
   GradientHeader,
+  LeaverNote,
   NotEnoughData,
   PillarCard,
   CEO_NAV,
@@ -77,6 +78,7 @@ export function ManagerDetailView({
                   {data.percentile}th percentile
                   {data.resolutionPct != null && ` · ${data.resolutionPct}% actions resolved`}
                 </p>
+                <LeaverNote count={data.leaverCount} />
               </div>
               {data.delta !== null && (
                 <div

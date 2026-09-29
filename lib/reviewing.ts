@@ -146,6 +146,7 @@ export async function getReviewingManagerDetail(
   }
 
   return {
+    leaverCount: agg.leaverCount,
     managerId,
     name: team.name,
     enoughData: true,

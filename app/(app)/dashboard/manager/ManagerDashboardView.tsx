@@ -8,6 +8,7 @@ import {
   Card,
   GradientHeader,
   InsightBarRow,
+  LeaverNote,
   Mascot,
   NotEnoughData,
   PillarCard,
@@ -201,6 +202,7 @@ export function ManagerDashboardView({
                 {fill(COPY.managerDashboard.peopleParticipation, { count: data.reporteeCount, pct: data.participation })}
               </span>
             </div>
+            <LeaverNote count={data.leaverCount} />
 
             {/* Pillar cards — aggregates only, no drill into individuals. Tap
                 through to the team-level pillar detail (same shape as the

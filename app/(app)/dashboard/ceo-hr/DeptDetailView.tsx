@@ -9,6 +9,7 @@ import {
   GradientHeader,
   InsightBarRow,
   Mascot,
+  LeaverNote,
   NotEnoughData,
   PillarCard,
   ScreenShell,
@@ -108,6 +109,7 @@ export function DeptDetailView({
                 <p className="mt-1 text-xs text-ink-3">
                   {data.peopleCount} people · {data.percentile}th percentile
                 </p>
+                <LeaverNote count={data.leaverCount} />
               </div>
               {data.delta !== null && (
                 <div

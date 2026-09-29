@@ -34,6 +34,13 @@ interface TeamRow {
   questionId: string;
   score: number;
   userId: string;
+  jobStatus: "active" | "ended";
+}
+
+/** How many distinct people behind `rows` have since left (ended job, no current one). */
+function countLeavers(rows: { userId: string; jobStatus: "active" | "ended" }[]): number {
+  const active = new Set(rows.filter((r) => r.jobStatus === "active").map((r) => r.userId));
+  return new Set(rows.filter((r) => r.jobStatus === "ended" && !active.has(r.userId)).map((r) => r.userId)).size;
 }
 
 export async function getTeamAggregate(
@@ -97,8 +104,11 @@ export async function getTeamAggregate(
     };
   }
 
-  // Team check-ins, scoped to active employment (so only during-employment
-  // counts). Reads this team's full history — can't bound this to the
+  // Team check-ins made during employment on this team — including people
+  // who have since left (ended jobs), so a resignation never rewrites the
+  // team's history; the dashboard notes how many such people are included.
+  // Headcount and the "people in the app" floor above count current members
+  // only. Reads this team's full history — can't bound this to the
   // selected window in SQL without changing which weeks count for a team
   // that's gone quiet recently (verified this actually shifts computed
   // scores against real seed data, so deliberately not doing it). Now an
@@ -106,10 +116,11 @@ export async function getTeamAggregate(
   // full table scan, which was the actual source of excessive D1 reads.
   const { results: allRows } = await db
     .prepare(
-      `SELECT c.weekId AS weekId, c.pillarId AS pillarId, c.questionId AS questionId, c.score AS score, e.userId AS userId
+      `SELECT c.weekId AS weekId, c.pillarId AS pillarId, c.questionId AS questionId, c.score AS score,
+              e.userId AS userId, e.status AS jobStatus
          FROM checkIns c
          JOIN employment e ON e.id = c.employmentId
-        WHERE e.teamId = ? AND e.status = 'active'`,
+        WHERE e.teamId = ? AND e.status IN ('active','ended')`,
     )
     .bind(resolvedTeamId)
     .all<TeamRow>();
@@ -212,7 +223,17 @@ export async function getTeamAggregate(
       };
     });
 
-  return { enoughData: true, teamScore, delta, participation, reporteeCount, pillars, questions, trend };
+  return {
+    enoughData: true,
+    teamScore,
+    delta,
+    participation,
+    reporteeCount,
+    leaverCount: countLeavers(rows),
+    pillars,
+    questions,
+    trend,
+  };
 }
 
 interface TeamQuestionRow {

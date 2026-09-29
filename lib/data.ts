@@ -85,6 +85,8 @@ export interface TeamAggregate {
   delta: number | null;
   participation: number;
   reporteeCount: number;
+  /** People whose past answers are included but who have since left. */
+  leaverCount?: number;
   pillars: PillarScore[];
   questions: QuestionInsight[];
   trend: TrendPoint[];
@@ -1248,6 +1250,8 @@ export interface ManagerDetail {
   delta: number | null;
   percentile: number | null;
   resolutionPct: number | null;
+  /** People whose past answers are included but who have since left. */
+  leaverCount?: number;
   pillars: PillarScore[];
   trend: TrendPoint[];
 }
@@ -1397,6 +1401,8 @@ export interface CeoDashboard {
   delta: number | null;
   percentile: number | null;
   peopleCount: number;
+  /** People whose past answers are included but who have since left. */
+  leaverCount?: number;
   pillars: PillarScore[];
   questions: QuestionInsight[];
   trend: TrendPoint[];

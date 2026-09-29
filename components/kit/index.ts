@@ -23,3 +23,4 @@ export { ScoreCircles } from "./ScoreCircles";
 export { MobileGestures } from "./MobileGestures";
 export { AIInsight } from "./AIInsight";
 export { Modal } from "./Modal";
+export { LeaverNote } from "./LeaverNote";

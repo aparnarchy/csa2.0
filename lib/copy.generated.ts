@@ -110,7 +110,8 @@ export const COPY = {
   "shared": {
     "aiInsightTitle": "AI insight",
     "aiInsightFallback": "No AI summary right now — the scores above are live, and a fresh summary will appear once enough check-ins are in.",
-    "aiInsightCareerNudge": "Add your career history for even more accurate insights."
+    "aiInsightCareerNudge": "Add your career history for even more accurate insights.",
+    "leaverNote": "Includes past answers from {count} who have since left."
   },
   "inbox": {
     "eyebrow": "📥 Inbox",

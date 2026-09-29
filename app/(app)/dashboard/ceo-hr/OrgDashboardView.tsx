@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { BigScore, Card, CustomDropdown, GradientHeader, Mascot, NotEnoughData, PillarCard, CEO_NAV, ScreenShell } from "@/components/kit";
+import { BigScore, Card, CustomDropdown, GradientHeader, LeaverNote, Mascot, NotEnoughData, PillarCard, CEO_NAV, ScreenShell } from "@/components/kit";
 import { type CeoDashboard, type Window } from "@/lib/data";
 import { getCeoDashboardAction, getDepartmentScoresAction } from "./actions";
 import type { DepartmentScore } from "@/lib/ceo";
@@ -111,6 +111,7 @@ export function OrgDashboardView({
             <p className="mt-1 text-xs text-ink-3">
               {org.peopleCount} people · {org.percentile}th percentile
             </p>
+            <LeaverNote count={org.leaverCount} />
             {/* Pillar grid — org-wide aggregates, same shape as the employee
                 and manager dashboards. Tap through to the org-scoped pillar
                 detail (same style as every other pillar drill-down). */}
