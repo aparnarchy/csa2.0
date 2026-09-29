@@ -78,6 +78,17 @@ async function applyPendingInvite(db: D1Database, userId: string, email: string)
     departmentId = team?.departmentId ?? null;
   }
 
+  // Never let a clashing employee ID block someone's signup — drop the ID
+  // (the admin sees it missing in People and can fix it) rather than fail.
+  let employeeId = invite.employeeId;
+  if (employeeId) {
+    const taken = await db
+      .prepare("SELECT 1 AS x FROM employment WHERE lower(employeeId) = lower(?) AND status = 'active'")
+      .bind(employeeId)
+      .first<{ x: number }>();
+    if (taken) employeeId = null;
+  }
+
   const today = new Date().toISOString().slice(0, 10);
   const empId = `emp-${userId.slice(0, 8)}`;
   await db
@@ -87,7 +98,7 @@ async function applyPendingInvite(db: D1Database, userId: string, email: string)
        ON CONFLICT(id) DO UPDATE SET teamId = excluded.teamId, departmentId = excluded.departmentId,
                                       grade = excluded.grade, employeeId = excluded.employeeId, status = 'active'`,
     )
-    .bind(empId, userId, invite.teamId, departmentId, invite.grade, invite.employeeId, today, email)
+    .bind(empId, userId, invite.teamId, departmentId, invite.grade, employeeId, today, email)
     .run();
 
   // Keep the cached user.teamId/departmentId columns (used for display

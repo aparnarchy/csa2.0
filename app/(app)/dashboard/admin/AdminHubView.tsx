@@ -38,15 +38,9 @@ const SECTIONS: Section[] = [
     href: "/dashboard/admin/recommendations",
   },
   {
-    icon: "✉️",
-    title: "Invites",
-    desc: "Invite managers and individuals; bulk-import from CSV; resend or cancel.",
-    href: "/dashboard/admin/invites",
-  },
-  {
     icon: "👥",
-    title: "People & roles",
-    desc: "Grant or revoke employee, manager, CEO/HR and admin access per person.",
+    title: "People",
+    desc: "Everyone in one table: upload your people list, add, edit, mark resigned, roles and manager approvals.",
     href: "/dashboard/admin/people",
   },
 ];
@@ -124,8 +118,8 @@ export function AdminHubView({ session }: { session: SessionUser }) {
 
       <Card>
         <p className="text-[11px] leading-relaxed text-ink-3">
-          Changes here write to the live database. Invite records are saved now; the actual
-          invitation email starts sending once the email service is connected.
+          Changes here write to the live database. Adding people doesn&apos;t email them —
+          share the signup link yourself.
         </p>
       </Card>
     </ScreenShell>

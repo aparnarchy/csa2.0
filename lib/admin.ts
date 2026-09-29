@@ -641,6 +641,487 @@ export async function setUserRoles(
   return listPeople(session);
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// People directory: one table of everyone — signed-up people and invites not
+// yet accepted — with full admin edit, add, bulk status changes and delete.
+//
+// Protocol (owner-approved 2026-09-29):
+// - "Resigned" is a soft remove: their job ends on a date, their account and
+//   personal data stay with them, and their company access (manager / CEO-HR /
+//   admin roles, team leadership) is revoked. Reactivating reopens that job
+//   (for fixing mistakes); roles are re-granted deliberately, not restored.
+// - Hard delete only for invites (never signed up). A signed-up person's
+//   account belongs to them.
+// - Guards: never lose the last admin; every change is audit-logged.
+// ─────────────────────────────────────────────────────────────────────────────
+
+export type PersonStatus = "active" | "resigned" | "no_job";
+
+export interface DirectoryRow {
+  /** "u:<userId>" or "i:<inviteId>" — unique across both kinds. */
+  key: string;
+  kind: "user" | "invite";
+  id: string;
+  employeeId: string | null;
+  name: string;
+  email: string;
+  teamId: string | null;
+  teamName: string | null;
+  departmentId: string | null;
+  departmentName: string | null;
+  grade: string | null;
+  /** Whoever leads this person's team (or is named to, awaiting approval). */
+  managerName: string | null;
+  managerEmail: string | null;
+  /** Teams this person leads (current or awaiting approval). */
+  leads: string[];
+  roles: Role[];
+  status: PersonStatus;
+  endedAt: string | null;
+  signedUp: boolean;
+  emailStatus: Invite["emailStatus"] | null;
+}
+
+export interface Directory {
+  rows: DirectoryRow[];
+  teams: { id: string; name: string; departmentId: string | null }[];
+  departments: Department[];
+  pendingManagers: PendingManager[];
+}
+
+export interface PersonInput {
+  name: string;
+  email: string; // only editable for invites (a signed-up person's login is theirs)
+  employeeId: string | null;
+  teamId: string | null;
+  departmentId: string | null;
+  grade: string | null;
+  status: "active" | "resigned";
+  endedAt: string | null; // YYYY-MM-DD; defaults to today when resigning
+  roles: Role[]; // only applied to signed-up, active people
+}
+
+const today = () => new Date().toISOString().slice(0, 10);
+const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+
+/**
+ * Is this employee ID already used by someone else — a current job OR a
+ * not-yet-signed-up invite? The database only enforces uniqueness within each
+ * list, so this checks across both (an invite's ID moves onto their job at
+ * signup, and must not collide there).
+ */
+async function employeeIdTaken(
+  db: D1Database,
+  employeeId: string | null,
+  except: { userId?: string; inviteId?: string },
+): Promise<boolean> {
+  if (!employeeId) return false;
+  const hit = await db
+    .prepare(
+      `SELECT 1 AS x FROM employment
+        WHERE lower(employeeId) = lower(?) AND status = 'active' AND userId IS NOT ?
+       UNION ALL
+       SELECT 1 FROM invites
+        WHERE lower(employeeId) = lower(?) AND status = 'pending' AND id IS NOT ?
+       LIMIT 1`,
+    )
+    .bind(employeeId, except.userId ?? null, employeeId, except.inviteId ?? null)
+    .first<{ x: number }>();
+  return !!hit;
+}
+
+const ID_TAKEN = "That employee ID is already used by someone else.";
+
+function isEmployeeIdClash(e: unknown): boolean {
+  return e instanceof Error && /UNIQUE constraint failed: .*employeeId/i.test(e.message);
+}
+
+export async function getDirectory(session: SessionUser): Promise<Directory> {
+  assertRole(session, "admin");
+  const db = getDB();
+  const [users, invites, teams, depts, roleRows, pendingManagers] = await Promise.all([
+    db
+      .prepare(
+        `SELECT u.id, u.name, u.email, e.employeeId, e.teamId, e.departmentId, e.grade,
+                e.status AS jobStatus, e.endedAt
+           FROM user u
+           LEFT JOIN employment e ON e.id = (
+             SELECT id FROM employment WHERE userId = u.id AND status IN ('active','ended')
+              ORDER BY status = 'active' DESC, COALESCE(endedAt, '') DESC, startedAt DESC LIMIT 1)`,
+      )
+      .all<{
+        id: string;
+        name: string;
+        email: string;
+        employeeId: string | null;
+        teamId: string | null;
+        departmentId: string | null;
+        grade: string | null;
+        jobStatus: "active" | "ended" | null;
+        endedAt: string | null;
+      }>(),
+    db
+      .prepare(
+        `SELECT id, email, name, employeeId, teamId, departmentId, grade, emailStatus
+           FROM invites WHERE status = 'pending'`,
+      )
+      .all<{
+        id: string;
+        email: string;
+        name: string | null;
+        employeeId: string | null;
+        teamId: string | null;
+        departmentId: string | null;
+        grade: string | null;
+        emailStatus: Invite["emailStatus"];
+      }>(),
+    db
+      .prepare(
+        `SELECT t.id, t.name, t.departmentId, t.managerId, t.pendingManagerEmail,
+                u.name AS leaderName, lower(u.email) AS leaderEmail
+           FROM teams t LEFT JOIN user u ON u.id = t.managerId ORDER BY t.name`,
+      )
+      .all<{
+        id: string;
+        name: string;
+        departmentId: string | null;
+        managerId: string | null;
+        pendingManagerEmail: string | null;
+        leaderName: string | null;
+        leaderEmail: string | null;
+      }>(),
+    db.prepare("SELECT id, name FROM departments ORDER BY name").all<Department>(),
+    db.prepare("SELECT userId, role FROM user_roles").all<{ userId: string; role: Role }>(),
+    listPendingManagers(session),
+  ]);
+
+  const teamById = new Map(teams.results.map((t) => [t.id, t]));
+  const deptById = new Map(depts.results.map((d) => [d.id, d.name]));
+  const rolesByUser = new Map<string, Role[]>();
+  for (const r of roleRows.results) {
+    if (!ASSIGNABLE_ROLES.includes(r.role)) continue;
+    rolesByUser.set(r.userId, [...(rolesByUser.get(r.userId) ?? []), r.role]);
+  }
+  const leadsOf = (email: string) =>
+    teams.results
+      .filter((t) => t.leaderEmail === email.toLowerCase() || t.pendingManagerEmail === email.toLowerCase())
+      .map((t) => t.name);
+  const managerOf = (teamId: string | null) => {
+    const t = teamId ? teamById.get(teamId) : undefined;
+    return {
+      managerName: t ? (t.leaderName ?? t.pendingManagerEmail ?? null) : null,
+      managerEmail: t ? (t.leaderEmail ?? t.pendingManagerEmail ?? null) : null,
+    };
+  };
+
+  const rows: DirectoryRow[] = [
+    ...users.results.map((u) => ({
+      key: `u:${u.id}`,
+      kind: "user" as const,
+      id: u.id,
+      employeeId: u.employeeId,
+      name: u.name,
+      email: u.email,
+      teamId: u.teamId,
+      teamName: u.teamId ? (teamById.get(u.teamId)?.name ?? null) : null,
+      departmentId: u.departmentId,
+      departmentName: u.departmentId ? (deptById.get(u.departmentId) ?? null) : null,
+      grade: u.grade,
+      ...managerOf(u.teamId),
+      leads: leadsOf(u.email),
+      roles: rolesByUser.get(u.id) ?? [],
+      status: (u.jobStatus === "active" ? "active" : u.jobStatus === "ended" ? "resigned" : "no_job") as PersonStatus,
+      endedAt: u.jobStatus === "ended" ? u.endedAt : null,
+      signedUp: true,
+      emailStatus: null,
+    })),
+    ...invites.results.map((i) => ({
+      key: `i:${i.id}`,
+      kind: "invite" as const,
+      id: i.id,
+      employeeId: i.employeeId,
+      name: i.name || i.email,
+      email: i.email,
+      teamId: i.teamId,
+      teamName: i.teamId ? (teamById.get(i.teamId)?.name ?? null) : null,
+      departmentId: i.departmentId,
+      departmentName: i.departmentId ? (deptById.get(i.departmentId) ?? null) : null,
+      grade: i.grade,
+      ...managerOf(i.teamId),
+      leads: leadsOf(i.email),
+      roles: [] as Role[],
+      status: "active" as PersonStatus,
+      endedAt: null,
+      signedUp: false,
+      emailStatus: i.emailStatus,
+    })),
+  ].sort((a, b) => a.name.localeCompare(b.name));
+
+  return {
+    rows,
+    teams: teams.results.map(({ id, name, departmentId }) => ({ id, name, departmentId })),
+    departments: depts.results,
+    pendingManagers,
+  };
+}
+
+/** Throws if `userIds` includes every remaining admin. */
+async function assertKeepsAnAdmin(db: D1Database, userIds: string[]): Promise<void> {
+  const { results } = await db
+    .prepare("SELECT userId FROM user_roles WHERE role = 'admin'")
+    .all<{ userId: string }>();
+  const remaining = results.filter((r) => !userIds.includes(r.userId));
+  if (results.length > 0 && remaining.length === 0) {
+    throw new Error("That would remove the last admin — make someone else an admin first.");
+  }
+}
+
+/**
+ * Statements that end (or reopen) a signed-up person's current job. Resigning
+ * also revokes company access: team leadership (current and pending) and the
+ * manager / CEO-HR / admin roles — they keep the employee role so they can
+ * still sign in to their own data.
+ */
+async function statusStatements(
+  db: D1Database,
+  actorId: string,
+  userId: string,
+  to: "active" | "resigned",
+  endedAt: string | null,
+): Promise<D1PreparedStatement[]> {
+  const person = await db
+    .prepare("SELECT email FROM user WHERE id = ?")
+    .bind(userId)
+    .first<{ email: string }>();
+  if (!person) throw new Error("That person no longer exists.");
+  const job = await db
+    .prepare(
+      `SELECT id, status, endedAt FROM employment WHERE userId = ? AND status IN ('active','ended')
+        ORDER BY status = 'active' DESC, COALESCE(endedAt, '') DESC, startedAt DESC LIMIT 1`,
+    )
+    .bind(userId)
+    .first<{ id: string; status: "active" | "ended"; endedAt: string | null }>();
+  if (!job && to === "active") return [];
+
+  if (to === "resigned") {
+    const date = endedAt && DATE_RE.test(endedAt) ? endedAt : today();
+    if (job?.status === "ended" && job.endedAt === date) return [];
+    return [
+      // Someone with no job record (e.g. a manager who never did check-ins
+      // themselves) still needs their access removed — record an ended job
+      // so they show as Resigned like everyone else.
+      job
+        ? db.prepare("UPDATE employment SET status = 'ended', endedAt = ? WHERE id = ?").bind(date, job.id)
+        : db
+            .prepare(
+              `INSERT INTO employment (id, userId, status, endedAt, workEmail, workEmailVerified)
+               VALUES (?, ?, 'ended', ?, ?, 1)`,
+            )
+            .bind(`emp-${crypto.randomUUID().slice(0, 8)}`, userId, date, person.email),
+      db.prepare("UPDATE teams SET managerId = NULL WHERE managerId = ?").bind(userId),
+      db
+        .prepare("UPDATE teams SET pendingManagerEmail = NULL WHERE lower(pendingManagerEmail) = lower(?)")
+        .bind(person.email),
+      db
+        .prepare("DELETE FROM user_roles WHERE userId = ? AND role IN ('manager','ceo_hr','admin')")
+        .bind(userId),
+      db.prepare("INSERT OR IGNORE INTO user_roles (userId, role) VALUES (?, 'employee')").bind(userId),
+      auditStmt(db, actorId, job?.status === "ended" ? "resigned_date_changed" : "resigned", "user", userId, {
+        endedAt: date,
+      }),
+    ];
+  }
+  if (!job || job.status === "active") return [];
+  return [
+    db.prepare("UPDATE employment SET status = 'active', endedAt = NULL WHERE id = ?").bind(job.id),
+    auditStmt(db, actorId, "reactivated", "user", userId, { previousEndedAt: job.endedAt }),
+  ];
+}
+
+/** Add one person (a quiet invite — nobody is emailed). Admin only. */
+export async function addPerson(session: SessionUser, input: PersonInput): Promise<void> {
+  assertRole(session, "admin");
+  const db = getDB();
+  const email = input.email.trim().toLowerCase();
+  if (!EMAIL_RE.test(email)) throw new Error("A valid email address is required.");
+  const existingUser = await db
+    .prepare("SELECT 1 AS x FROM user WHERE lower(email) = ?")
+    .bind(email)
+    .first<{ x: number }>();
+  if (existingUser) throw new Error("This person already has an account — find them in the list and edit them.");
+  if (await employeeIdTaken(db, input.employeeId?.trim() || null, {})) throw new Error(ID_TAKEN);
+  const id = `inv-${crypto.randomUUID().slice(0, 8)}`;
+  try {
+    await db.batch([
+      db
+        .prepare(
+          `INSERT INTO invites (id, email, name, employeeId, grade, role, invitedBy, teamId, departmentId, status)
+           VALUES (?, ?, ?, ?, ?, 'employee', ?, ?, ?, 'pending')`,
+        )
+        .bind(
+          id,
+          email,
+          input.name.trim() || null,
+          input.employeeId?.trim() || null,
+          input.grade?.trim() || null,
+          session.id,
+          input.teamId || null,
+          input.departmentId || null,
+        ),
+      auditStmt(db, session.id, "person_added", "invite", id, { email, employeeId: input.employeeId }),
+    ]);
+  } catch (e) {
+    if (isEmployeeIdClash(e)) throw new Error(ID_TAKEN);
+    if (isUniqueConstraintError(e)) throw new Error("This email has already been added.");
+    throw e;
+  }
+}
+
+/** Edit one row of the directory. Admin only. */
+export async function updatePerson(session: SessionUser, key: string, input: PersonInput): Promise<void> {
+  assertRole(session, "admin");
+  const db = getDB();
+  const [kind, id] = [key.slice(0, 1), key.slice(2)];
+  const employeeId = input.employeeId?.trim() || null;
+  const grade = input.grade?.trim() || null;
+  if (await employeeIdTaken(db, employeeId, kind === "u" ? { userId: id } : { inviteId: id })) {
+    throw new Error(ID_TAKEN);
+  }
+
+  try {
+    if (kind === "i") {
+      const email = input.email.trim().toLowerCase();
+      if (!EMAIL_RE.test(email)) throw new Error("A valid email address is required.");
+      await db.batch([
+        db
+          .prepare(
+            `UPDATE invites SET email = ?, name = ?, employeeId = ?, teamId = ?, departmentId = ?, grade = ?
+              WHERE id = ? AND status = 'pending'`,
+          )
+          .bind(email, input.name.trim() || null, employeeId, input.teamId || null, input.departmentId || null, grade, id),
+        auditStmt(db, session.id, "person_edited", "invite", id, { ...input }),
+      ]);
+      return;
+    }
+    if (kind !== "u") throw new Error("Unknown row.");
+
+    if (input.status === "resigned") await assertKeepsAnAdmin(db, [id]);
+    else if (!input.roles.includes("admin")) await assertKeepsAnAdmin(db, [id]);
+
+    const stmts: D1PreparedStatement[] = [];
+    if (input.name.trim()) {
+      stmts.push(db.prepare("UPDATE user SET name = ? WHERE id = ?").bind(input.name.trim(), id));
+    }
+    const job = await db
+      .prepare(
+        `SELECT id FROM employment WHERE userId = ? AND status IN ('active','ended')
+          ORDER BY status = 'active' DESC, COALESCE(endedAt, '') DESC, startedAt DESC LIMIT 1`,
+      )
+      .bind(id)
+      .first<{ id: string }>();
+    if (job) {
+      stmts.push(
+        db
+          .prepare("UPDATE employment SET employeeId = ?, teamId = ?, departmentId = ?, grade = ? WHERE id = ?")
+          .bind(employeeId, input.teamId || null, input.departmentId || null, grade, job.id),
+      );
+    } else if (input.status === "active" && (input.teamId || input.departmentId || employeeId || grade)) {
+      // No job yet (e.g. an account made before any roster) — start one.
+      const email = await db.prepare("SELECT email FROM user WHERE id = ?").bind(id).first<{ email: string }>();
+      stmts.push(
+        db
+          .prepare(
+            `INSERT INTO employment (id, userId, teamId, departmentId, grade, employeeId, status, startedAt, workEmail, workEmailVerified)
+             VALUES (?, ?, ?, ?, ?, ?, 'active', ?, ?, 1)`,
+          )
+          .bind(`emp-${id.slice(0, 8)}`, id, input.teamId || null, input.departmentId || null, grade, employeeId, today(), email?.email ?? null),
+      );
+    }
+    if (input.status === "active") {
+      stmts.push(
+        db
+          .prepare("UPDATE user SET teamId = ?, departmentId = ? WHERE id = ?")
+          .bind(input.teamId || null, input.departmentId || null, id),
+      );
+    }
+    stmts.push(auditStmt(db, session.id, "person_edited", "user", id, { ...input }));
+    if (stmts.length) await db.batch(stmts);
+
+    // Status last: resigning revokes roles, so it must win over any role edit.
+    const statusStmts = await statusStatements(db, session.id, id, input.status, input.endedAt);
+    if (input.status === "active") {
+      await setUserRoles(session, id, input.roles);
+    }
+    if (statusStmts.length) await db.batch(statusStmts);
+  } catch (e) {
+    if (isEmployeeIdClash(e)) throw new Error(ID_TAKEN);
+    if (isUniqueConstraintError(e)) throw new Error("Another pending person already has this email.");
+    throw e;
+  }
+}
+
+export interface BulkResult {
+  changed: number;
+  skipped: string[]; // one plain-English line per row that wasn't changed
+}
+
+/** Mark many people resigned / active at once. Admin only. */
+export async function bulkSetStatus(
+  session: SessionUser,
+  keys: string[],
+  to: "active" | "resigned",
+  endedAt: string | null,
+): Promise<BulkResult> {
+  assertRole(session, "admin");
+  const db = getDB();
+  const result: BulkResult = { changed: 0, skipped: [] };
+  const userIds = keys.filter((k) => k.startsWith("u:")).map((k) => k.slice(2));
+  const inviteCount = keys.length - userIds.length;
+  if (inviteCount > 0) {
+    result.skipped.push(
+      `${inviteCount} ${inviteCount === 1 ? "person hasn't" : "people haven't"} signed up yet — use Delete to remove them instead.`,
+    );
+  }
+  if (to === "resigned") await assertKeepsAnAdmin(db, userIds);
+  const stmts: D1PreparedStatement[] = [];
+  for (const id of userIds) {
+    try {
+      const s = await statusStatements(db, session.id, id, to, endedAt);
+      if (s.length) {
+        stmts.push(...s);
+        result.changed++;
+      }
+    } catch (e) {
+      result.skipped.push(e instanceof Error ? e.message : String(e));
+    }
+  }
+  if (stmts.length) await db.batch(stmts);
+  return result;
+}
+
+/** Delete rows. Only invites (never signed up) can be deleted. Admin only. */
+export async function deletePeople(session: SessionUser, keys: string[]): Promise<BulkResult> {
+  assertRole(session, "admin");
+  const db = getDB();
+  const inviteIds = keys.filter((k) => k.startsWith("i:")).map((k) => k.slice(2));
+  const userCount = keys.length - inviteIds.length;
+  const result: BulkResult = { changed: 0, skipped: [] };
+  if (userCount > 0) {
+    result.skipped.push(
+      `${userCount} signed-up ${userCount === 1 ? "person was" : "people were"} not deleted — their account belongs to them. Mark them as resigned instead.`,
+    );
+  }
+  if (inviteIds.length) {
+    const stmts = inviteIds.flatMap((id) => [
+      db.prepare("DELETE FROM invites WHERE id = ? AND status = 'pending'").bind(id),
+      auditStmt(db, session.id, "invite_deleted", "invite", id, {}),
+    ]);
+    await db.batch(stmts);
+    result.changed = inviteIds.length;
+  }
+  return result;
+}
+
 /** A UNIQUE-index violation from D1 (e.g. a duplicate department/team name),
     surfaced as a plain-English message instead of a raw SQL error. */
 function isUniqueConstraintError(e: unknown): boolean {
@@ -958,15 +1439,6 @@ export async function deleteContent(session: SessionUser, id: string): Promise<v
 // configured — that step is the owner's (see the TODO(email) markers).
 // ─────────────────────────────────────────────────────────────────────────────
 
-/** An invite enriched with display names for the admin list. */
-export interface InviteWithMeta extends Invite {
-  teamName: string | null;
-  departmentName: string | null;
-  /** A team this email has been named to lead (current or awaiting approval). */
-  leadsTeamName: string | null;
-}
-
-type InviteRow = InviteWithMeta;
 
 /** The editable fields of an invite. `role` uses the DB values (employee/manager).
  *  A manager invite's team is the team they LEAD (not join) — see createInvite. */
@@ -1018,29 +1490,6 @@ function normaliseRole(raw: string): "manager" | "employee" | null {
   if (r === "manager") return "manager";
   if (r === "employee" || r === "individual") return "employee";
   return null;
-}
-
-/** All invites, newest first, with team/department/led-team names. Admin only. */
-export async function getInvites(session: SessionUser): Promise<InviteWithMeta[]> {
-  assertRole(session, "admin");
-  const { results } = await getDB()
-    .prepare(
-      `SELECT i.id, i.email, i.name, i.grade, i.role, i.invitedBy, i.teamId, i.departmentId,
-              i.status, i.emailStatus, i.createdAt,
-              t.name AS teamName,
-              COALESCE(d.name, td.name) AS departmentName,
-              (SELECT lt.name FROM teams lt
-                 LEFT JOIN user lu ON lu.id = lt.managerId
-                WHERE lower(lt.pendingManagerEmail) = lower(i.email) OR lower(lu.email) = lower(i.email)
-                LIMIT 1) AS leadsTeamName
-         FROM invites i
-         LEFT JOIN teams t ON t.id = i.teamId
-         LEFT JOIN departments td ON td.id = t.departmentId
-         LEFT JOIN departments d ON d.id = i.departmentId
-        ORDER BY i.createdAt DESC`,
-    )
-    .all<InviteRow>();
-  return results;
 }
 
 /**
@@ -1142,11 +1591,6 @@ export async function resendInvite(session: SessionUser, id: string): Promise<vo
   await db.prepare("UPDATE invites SET emailStatus = ? WHERE id = ?").bind(status, id).run();
 }
 
-/** Cancel (delete) an invite. Admin only. */
-export async function cancelInvite(session: SessionUser, id: string): Promise<void> {
-  assertRole(session, "admin");
-  await getDB().prepare("DELETE FROM invites WHERE id = ?").bind(id).run();
-}
 
 /** Summary returned after a CSV bulk import. */
 export interface CsvImportResult {
@@ -1608,7 +2052,10 @@ async function importRoster(
     const byEmailUser = userByEmail.get(r.email)?.id;
     const byIdInvite = idKey ? inviteByEmployeeId.get(idKey) : undefined;
     const byEmailInvite = inviteByEmail.get(r.email);
-    if ((byIdUser && byEmailUser && byIdUser !== byEmailUser) || (byIdInvite && byEmailInvite && byIdInvite !== byEmailInvite)) {
+    const matches = new Set(
+      [byIdUser && `u:${byIdUser}`, byEmailUser && `u:${byEmailUser}`, byIdInvite && `i:${byIdInvite}`, byEmailInvite && `i:${byEmailInvite}`].filter(Boolean),
+    );
+    if (matches.size > 1) {
       result.skipped++;
       result.errors.push(
         `Row ${r.rowNo} (${r.email}): employee ID ${r.employeeId} already belongs to someone else in the app — skipped.`,

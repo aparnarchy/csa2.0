@@ -33,23 +33,21 @@ import {
   getWisdomCms,
   updateContent,
   updateModule,
-  cancelInvite,
-  createInvite,
-  getInvites,
   importInvitesCsv,
   resendInvite,
-  listPeople,
-  setUserRoles,
-  listPendingManagers,
   approvePendingManager,
   rejectPendingManager,
+  getDirectory,
+  addPerson,
+  updatePerson,
+  bulkSetStatus,
+  deletePeople,
+  type BulkResult,
+  type Directory,
+  type PersonInput,
   type BulkDeleteResult,
   type CsvImportResult,
-  type InviteInput,
-  type InviteWithMeta,
   type OrgStructure,
-  type PersonRow,
-  type PendingManager,
   type QuestionInput,
   type RecommendationRow,
   type RecommendationAudience,
@@ -58,7 +56,7 @@ import {
   type WisdomModuleInput,
   type WisdomModuleWithContent,
 } from "@/lib/admin";
-import type { Question, Role } from "@/lib/types";
+import type { Question } from "@/lib/types";
 
 async function requireAdmin() {
   const session = await getSession();
@@ -214,67 +212,67 @@ export async function deleteContentAction(id: string): Promise<WisdomModuleWithC
   return getWisdomCms(user);
 }
 
-// ── Invites ─────────────────────────────────────────────────────────────────
+// ── People directory (people + invites in one table) ─────────────────────────
 
-export async function createInviteAction(input: InviteInput): Promise<InviteWithMeta[]> {
+export async function getDirectoryAction(): Promise<Directory> {
   const user = await requireAdmin();
-  await createInvite(user, input);
-  return getInvites(user);
+  return getDirectory(user);
 }
 
-export async function resendInviteAction(id: string): Promise<InviteWithMeta[]> {
+export async function addPersonAction(input: PersonInput): Promise<Directory> {
   const user = await requireAdmin();
-  await resendInvite(user, id);
-  return getInvites(user);
+  await addPerson(user, input);
+  return getDirectory(user);
 }
 
-export async function cancelInviteAction(id: string): Promise<InviteWithMeta[]> {
+export async function updatePersonAction(key: string, input: PersonInput): Promise<Directory> {
   const user = await requireAdmin();
-  await cancelInvite(user, id);
-  return getInvites(user);
+  await updatePerson(user, key, input);
+  return getDirectory(user);
 }
 
-/** Bulk import; returns both the summary and the refreshed list. */
-export async function importInvitesCsvAction(
+export async function bulkSetStatusAction(
+  keys: string[],
+  to: "active" | "resigned",
+  endedAt: string | null,
+): Promise<{ result: BulkResult; directory: Directory }> {
+  const user = await requireAdmin();
+  const result = await bulkSetStatus(user, keys, to, endedAt);
+  return { result, directory: await getDirectory(user) };
+}
+
+export async function deletePeopleAction(
+  keys: string[],
+): Promise<{ result: BulkResult; directory: Directory }> {
+  const user = await requireAdmin();
+  const result = await deletePeople(user, keys);
+  return { result, directory: await getDirectory(user) };
+}
+
+/** Email one invite its signup link (records whether it was delivered). */
+export async function emailInviteAction(inviteId: string): Promise<Directory> {
+  const user = await requireAdmin();
+  await resendInvite(user, inviteId);
+  return getDirectory(user);
+}
+
+/** Roster / people-list upload; returns the summary and the refreshed table. */
+export async function importPeopleCsvAction(
   text: string,
-): Promise<{ result: CsvImportResult; invites: InviteWithMeta[] }> {
+): Promise<{ result: CsvImportResult; directory: Directory }> {
   const user = await requireAdmin();
   const result = await importInvitesCsv(user, text);
-  const invites = await getInvites(user);
-  return { result, invites };
+  return { result, directory: await getDirectory(user) };
 }
 
-// ── People & roles ──────────────────────────────────────────────────────────
-
-export async function listPeopleAction(): Promise<PersonRow[]> {
-  const user = await requireAdmin();
-  return listPeople(user);
-}
-
-export async function setUserRolesAction(userId: string, roles: Role[]): Promise<PersonRow[]> {
-  const user = await requireAdmin();
-  return setUserRoles(user, userId, roles);
-}
-
-/** People & roles screen data: everyone, plus team leads awaiting approval. */
-export interface PeopleData {
-  people: PersonRow[];
-  pendingManagers: PendingManager[];
-}
-
-async function peopleData(user: Awaited<ReturnType<typeof requireAdmin>>): Promise<PeopleData> {
-  const [people, pendingManagers] = await Promise.all([listPeople(user), listPendingManagers(user)]);
-  return { people, pendingManagers };
-}
-
-export async function approvePendingManagerAction(teamId: string): Promise<PeopleData> {
+export async function approvePendingManagerAction(teamId: string): Promise<Directory> {
   const user = await requireAdmin();
   await approvePendingManager(user, teamId);
-  return peopleData(user);
+  return getDirectory(user);
 }
 
-export async function rejectPendingManagerAction(teamId: string): Promise<PeopleData> {
+export async function rejectPendingManagerAction(teamId: string): Promise<Directory> {
   const user = await requireAdmin();
   await rejectPendingManager(user, teamId);
-  return peopleData(user);
+  return getDirectory(user);
 }
