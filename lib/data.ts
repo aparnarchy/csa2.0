@@ -8,6 +8,7 @@
  * no change to the function signatures or the shapes screens consume.
  */
 
+import type { Breakdown } from "./responses";
 import type { FollowUpStatus, PillarId, SessionUser, WisdomLevel } from "./types";
 import { PILLAR_ORDER, PILLARS } from "./pillars";
 import {
@@ -38,6 +39,8 @@ export interface QuestionInsight {
   pillarId: PillarId;
   score: number;
   responses: { key: "A" | "B" | "C"; text: string; pct: number }[];
+  /** How to read `responses` (lib/responses.ts). Absent = a plain % split. */
+  breakdown?: Breakdown;
   recommendation: string;
 }
 
@@ -1080,6 +1083,8 @@ export interface ManagerActionItem {
   triggerQuestion: string;
   teamAvg: number; // aggregate score on the trigger question
   responses: { key: "A" | "B" | "C"; text: string; pct: number }[]; // A/B/C bar
+  /** How to read `responses` (lib/responses.ts). Absent = a plain % split. */
+  breakdown?: Breakdown;
   recommendation: string;
   status: ManagerActionStatus;
   dateLabel: string; // when it was flagged, e.g. "Flagged Jun 2026"

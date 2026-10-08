@@ -24,6 +24,7 @@ import type {
 } from "./data";
 import { PILLAR_ORDER } from "./pillars";
 import { scoreBand } from "./scoring";
+import { myBreakdown, type QuestionOptionCols } from "./responses";
 import type { PillarId, SessionUser } from "./types";
 
 function round1(n: number): number {
@@ -37,13 +38,6 @@ function weeksIn(window: Window): number {
 
 const avg = (xs: number[]) => xs.reduce((a, b) => a + b, 0) / xs.length;
 
-/** An individual's single answer shows 100% on the option their score falls in. */
-function singleAnswer(score: number): QuestionInsight["responses"] {
-  const sel = score > 7 ? "A" : score >= 4 ? "B" : "C";
-  const text: Record<"A" | "B" | "C", string> = { A: "Positive", B: "Mixed", C: "Needs work" };
-  return (["A", "B", "C"] as const).map((k) => ({ key: k, text: text[k], pct: k === sel ? 100 : 0 }));
-}
-
 interface CheckInRow {
   weekId: string;
   questionId: string;
@@ -56,14 +50,17 @@ async function computeAggregate(userId: string, window: Window): Promise<Employe
   const db = getDB();
   const [ciRes, qRes, sRes, wRes, recMap] = await Promise.all([
     db
-      .prepare("SELECT weekId, questionId, pillarId, score FROM checkIns WHERE userId = ?")
+      // Oldest first, so a question's last answer is its most recent pick.
+      .prepare("SELECT weekId, questionId, pillarId, score FROM checkIns WHERE userId = ? ORDER BY timestamp, weekId")
       .bind(userId)
       .all<CheckInRow>(),
     // Not filtered to isActive: a deactivated question's past answers still
     // belong in this person's own breakdown, or they silently vanish from it.
     db
-      .prepare("SELECT id, text, pillarId FROM questions")
-      .all<{ id: string; text: string; pillarId: PillarId }>(),
+      .prepare(
+        "SELECT id, text, pillarId, optionA_text, optionA_score, optionB_text, optionB_score, optionC_text, optionC_score FROM questions",
+      )
+      .all<{ id: string; text: string; pillarId: PillarId } & QuestionOptionCols>(),
     db.prepare("SELECT currentStreak FROM streaks WHERE userId = ?").bind(userId).first<{
       currentStreak: number;
     }>(),
@@ -178,7 +175,8 @@ async function computeAggregate(userId: string, window: Window): Promise<Employe
         text: meta.text,
         pillarId: meta.pillarId,
         score,
-        responses: singleAnswer(score),
+        // Their real options, latest pick highlighted (oldest-first rows).
+        ...myBreakdown(meta, scores),
         recommendation: pickRecommendation(recMap, qid, meta.pillarId),
       };
     });

@@ -24,6 +24,7 @@ import type {
 } from "./data";
 import { PILLARS, PILLAR_ORDER } from "./pillars";
 import { ANONYMISATION_FLOOR } from "./scoring";
+import { groupBreakdown } from "./responses";
 import { MANAGER_ACTION_DELAY_WEEKS } from "./testing-mode";
 import type { PillarId, SessionUser } from "./types";
 
@@ -55,21 +56,6 @@ interface QuestionRow {
   optionB_score: number;
   optionC_text: string;
   optionC_score: number;
-}
-
-/** Real A/B/C split for a question from the team's answers (score → option). */
-function distribution(scores: number[], q: QuestionRow): ManagerActionItem["responses"] {
-  const opts = [
-    { key: "A" as const, text: q.optionA_text, score: q.optionA_score },
-    { key: "B" as const, text: q.optionB_text, score: q.optionB_score },
-    { key: "C" as const, text: q.optionC_text, score: q.optionC_score },
-  ];
-  const total = scores.length || 1;
-  return opts.map((o) => ({
-    key: o.key,
-    text: o.text,
-    pct: Math.round((scores.filter((s) => s === o.score).length / total) * 100),
-  }));
 }
 
 type DB = ReturnType<typeof getDB>;
@@ -177,9 +163,11 @@ export async function getManagerInbox(
 
   const qById = new Map(qRows.map((q) => [q.id, q]));
   const scoresByQ = new Map<string, number[]>();
+  const peopleByQ = new Map<string, Set<string>>();
   const scoresByPillar = new Map<PillarId, number[]>();
   for (const r of ciRows) {
     (scoresByQ.get(r.questionId) ?? scoresByQ.set(r.questionId, []).get(r.questionId)!).push(r.score);
+    (peopleByQ.get(r.questionId) ?? peopleByQ.set(r.questionId, new Set()).get(r.questionId)!).add(r.userId);
     (scoresByPillar.get(r.pillarId) ?? scoresByPillar.set(r.pillarId, []).get(r.pillarId)!).push(r.score);
   }
 
@@ -211,7 +199,8 @@ export async function getManagerInbox(
       pillarLabel: PILLARS[pid].label,
       triggerQuestion: q.text,
       teamAvg: round1(avg(qScores)),
-      responses: distribution(qScores, q),
+      // % split from 5+ people, else average + closest option only.
+      ...groupBreakdown(q, qScores, peopleByQ.get(q.id)?.size ?? 0),
       recommendation: pickRecommendation(recMap, q.id, pid),
       status: (existing?.status === "in_progress" ? "flagged" : "open") as ManagerActionStatus,
       dateLabel: `Flagged ${monthLabel(new Date().toISOString())}`,
@@ -251,7 +240,7 @@ export async function getManagerInbox(
       pillarLabel: PILLARS[a.pillarId].label,
       triggerQuestion: q?.text ?? "",
       teamAvg: qScores.length ? round1(avg(qScores)) : 0,
-      responses: q ? distribution(qScores, q) : [],
+      ...(q ? groupBreakdown(q, qScores, peopleByQ.get(q.id)?.size ?? 0) : { responses: [] }),
       recommendation: a.recommendationText ?? pickRecommendation(recMap, a.questionId, a.pillarId),
       status: "resolved",
       dateLabel: `Flagged ${monthLabel(a.submittedAt)}`,

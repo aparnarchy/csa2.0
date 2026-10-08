@@ -1,10 +1,11 @@
 "use client";
 
 import type { QuestionInsight } from "@/lib/data";
+import { ResponseBreakdown } from "./ResponseBreakdown";
 
 /**
- * Expandable question row: score bar; tap to reveal the A/B/C response
- * breakdown and (for concerns) a recommendation + inbox link.
+ * Expandable question row: score bar; tap to reveal how it was answered
+ * (ResponseBreakdown — real options, privacy-aware) and (for concerns) a recommendation + inbox link.
  * Bars use uniform lavender + purple (no score colour bands), per design.
  *
  * Controlled on purpose: the parent owns which row is open so the list behaves
@@ -81,25 +82,7 @@ export function InsightBarRow({
       >
         <div className="min-h-0 overflow-hidden">
           <div className="mt-2 rounded-xl border border-lav-soft bg-lav-light p-3">
-          <p className="mb-2.5 text-[10px] font-bold uppercase tracking-wide text-ink-3">
-            Response breakdown
-          </p>
-          {q.responses.map((r) => (
-            <div key={r.key} className="mb-1.5 flex items-center gap-2">
-              <span className="w-3.5 flex-shrink-0 text-[10px] font-bold text-brand">
-                {r.key}
-              </span>
-              <div className="flex-1">
-                <p className="mb-0.5 text-[11px] text-ink-2">{r.text}</p>
-                <div className="h-[5px] rounded-full bg-lav-soft">
-                  <div className="h-full rounded-full bg-brand" style={{ width: `${r.pct}%` }} />
-                </div>
-              </div>
-              <span className="w-8 flex-shrink-0 text-right font-display text-[11px] font-bold text-brand">
-                {r.pct}%
-              </span>
-            </div>
-          ))}
+          <ResponseBreakdown responses={q.responses} breakdown={q.breakdown} score={q.score} />
 
           {!isStrength && (
             <div className="mt-2.5 rounded-xl bg-lav-soft p-3">

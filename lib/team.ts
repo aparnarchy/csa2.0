@@ -18,6 +18,7 @@ import { loadRecommendations, pickRecommendation } from "./recommendations";
 import type { PillarScore, QuestionInsight, TeamAggregate, TrendPoint, Window } from "./data";
 import { PILLAR_ORDER } from "./pillars";
 import { ANONYMISATION_FLOOR, scoreBand } from "./scoring";
+import { groupBreakdown } from "./responses";
 import type { PillarId, SessionUser } from "./types";
 
 function round1(n: number): number {
@@ -219,7 +220,8 @@ export async function getTeamAggregate(
         text: q.text,
         pillarId: q.pillarId,
         score: round1(avg(scores)),
-        responses: distribution(scores, q),
+        // % split from 5+ people, else average + closest option only.
+        ...groupBreakdown(q, scores, respondersByQ.get(q.id)!.size),
         recommendation: pickRecommendation(recMap, q.id, q.pillarId),
       };
     });
@@ -247,21 +249,6 @@ interface TeamQuestionRow {
   optionB_score: number;
   optionC_text: string;
   optionC_score: number;
-}
-
-/** Real A/B/C split for a question from the team's answers (score → option). */
-function distribution(scores: number[], q: TeamQuestionRow): QuestionInsight["responses"] {
-  const opts = [
-    { key: "A" as const, text: q.optionA_text, score: q.optionA_score },
-    { key: "B" as const, text: q.optionB_text, score: q.optionB_score },
-    { key: "C" as const, text: q.optionC_text, score: q.optionC_score },
-  ];
-  const total = scores.length || 1;
-  return opts.map((o) => ({
-    key: o.key,
-    text: o.text,
-    pct: Math.round((scores.filter((s) => s === o.score).length / total) * 100),
-  }));
 }
 
 export interface TeamPillarDetail {

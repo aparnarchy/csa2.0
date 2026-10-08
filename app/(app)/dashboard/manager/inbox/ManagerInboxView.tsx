@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { BackButton, Card, GradientHeader, Mascot, NotEnoughData, ScreenShell } from "@/components/kit";
+import { BackButton, Card, GradientHeader, Mascot, NotEnoughData, ResponseBreakdown, ScreenShell } from "@/components/kit";
 import { HEADER_MASCOT_SIZE } from "@/lib/mascot";
 import { PILLARS } from "@/lib/pillars";
 import {
@@ -220,7 +220,13 @@ function ParticipationLine({
   );
 }
 
-function ResponseBar({ responses }: { responses: ManagerActionItem["responses"] }) {
+function ResponseBar({ item }: { item: ManagerActionItem }) {
+  const { responses, breakdown } = item;
+  // Fewer than SPLIT_MIN_PEOPLE answered → no % split (it could point at one
+  // person); show the average + closest option instead. See lib/responses.ts.
+  if (breakdown?.kind === "average") {
+    return <ResponseBreakdown responses={responses} breakdown={breakdown} score={item.teamAvg} />;
+  }
   const colours = ["#7C6FFF", "#C9B4FF", "#EAE8FF"];
   return (
     <div>
@@ -271,7 +277,7 @@ function OpenActionCard({
       </p>
 
       <div className="mt-3">
-        <ResponseBar responses={item.responses} />
+        <ResponseBar item={item} />
       </div>
 
       <div className="mt-4 rounded-card bg-lav-soft p-3">

@@ -14,6 +14,7 @@ export { TrendChart } from "./TrendChart";
 export { CustomDropdown } from "./CustomDropdown";
 export { SegmentedToggle } from "./SegmentedToggle";
 export { InsightBarRow } from "./InsightBarRow";
+export { ResponseBreakdown } from "./ResponseBreakdown";
 export { RecommendationCard } from "./RecommendationCard";
 export { NotEnoughData } from "./NotEnoughData";
 export { OptionCard } from "./OptionCard";

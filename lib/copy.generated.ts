@@ -156,6 +156,13 @@ export const COPY = {
     "aiInsightTitle": "AI insight",
     "aiInsightFallback": "No AI summary right now — the scores above are live, and a fresh summary will appear once enough check-ins are in.",
     "aiInsightCareerNudge": "Add your career history for even more accurate insights.",
+    "breakdownMineTitle": "Your answer",
+    "breakdownLatestTag": "Your latest",
+    "breakdownAnsweredTimes": "You've answered this {count} times · your average is {avg}",
+    "breakdownSplitTitle": "How people answered",
+    "breakdownAverageTitle": "Typical answer",
+    "breakdownAverageLine": "Average {avg}, closest to “{option}”",
+    "breakdownSmallGroup": "The exact split shows once {min} or more people have answered. This keeps answers anonymous.",
     "leaverNote": "Includes past answers from {count} who have since left."
   },
   "inbox": {

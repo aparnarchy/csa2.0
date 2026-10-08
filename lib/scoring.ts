@@ -39,6 +39,14 @@ function average(nums: number[]): number {
   return Math.round((sum / nums.length) * 10) / 10;
 }
 
+/**
+ * A group's per-option % split (how many picked each answer) only shows once
+ * at least this many distinct people answered that question. Below it, only
+ * the average and the option it's closest to — in a 3-person team, "33%" is
+ * one identifiable person. See lib/responses.ts.
+ */
+export const SPLIT_MIN_PEOPLE = 5;
+
 /** True once there are at least ANONYMISATION_FLOOR responses. */
 export function hasEnoughData(responseCount: number): boolean {
   return responseCount >= ANONYMISATION_FLOOR;
