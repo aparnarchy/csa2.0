@@ -57,14 +57,38 @@ function toCheckInQuestion(
     id: q.id,
     text: q.text,
     pillarId: q.pillarId,
-    options: [
+    options: shuffleFor(q.assignmentId, [
       { key: "A", text: q.optionA_text, score: q.optionA_score },
       { key: "B", text: q.optionB_text, score: q.optionB_score },
       { key: "C", text: q.optionC_text, score: q.optionC_score },
-    ],
+    ]),
     recommendation: pickRecommendation(recMap, q.id, q.pillarId),
     weekLabel: withLabel ? monthLabel(q.startDate) : undefined,
   };
+}
+
+/**
+ * Answer options in a shuffled order, so people read them instead of tapping
+ * by position (they're stored positive → neutral → negative). Seeded by the
+ * assignment id: one person sees the same order for one question every time
+ * (no reshuffle on refresh), while other people and other weeks get their own.
+ * Only the display order changes — each option carries its own key and score,
+ * and the score is what's saved.
+ */
+function shuffleFor<T>(seed: string, items: T[]): T[] {
+  let h = 2166136261; // FNV-1a hash of the seed → starting state
+  for (let i = 0; i < seed.length; i++) h = Math.imul(h ^ seed.charCodeAt(i), 16777619);
+  const next = () => {
+    h = Math.imul(h ^ (h >>> 15), 2246822507);
+    h = Math.imul(h ^ (h >>> 13), 3266489909);
+    return ((h ^= h >>> 16) >>> 0) / 4294967296;
+  };
+  const out = [...items];
+  for (let i = out.length - 1; i > 0; i--) {
+    const j = Math.floor(next() * (i + 1));
+    [out[i], out[j]] = [out[j], out[i]];
+  }
+  return out;
 }
 
 /** "2026-06-01" → "June 2026" for the catch-up chip. */
