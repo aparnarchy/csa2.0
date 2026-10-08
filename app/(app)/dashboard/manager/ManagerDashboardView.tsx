@@ -154,7 +154,7 @@ export function ManagerDashboardView({
               employee dashboard, at team level (top/bottom scoring pillar).
               Professional: no equivalent here (matches employee, which also
               only shows this in Play). */}
-          {isPlay && brightPillar && watchPillar && (
+          {isPlay && (
             <div className="mb-7 pt-4">
               <ScoreCircles bright={brightPillar} watch={watchPillar} onSelect={setSelectedPillar} />
             </div>
@@ -268,7 +268,7 @@ export function ManagerDashboardView({
             ))}
             {scShown.length === 0 && (
               <p className="text-xs text-ink-4">
-                {scTab === "strengths" ? "Nothing scoring 7+ yet." : "Nothing scoring below 7 — nice."}
+                {scTab === "strengths" ? COPY.mood.noStrengths : COPY.mood.noConcerns}
               </p>
             )}
           </Card>

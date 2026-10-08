@@ -21,7 +21,7 @@ import { type EmployeeScores, type Window } from "@/lib/data";
 import { getEmployeeInsightAction, getEmployeeScoresAction } from "./actions";
 import { HEADER_MASCOT_SIZE, mascotForScore } from "@/lib/mascot";
 import { STRENGTH_CUTOFF } from "@/lib/pillars";
-import { buildEmployeeInsight } from "@/lib/insight";
+import { buildEmployeeInsight, type InsightSpot } from "@/lib/insight";
 import { earlyReadNote } from "@/lib/mood";
 import { chromeFor } from "@/lib/voice";
 import type { PillarId, SessionUser } from "@/lib/types";
@@ -126,43 +126,31 @@ export function AnalysisView({
         <>
           {/* Bright Spot / Watch Out — Play: animated wavy blobs. Professional:
               plain stat cards. */}
-          {insight.brightSpot && insight.watchOut && (
-            isPlay ? (
-              <div className="mb-7 pt-4">
-                <ScoreCircles
-                  bright={insight.brightSpot}
-                  watch={insight.watchOut}
-                  onSelect={setSelectedPillar}
-                />
-              </div>
-            ) : (
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  type="button"
-                  onClick={() => setSelectedPillar(insight.brightSpot!.pillarId)}
-                  className="rounded-card bg-lav-soft p-4 text-left shadow-card transition active:scale-[0.98]"
-                >
-                  <p className="text-[11px] font-semibold uppercase tracking-wide text-brand">☀️ {insight.brightSpot.label}</p>
-                  <p className="mt-1 font-display text-3xl font-black leading-none text-brand">
-                    {insight.brightSpot.score.toFixed(1)}
-                  </p>
-                  <p className="mt-1 text-xs text-brand/70">{insight.brightSpot.pillar}</p>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setSelectedPillar(insight.watchOut!.pillarId)}
-                  className="rounded-card bg-lav-soft p-4 text-left shadow-card transition active:scale-[0.98]"
-                >
-                  <p className="text-[11px] font-semibold uppercase tracking-wide text-brand">
-                    {insight.watchOut.label === COPY.mood.watchOut ? "⚠️" : "🔎"} {insight.watchOut.label}
-                  </p>
-                  <p className="mt-1 font-display text-3xl font-black leading-none text-brand">
-                    {insight.watchOut.score.toFixed(1)}
-                  </p>
-                  <p className="mt-1 text-xs text-brand/70">{insight.watchOut.pillar}</p>
-                </button>
-              </div>
-            )
+          {/* Each slot is filled only when earned (lib/insight.ts); otherwise
+              it stays, empty, with its "nothing here" line. */}
+          {isPlay ? (
+            <div className="mb-7 pt-4">
+              <ScoreCircles
+                bright={insight.brightSpot}
+                watch={insight.watchOut}
+                onSelect={setSelectedPillar}
+              />
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 gap-2">
+              <SpotCard
+                title={`☀️ ${COPY.mood.brightSpot}`}
+                spot={insight.brightSpot}
+                emptyText={COPY.mood.noBrightSpot}
+                onSelect={setSelectedPillar}
+              />
+              <SpotCard
+                title={`${insight.watchOut ? "⚠️ " : ""}${COPY.mood.watchOut}`}
+                spot={insight.watchOut}
+                emptyText={COPY.mood.noWatchOut}
+                onSelect={setSelectedPillar}
+              />
+            </div>
           )}
 
           {/* Happiness score + pillars first (unchanged), then Strengths/Concerns,
@@ -242,7 +230,7 @@ export function AnalysisView({
             ))}
             {shownQs.length === 0 && (
               <p className="text-xs text-ink-4">
-                {tab === "strengths" ? "Nothing scoring 7+ yet." : "Nothing scoring below 7 — nice."}
+                {tab === "strengths" ? COPY.mood.noStrengths : COPY.mood.noConcerns}
               </p>
             )}
           </Card>
@@ -271,5 +259,39 @@ export function AnalysisView({
         </>
       )}
     </ScreenShell>
+  );
+}
+
+/** Professional-mode Bright spot / Watch out card. `spot` null = empty slot:
+ *  no score, no warning sign, just its "nothing here" line, not tappable. */
+function SpotCard({
+  title,
+  spot,
+  emptyText,
+  onSelect,
+}: {
+  title: string;
+  spot: InsightSpot | null;
+  emptyText: string;
+  onSelect: (pillarId: PillarId) => void;
+}) {
+  if (!spot) {
+    return (
+      <div className="rounded-card bg-lav-soft p-4 text-left shadow-card">
+        <p className="text-[11px] font-semibold uppercase tracking-wide text-brand/60">{title}</p>
+        <p className="mt-2 text-xs font-semibold leading-snug text-brand/70">{emptyText}</p>
+      </div>
+    );
+  }
+  return (
+    <button
+      type="button"
+      onClick={() => onSelect(spot.pillarId)}
+      className="rounded-card bg-lav-soft p-4 text-left shadow-card transition active:scale-[0.98]"
+    >
+      <p className="text-[11px] font-semibold uppercase tracking-wide text-brand">{title}</p>
+      <p className="mt-1 font-display text-3xl font-black leading-none text-brand">{spot.score.toFixed(1)}</p>
+      <p className="mt-1 text-xs text-brand/70">{spot.pillar}</p>
+    </button>
   );
 }

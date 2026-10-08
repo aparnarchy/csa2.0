@@ -7,12 +7,13 @@
 import { type PillarScore } from "./data";
 import { PILLARS } from "./pillars";
 import type { Persona, PillarId } from "./types";
-import { bottomLabel, moodHeadline, topLabel } from "./mood";
+import { COPY } from "./copy";
+import { moodHeadline, scoreLevel } from "./mood";
 
 export interface InsightSpot {
   /** The pillar's name, e.g. "Growth". */
   pillar: string;
-  /** "Bright spot" / "Strongest area" or "Watch out" / "Lowest area". */
+  /** "Bright spot" or "Watch out" (from copy.html). */
   label: string;
   score: number;
   pillarId: PillarId;
@@ -20,14 +21,18 @@ export interface InsightSpot {
 
 export interface EmployeeInsight {
   headline: string; // short, punchy hero phrase
+  /** Null = the slot shows its empty line (no score, no icon). */
   brightSpot: InsightSpot | null;
   watchOut: InsightSpot | null;
 }
 
 /**
  * Headline + highest/lowest pillar for any dashboard (employee, team, org).
- * Both spots need at least two pillars with real scores — with one, "highest"
- * and "lowest" would be the same pillar.
+ * Each spot is filled only when it's genuinely earned: Bright spot = the top
+ * pillar, only if it scores above 7; Watch out = the lowest pillar, only if it
+ * scores 7 or below. Otherwise that slot is null and the screen shows its
+ * empty line ("Nothing to watch out for right now") — never a warning sign on
+ * a good score.
  */
 export function buildInsight(
   overall: number | null,
@@ -37,11 +42,12 @@ export function buildInsight(
 ): EmployeeInsight {
   const headline = moodHeadline(overall, delta, persona);
   const scored = pillars.filter((p): p is PillarScore & { score: number } => p.score !== null);
-  if (overall === null || scored.length < 2) return { headline, brightSpot: null, watchOut: null };
+  if (overall === null || scored.length === 0) return { headline, brightSpot: null, watchOut: null };
 
   const sorted = [...scored].sort((a, b) => b.score - a.score);
   const top = sorted[0];
   const bottom = sorted[sorted.length - 1];
+  const good = (p: { score: number }) => scoreLevel(p.score) === "good";
   const spot = (p: PillarScore & { score: number }, label: string): InsightSpot => ({
     pillar: PILLARS[p.pillarId].label,
     label,
@@ -50,8 +56,8 @@ export function buildInsight(
   });
   return {
     headline,
-    brightSpot: spot(top, topLabel(top.score)),
-    watchOut: bottom.pillarId !== top.pillarId ? spot(bottom, bottomLabel(bottom.score)) : null,
+    brightSpot: good(top) ? spot(top, COPY.mood.brightSpot) : null,
+    watchOut: !good(bottom) ? spot(bottom, COPY.mood.watchOut) : null,
   };
 }
 

@@ -1,7 +1,7 @@
 /**
  * One place that turns a score into its mood — the level, the headline, the
- * big-score tagline and the Bright spot / Watch out labels — so the words on
- * every dashboard always agree with the number next to them.
+ * big-score tagline — so the words on every dashboard always agree with the
+ * number next to them. (Bright spot / Watch out are decided in lib/insight.ts.)
  *
  * Levels follow the locked colour bands (lib/scoring.ts scoreBand):
  *   good  = above 7, mixed = 4 to 7, low = below 4, and null = no data.
@@ -50,16 +50,6 @@ export function scoreTagline(score: number | null): string {
   const level = scoreLevel(score);
   if (!level) return COPY.mood.noDataTitle;
   return { good: COPY.mood.taglineGood, mixed: COPY.mood.taglineMixed, low: COPY.mood.taglineLow }[level];
-}
-
-/** Label for the highest pillar: only a real bright spot if it's actually good. */
-export function topLabel(score: number): string {
-  return scoreLevel(score) === "good" ? COPY.mood.brightSpot : COPY.mood.strongestArea;
-}
-
-/** Label for the lowest pillar: only "watch out" if it's actually below good. */
-export function bottomLabel(score: number): string {
-  return scoreLevel(score) === "good" ? COPY.mood.lowestArea : COPY.mood.watchOut;
 }
 
 /** "Based on 3 answers — …" while a score rests on only a few answers. */

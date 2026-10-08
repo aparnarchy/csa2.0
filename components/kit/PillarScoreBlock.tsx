@@ -36,5 +36,5 @@ export function PillarScoreBlock({ score, delta }: { score: number | null; delta
  *  answers yet" when there are none, rather than implying all is well. */
 export function emptyInsightLine(hasAnyQuestions: boolean, tab: "strengths" | "concerns"): string {
   if (!hasAnyQuestions) return COPY.mood.noDataPillar;
-  return tab === "strengths" ? "Nothing scoring 7+ yet." : "Nothing scoring below 7 — nice.";
+  return tab === "strengths" ? COPY.mood.noStrengths : COPY.mood.noConcerns;
 }

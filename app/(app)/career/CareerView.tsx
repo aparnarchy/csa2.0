@@ -334,7 +334,7 @@ function CompanyDetailView({ detail, onBack, isCeoHr = false }: { detail: Compan
           ))}
           {rows.length === 0 && (
             <p className="text-xs text-ink-4">
-              {tab === "strengths" ? "Nothing scoring 7+ yet." : "Nothing scoring below 7 — nice."}
+              {tab === "strengths" ? COPY.mood.noStrengths : COPY.mood.noConcerns}
             </p>
           )}
         </Card>

@@ -168,7 +168,7 @@ export function DeptDetailView({
             ))}
             {scShown.length === 0 && (
               <p className="text-xs text-ink-4">
-                {scTab === "strengths" ? "Nothing scoring 7+ yet." : "Nothing scoring below 7 — nice."}
+                {scTab === "strengths" ? COPY.mood.noStrengths : COPY.mood.noConcerns}
               </p>
             )}
           </Card>

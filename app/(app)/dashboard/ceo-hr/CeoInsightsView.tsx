@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { COPY } from "@/lib/copy";
 import { Card, CustomDropdown, GradientHeader, CEO_NAV, ScreenShell, SegmentedToggle } from "@/components/kit";
 import { type CeoDashboard, type ManagerSummary, type ReviewingManagerList, type Window } from "@/lib/data";
 import type { DepartmentScore } from "@/lib/ceo";
@@ -205,7 +206,7 @@ export function CeoInsightsView({
             ))}
             {ranked.length === 0 && (
               <p className="text-xs text-ink-4">
-                {highLow === "high" ? "No pillar scoring 7+ yet." : "Nothing scoring below 7 — nice."}
+                {highLow === "high" ? COPY.mood.noStrengths : COPY.mood.noConcerns}
               </p>
             )}
           </div>

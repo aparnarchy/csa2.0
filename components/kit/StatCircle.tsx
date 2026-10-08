@@ -1,29 +1,31 @@
-import { scoreLevel } from "@/lib/mood";
-
 /**
  * A wavy, gently morphing "blob" score circle — Bright Spot / Watch Out. Two
  * softer blobs float + morph behind it. Both labels curve (icon-led title along
  * the top, pillar along the bottom). The `.sc-content` group is scaled by the
  * parent (ScoreCircles) so the text grows/shrinks proportionally with the circle.
+ *
+ * `score` null = an empty slot (no area earns it): no number, no pillar and no
+ * warning icon — just `emptyText` in the middle.
  */
 export function StatCircle({
   kind,
   label,
   score,
   pillar,
+  emptyText,
 }: {
   kind: "bright" | "watch";
   label: string;
-  score: number;
+  score: number | null;
   pillar: string;
+  emptyText?: string;
 }) {
-  // Icon and colour follow the score's own level (lib/mood.ts), not just which
-  // slot it's in: the sun is for a genuinely good pillar, the red "!" for a
-  // genuinely low one. A so-so highest pillar or a good lowest one gets a
-  // neutral look, matching its "Strongest area" / "Lowest area" label.
-  const good = scoreLevel(score) === "good";
-  const titleColor = kind === "bright" ? (good ? "#FFD36B" : "#FFFFFF") : good ? "#FFFFFF" : "#FF9E9E";
-  const icon = kind === "bright" ? (good ? "☀️" : "💪") : good ? "🔎" : "❗";
+  // A filled slot is always earned (lib/insight.ts): Bright spot only above 7,
+  // Watch out only at 7 or below — so the slot alone sets icon and colour. An
+  // empty slot is plain white with no icon.
+  const empty = score === null;
+  const titleColor = empty ? "#FFFFFF" : kind === "bright" ? "#FFD36B" : "#FF9E9E";
+  const icon = empty ? "" : kind === "bright" ? "☀️ " : "❗ ";
   const arcId = `arc-${kind}`;
 
   // The pillar sits on a fixed-length arc — roughly 91 units of this 100-wide
@@ -55,11 +57,15 @@ export function StatCircle({
             </defs>
             <text fill={titleColor} fontSize="9" fontWeight="800" letterSpacing="0.2">
               <textPath href={`#${arcId}`} startOffset="50%" textAnchor="middle">
-                {icon} {label}
+                {icon}{label}
               </textPath>
             </text>
           </svg>
-          <p className="-mt-1 font-display text-[46px] font-black leading-none">{score.toFixed(1)}</p>
+          {empty ? (
+            <p className="mt-1 px-3 text-[13px] font-bold leading-snug text-white/90">{emptyText}</p>
+          ) : (
+            <p className="-mt-1 font-display text-[46px] font-black leading-none">{score.toFixed(1)}</p>
+          )}
           {/* pillar, curved along the bottom. The arc sits low in its box on
               purpose: its ends are its highest points, and a long label reaches
               out towards them, where the letters are also tilted. With the ends
