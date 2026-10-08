@@ -1,8 +1,8 @@
 import { betterAuth } from "better-auth";
-import { Resend } from "resend";
 import { Kysely } from "kysely";
 import { D1Dialect } from "kysely-d1";
 import { hashPassword, verifyPassword } from "./auth-password";
+import { sendEmail } from "./email";
 
 /**
  * Which origins are allowed to sign in (better-auth's CSRF protection).
@@ -128,8 +128,7 @@ export function createAuth(db: D1Database) {
       // makes sign-in/sign-up 503. See lib/auth-password.ts.
       password: { hash: hashPassword, verify: verifyPassword },
       sendResetPassword: async ({ user, url }) => {
-        const resend = new Resend(process.env.RESEND_API_KEY);
-        await resend.emails.send({
+        await sendEmail({
           from: "CSA <noreply@resend.dev>",
           to: user.email,
           subject: "Reset your CSA password",

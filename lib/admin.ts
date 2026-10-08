@@ -7,7 +7,7 @@
  * enforced in server code, never in the UI.
  */
 
-import { Resend } from "resend";
+import { sendEmail } from "@/lib/email";
 import { getDB } from "@/lib/db";
 import { assertRole } from "@/lib/access-control";
 import type { RecommendationAudience } from "@/lib/recommendations";
@@ -1460,9 +1460,8 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 async function sendInviteEmail(email: string): Promise<"sent" | "failed"> {
   try {
     if (!process.env.RESEND_API_KEY) return "failed";
-    const resend = new Resend(process.env.RESEND_API_KEY);
     const signupUrl = `${process.env.BETTER_AUTH_URL ?? "http://localhost:3000"}/signup`;
-    const { error } = await resend.emails.send({
+    const { error } = await sendEmail({
       from: "CSA <noreply@resend.dev>",
       to: email,
       subject: "You're invited to CSA",
