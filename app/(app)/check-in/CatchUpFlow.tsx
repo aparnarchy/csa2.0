@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import type { CheckInQuestion } from "@/lib/data";
 import { COPY } from "@/lib/copy";
 import { skipCheckInAction, submitCheckInAction } from "./actions";
+import { useSaveQueue } from "./useSaveQueue";
 
 const t = COPY.catchup;
 
@@ -15,7 +16,9 @@ const HIGHLIGHT_MS = 200;
  * ‹ › arrows) so it reads clearly differently from this week's full-screen check-in
  * and never feels like the same questions again. Tapping an answer records it
  * (retrospective — excluded from the streak) and glides to the next; "Skip"
- * retires it. "Done" (or the final card) hands back to the session → dashboard.
+ * retires it. "Continue"/"Done" skips any card left untouched (it moves to the
+ * Inbox, like a skip) and hands back to the session → dashboard. Untouched
+ * cards used to stay pending, so the dashboard sent the user straight back here.
  */
 export function CatchUpFlow({
   questions,
@@ -30,14 +33,22 @@ export function CatchUpFlow({
   const beat = useRef<number | null>(null);
   const leave = useRef<number | null>(null);
   // Submits/skips are fire-and-forget for snappy UI, but finishing leads to a
-  // server-side redirect that re-checks "anything still unanswered?" —
-  // awaiting these before finishing avoids a race where that check runs
-  // before the last write lands and bounces the user back into catch-up
-  // right after they already saw the "done" screen.
-  const pending = useRef<Promise<unknown>[]>([]);
+  // dashboard that re-checks "anything still unanswered?" — so finishing waits
+  // for every write to land (retrying a failed one), or that check would
+  // bounce the user back into catch-up. See useSaveQueue.
+  const saves = useSaveQueue();
+  const [saveFailed, setSaveFailed] = useState(false);
 
   async function finish() {
-    await Promise.all(pending.current);
+    for (const uq of questions) {
+      const id = uq.assignmentId;
+      if (!saves.has(id)) saves.save(id, () => skipCheckInAction(id)); // untouched → skipped
+    }
+    if (!(await saves.flush())) {
+      setLeaving(false);
+      setSaveFailed(true);
+      return;
+    }
     onDone();
   }
 
@@ -70,7 +81,8 @@ export function CatchUpFlow({
   function pick(key: string, score: number) {
     if (leaving) return;
     setAnswers((a) => ({ ...a, [q.assignmentId]: { key, score } }));
-    pending.current.push(submitCheckInAction(q.assignmentId, score)); // retrospective (derived server-side)
+    const id = q.assignmentId;
+    saves.save(id, () => submitCheckInAction(id, score)); // retrospective (derived server-side)
     // glide to the next unanswered one; on the last card, stay (Done finishes).
     if (idx + 1 < total) {
       clearTimers();
@@ -80,7 +92,8 @@ export function CatchUpFlow({
 
   function skip() {
     if (leaving) return;
-    pending.current.push(skipCheckInAction(q.assignmentId)); // retire it from the pending list
+    const id = q.assignmentId;
+    saves.save(id, () => skipCheckInAction(id)); // retire it from the pending list
     const isLast = idx + 1 >= total;
     transitionTo(() => {
       if (!isLast) setIdx(idx + 1);
@@ -194,9 +207,15 @@ export function CatchUpFlow({
         </div>
       </div>
 
+      {saveFailed && (
+        <p className="mt-4 text-center text-xs font-semibold text-bad">{COPY.checkin.saveFailed}</p>
+      )}
       <button
         type="button"
-        onClick={() => void finish()}
+        onClick={() => {
+          setSaveFailed(false);
+          void finish();
+        }}
         className="mt-4 w-full rounded-2xl bg-brand py-3.5 font-display text-sm font-black text-white transition active:scale-[0.98]"
       >
         {allDone ? "Done" : "Continue"}

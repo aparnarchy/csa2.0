@@ -6,6 +6,7 @@ import { COPY, fill } from "@/lib/copy";
 import { type CheckInQuestion } from "@/lib/data";
 import type { SessionUser } from "@/lib/types";
 import { submitCheckInAction } from "./actions";
+import { useSaveQueue } from "./useSaveQueue";
 
 const t = COPY.checkin;
 
@@ -33,11 +34,12 @@ export function CheckInFlow({
   const [leaving, setLeaving] = useState(false);
   const beat = useRef<number | null>(null);
   const leave = useRef<number | null>(null);
-  // The last question's submit is fire-and-forget for snappy UI, but onDone()
-  // leads straight to a server-side redirect that re-checks "anything still
-  // unanswered?" — awaiting it here before finishing avoids a race where that
-  // check runs before the write lands and bounces the user back into catch-up.
-  const pendingSubmit = useRef<Promise<unknown>>(Promise.resolve());
+  // Submits are fire-and-forget for snappy UI, but onDone() leads to a
+  // dashboard that re-checks "anything still due?" — so finishing waits for
+  // every answer to land (retrying a failed one), or that check would bounce
+  // the user straight back here. See useSaveQueue.
+  const saves = useSaveQueue();
+  const [saveFailed, setSaveFailed] = useState(false);
 
   const first = (session.name || "there").trim().split(/\s+/)[0];
   const total = questions.length;
@@ -73,7 +75,11 @@ export function CheckInFlow({
     if (index + 1 < total) {
       setIndex(index + 1);
     } else {
-      await pendingSubmit.current;
+      if (!(await saves.flush())) {
+        setSaveFailed(true);
+        setLeaving(false); // stay on this question, offering a retry
+        return;
+      }
       onDone();
     }
   }
@@ -81,7 +87,9 @@ export function CheckInFlow({
   function pick(optionKey: string, score: number) {
     if (leaving) return;
     setAnswers((a) => ({ ...a, [q.assignmentId]: optionKey }));
-    pendingSubmit.current = submitCheckInAction(q.assignmentId, score);
+    const id = q.assignmentId;
+    saves.save(id, () => submitCheckInAction(id, score));
+    setSaveFailed(false);
     clearTimers();
     const isLast = index + 1 >= total;
     beat.current = window.setTimeout(() => transitionTo(nextStep, !isLast), HIGHLIGHT_MS);
@@ -132,9 +140,22 @@ export function CheckInFlow({
         </div>
       </div>
 
-      <p className="mt-6 text-center text-xs text-ink-4">
-        {selected ? "Saved — moving on…" : "Tap an answer to continue"}
-      </p>
+      {saveFailed ? (
+        <button
+          type="button"
+          onClick={() => {
+            setSaveFailed(false);
+            transitionTo(nextStep, false);
+          }}
+          className="mt-6 text-center text-xs font-semibold text-bad active:opacity-70"
+        >
+          {t.saveFailed}
+        </button>
+      ) : (
+        <p className="mt-6 text-center text-xs text-ink-4">
+          {selected ? "Saved — moving on…" : "Tap an answer to continue"}
+        </p>
+      )}
     </div>
   );
 }

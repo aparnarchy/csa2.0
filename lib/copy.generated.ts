@@ -82,7 +82,8 @@ export const COPY = {
     "greeting": "Hey {name}!",
     "backLink": "← Back",
     "continueButton": "Continue",
-    "finishButton": "Submit →"
+    "finishButton": "Submit →",
+    "saveFailed": "Couldn't save your answer — tap here to try again."
   },
   "catchup": {
     "chipPrefix": "Catch-up",

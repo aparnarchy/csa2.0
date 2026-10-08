@@ -30,28 +30,35 @@ export function ReturnCheckIn({
   const [note, setNote] = useState("");
   const [celebrate, setCelebrate] = useState(false);
   const [saving, setSaving] = useState(false);
+  // A failed save used to leave the button stuck on "saving" forever; now it
+  // re-enables with a "tap to try again" line instead.
+  const [saveFailed, setSaveFailed] = useState(false);
+
+  async function save(status: "acted" | "not_acted"): Promise<boolean> {
+    setSaving(true);
+    setSaveFailed(false);
+    try {
+      await submitFollowUpAction({
+        questionId: rec.questionId,
+        pillarId: rec.pillarId,
+        status,
+        journalText: status === "acted" ? note.trim() || undefined : undefined,
+      });
+      return true;
+    } catch {
+      setSaveFailed(true);
+      return false;
+    } finally {
+      setSaving(false);
+    }
+  }
 
   async function saveActed() {
-    setSaving(true);
-    await submitFollowUpAction({
-      questionId: rec.questionId,
-      pillarId: rec.pillarId,
-      status: "acted",
-      journalText: note.trim() || undefined,
-    });
-    setSaving(false);
-    setCelebrate(true);
+    if (await save("acted")) setCelebrate(true);
   }
 
   async function saveNotActed() {
-    setSaving(true);
-    await submitFollowUpAction({
-      questionId: rec.questionId,
-      pillarId: rec.pillarId,
-      status: "not_acted",
-    });
-    setSaving(false);
-    onDone();
+    if (await save("not_acted")) onDone();
   }
 
   // ── Confirmation after "Yes" ──────────────────────────────────────────────
@@ -146,6 +153,9 @@ export function ReturnCheckIn({
         )}
       </div>
 
+      {saveFailed && (
+        <p className="mb-3 text-center text-xs font-semibold text-bad">{COPY.checkin.saveFailed}</p>
+      )}
       {/* primary action */}
       <button
         type="button"
