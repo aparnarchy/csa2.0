@@ -69,7 +69,7 @@ export function CeoInsightsView({
   const ranked = useMemo(() => {
     const withScore = scoped.pillars.filter((p) => p.score !== null);
     const inTab = withScore.filter((p) =>
-      highLow === "high" ? p.score! >= STRENGTH_CUTOFF : p.score! < STRENGTH_CUTOFF,
+      highLow === "high" ? p.score! > STRENGTH_CUTOFF : p.score! <= STRENGTH_CUTOFF,
     );
     return inTab.sort((a, b) =>
       highLow === "high" ? (b.score ?? 0) - (a.score ?? 0) : (a.score ?? 0) - (b.score ?? 0),
@@ -253,7 +253,7 @@ function PillarRankRow({
   score: number;
   onClick: () => void;
 }) {
-  const color = score >= 7 ? "#059669" : score >= 4 ? "#b45309" : "#dc2626";
+  const color = score > 7 ? "#059669" : score >= 4 ? "#b45309" : "#dc2626";
   return (
     <button type="button" onClick={onClick} className="flex w-full items-center gap-3 text-left active:scale-[0.99]">
       <p className="w-28 flex-shrink-0 text-[13px] font-semibold text-ink">{PILLARS[pillarId].label}</p>

@@ -29,8 +29,8 @@ export const PILLAR_ORDER: PillarId[] = [
   "compensation",
 ];
 
-/** A question/pillar score at or above this counts as a strength, below it a
-    concern — used everywhere a screen splits scores into a Strengths/Concerns
+/** A question/pillar score ABOVE this counts as a strength; this score or
+    lower is a concern (a 7 shows amber, not green) — used everywhere a screen splits scores into a Strengths/Concerns
     view instead of just ranking top/bottom regardless of whether they're
     actually good or bad. */
 export const STRENGTH_CUTOFF = 7;

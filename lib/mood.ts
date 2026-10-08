@@ -4,7 +4,7 @@
  * every dashboard always agree with the number next to them.
  *
  * Levels follow the locked colour bands (lib/scoring.ts scoreBand):
- *   good  = 7 and above, mixed = 4 to 6.9, low = below 4, and null = no data.
+ *   good  = above 7, mixed = 4 to 7, low = below 4, and null = no data.
  * All wording lives in copy/copy.html (the "mood" section) so the owner can
  * edit it; this file only decides WHICH line applies.
  */

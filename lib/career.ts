@@ -174,8 +174,8 @@ export async function addCareerCompany(
   // the question bank (which may have been edited since).
   const byScore = [...scored].sort((a, b) => b.score - a.score);
   const questionnaire = {
-    strengths: byScore.filter((q) => q.score >= STRENGTH_CUTOFF).slice(0, 3),
-    concerns: byScore.filter((q) => q.score < STRENGTH_CUTOFF).reverse().slice(0, 3),
+    strengths: byScore.filter((q) => q.score > STRENGTH_CUTOFF).slice(0, 3),
+    concerns: byScore.filter((q) => q.score <= STRENGTH_CUTOFF).reverse().slice(0, 3),
   };
 
   const id = `cc-${crypto.randomUUID().slice(0, 8)}`;
@@ -405,8 +405,8 @@ export async function getCompanyDetail(
       participationPct: live.participation,
       delta: live.delta,
       pillars: live.pillars.filter((p) => p.score !== null),
-      strengths: sorted.filter((q) => q.score >= STRENGTH_CUTOFF).slice(0, 3),
-      concerns: sorted.filter((q) => q.score < STRENGTH_CUTOFF).reverse().slice(0, 3),
+      strengths: sorted.filter((q) => q.score > STRENGTH_CUTOFF).slice(0, 3),
+      concerns: sorted.filter((q) => q.score <= STRENGTH_CUTOFF).reverse().slice(0, 3),
       trend: live.trend,
       insight,
     };

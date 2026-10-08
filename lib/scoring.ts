@@ -44,9 +44,9 @@ export function hasEnoughData(responseCount: number): boolean {
   return responseCount >= ANONYMISATION_FLOOR;
 }
 
-/** Colour band for a score: >=7 green, 4–6 amber, <=3 red. */
+/** Colour band for a score: above 7 green, 4–7 amber, below 4 red. */
 export function scoreBand(score: number): "green" | "amber" | "red" {
-  if (score >= 7) return "green";
+  if (score > 7) return "green";
   if (score >= 4) return "amber";
   return "red";
 }

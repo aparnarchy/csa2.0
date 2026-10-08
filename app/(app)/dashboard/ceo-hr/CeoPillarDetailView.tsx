@@ -60,8 +60,8 @@ export function CeoPillarDetailView({
   }, [onBack]);
 
   const questions = [...(detail?.questions ?? [])].sort((a, b) => b.score - a.score);
-  const strengths = questions.filter((q) => q.score >= STRENGTH_CUTOFF).slice(0, 3);
-  const concerns = questions.filter((q) => q.score < STRENGTH_CUTOFF).reverse().slice(0, 3);
+  const strengths = questions.filter((q) => q.score > STRENGTH_CUTOFF).slice(0, 3);
+  const concerns = questions.filter((q) => q.score <= STRENGTH_CUTOFF).reverse().slice(0, 3);
   const shown = tab === "strengths" ? strengths : concerns;
 
   return (

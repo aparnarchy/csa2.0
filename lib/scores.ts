@@ -39,7 +39,7 @@ const avg = (xs: number[]) => xs.reduce((a, b) => a + b, 0) / xs.length;
 
 /** An individual's single answer shows 100% on the option their score falls in. */
 function singleAnswer(score: number): QuestionInsight["responses"] {
-  const sel = score >= 7 ? "A" : score >= 4 ? "B" : "C";
+  const sel = score > 7 ? "A" : score >= 4 ? "B" : "C";
   const text: Record<"A" | "B" | "C", string> = { A: "Positive", B: "Mixed", C: "Needs work" };
   return (["A", "B", "C"] as const).map((k) => ({ key: k, text: text[k], pct: k === sel ? 100 : 0 }));
 }

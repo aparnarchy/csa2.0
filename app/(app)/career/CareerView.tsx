@@ -305,7 +305,7 @@ function CompanyDetailView({ detail, onBack, isCeoHr = false }: { detail: Compan
 
       {/* Strengths / concerns — the dashboard's accordion. Questionnaire rows
           have no breakdown, so InsightBarRow renders them as static bars. Shown
-          whenever EITHER tab has something — a real threshold split (>=7) means
+          whenever EITHER tab has something — a real threshold split (above 7) means
           one tab can legitimately be empty while the other still has data. */}
       {(detail.strengths.length > 0 || detail.concerns.length > 0) && (
         <Card>

@@ -1,6 +1,6 @@
 /**
  * Shared score → colour mapping, so every screen colours scores identically.
- * Bands are LOCKED (CLAUDE.md): >=7 green, 4–6 amber, <=3 red.
+ * Bands: above 7 green, 4–7 amber, below 4 red (see scoreBand).
  * Returns hex values (charts/SVG can't read Tailwind classes) that match the
  * --color-good/warn/bad tokens in globals.css.
  */

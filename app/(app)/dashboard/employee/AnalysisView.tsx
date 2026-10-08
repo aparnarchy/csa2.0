@@ -68,8 +68,8 @@ export function AnalysisView({
   }
 
   const sortedQs = [...data.questions].sort((a, b) => b.score - a.score);
-  const strengthQs = sortedQs.filter((q) => q.score >= STRENGTH_CUTOFF).slice(0, 3);
-  const concernQs = sortedQs.filter((q) => q.score < STRENGTH_CUTOFF).reverse().slice(0, 3);
+  const strengthQs = sortedQs.filter((q) => q.score > STRENGTH_CUTOFF).slice(0, 3);
+  const concernQs = sortedQs.filter((q) => q.score <= STRENGTH_CUTOFF).reverse().slice(0, 3);
   const shownQs = tab === "strengths" ? strengthQs : concernQs;
   const up = (data.delta ?? 0) >= 0;
   // Mode = design only. Play shows the fun look (mascot, blob circles, persona

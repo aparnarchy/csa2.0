@@ -95,8 +95,8 @@ export function ManagerDashboardView({
   // a question only appears once >= the anonymisation floor of distinct
   // teammates answered it).
   const scSorted = [...data.questions].sort((a, b) => b.score - a.score);
-  const scStrengths = scSorted.filter((q) => q.score >= STRENGTH_CUTOFF).slice(0, 3);
-  const scConcerns = scSorted.filter((q) => q.score < STRENGTH_CUTOFF).reverse().slice(0, 3);
+  const scStrengths = scSorted.filter((q) => q.score > STRENGTH_CUTOFF).slice(0, 3);
+  const scConcerns = scSorted.filter((q) => q.score <= STRENGTH_CUTOFF).reverse().slice(0, 3);
   const scShown = scTab === "strengths" ? scStrengths : scConcerns;
 
   if (selectedPillar) {

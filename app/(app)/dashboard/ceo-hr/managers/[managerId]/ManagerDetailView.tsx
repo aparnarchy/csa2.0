@@ -139,7 +139,7 @@ export function ManagerDetailView({
 }
 
 function PillarRankRow({ pillarId, score }: { pillarId: PillarId; score: number }) {
-  const color = score >= 7 ? "#059669" : score >= 4 ? "#b45309" : "#dc2626";
+  const color = score > 7 ? "#059669" : score >= 4 ? "#b45309" : "#dc2626";
   return (
     <div className="flex items-center gap-3">
       <p className="w-28 flex-shrink-0 text-[13px] font-semibold text-ink">{PILLARS[pillarId].label}</p>
