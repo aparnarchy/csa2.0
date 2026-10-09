@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { BackButton, Card, GradientHeader, Mascot, ScreenShell } from "@/components/kit";
 import { HEADER_MASCOT_SIZE } from "@/lib/mascot";
+import { PILLARS } from "@/lib/pillars";
 import {
   type ActionHistoryItem,
   type ActionResponseValue,
@@ -299,6 +300,10 @@ function UnansweredCard({ questions }: { questions: CheckInQuestion[] }) {
 }
 
 // ── Un-actioned recommendations (every open one, not just the latest) ────────
+// Only the most important is open (items arrive lowest answer first, then
+// newest — lib/checkins.ts); the rest are one line each and open on tap, one
+// at a time. Several low answers at once used to stack every tip in full —
+// one long wall of text (owner, 2026-10-09).
 function OpenRecommendationsCard({
   items,
   onResolved,
@@ -306,17 +311,55 @@ function OpenRecommendationsCard({
   items: OpenRecommendationItem[];
   onResolved: (questionId: string) => void;
 }) {
+  const [openId, setOpenId] = useState<string | null>(null);
+  const [first, ...rest] = items;
   return (
-    <Card>
-      <p className="text-[11px] font-bold uppercase tracking-wide text-brand">
-        {COPY.inbox.recommendationLabel} · {items.length} to act on
-      </p>
-      <div className="mt-3 space-y-3">
-        {items.map((r) => (
-          <RecommendationRow key={r.questionId} item={r} onResolved={() => onResolved(r.questionId)} />
-        ))}
-      </div>
-    </Card>
+    <>
+      <Card>
+        <p className="text-[11px] font-bold uppercase tracking-wide text-brand">{COPY.inbox.recStartHere}</p>
+        <div className="mt-3">
+          <RecommendationRow key={first.questionId} item={first} onResolved={() => onResolved(first.questionId)} />
+        </div>
+      </Card>
+      {rest.length > 0 && (
+        <Card>
+          <p className="text-[11px] font-bold uppercase tracking-wide text-brand">
+            {fill(COPY.inbox.recMore, { count: rest.length })}
+          </p>
+          <div className="mt-2">
+            {rest.map((r) =>
+              openId === r.questionId ? (
+                <div key={r.questionId} className="py-2">
+                  <RecommendationRow item={r} onResolved={() => onResolved(r.questionId)} />
+                  <button
+                    type="button"
+                    onClick={() => setOpenId(null)}
+                    className="mt-1.5 w-full py-1 text-center text-[11px] font-semibold text-ink-4"
+                  >
+                    Close
+                  </button>
+                </div>
+              ) : (
+                <button
+                  key={r.questionId}
+                  type="button"
+                  onClick={() => setOpenId(r.questionId)}
+                  className="flex w-full items-center gap-3 border-t border-lav-mid py-3 text-left first:border-t-0 active:opacity-70"
+                >
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-[9px] font-bold uppercase tracking-wide text-brand-light">
+                      {PILLARS[r.pillarId].label}
+                    </span>
+                    <span className="mt-0.5 block text-[13px] leading-snug text-ink">{r.questionText}</span>
+                  </span>
+                  <span className="flex-shrink-0 text-ink-4">›</span>
+                </button>
+              ),
+            )}
+          </div>
+        </Card>
+      )}
+    </>
   );
 }
 

@@ -89,7 +89,11 @@ export const COPY = {
     "chipPrefix": "Catch-up",
     "defaultWeekLabel": "earlier",
     "saveButton": "Save & next",
-    "skipButton": "Skip this for now"
+    "skipButton": "Skip this for now",
+    "tipsTitle": "All caught up",
+    "tipsBody": "{count} saved in your Inbox, starting with the one that matters most.",
+    "tipsSeeButton": "See my tips",
+    "tipsContinueButton": "Continue"
   },
   "followup": {
     "eyebrow": "Welcome back",
@@ -201,6 +205,8 @@ export const COPY = {
     "viewPastResponses": "View past responses →",
     "latestCheckInLabel": "📋 Latest check-in · {date}",
     "recommendationLabel": "Recommendation",
+    "recStartHere": "Start here",
+    "recMore": "{count} more to look at",
     "sharedThanks": "Saved! 🙏",
     "doingGreatPrompt": "You're doing great — jot down what's working ✨",
     "shareNotePlaceholder": "What's been making work feel meaningful?",

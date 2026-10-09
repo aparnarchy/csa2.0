@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import type { CheckInQuestion } from "@/lib/data";
-import { COPY } from "@/lib/copy";
+import { COPY, fill } from "@/lib/copy";
 import { skipCheckInAction, submitCheckInAction } from "./actions";
 import { useSaveQueue } from "./useSaveQueue";
 
@@ -19,6 +20,10 @@ const HIGHLIGHT_MS = 200;
  * retires it. "Continue"/"Done" skips any card left untouched (it moves to the
  * Inbox, like a skip) and hands back to the session → dashboard. Untouched
  * cards used to stay pending, so the dashboard sent the user straight back here.
+ *
+ * Low answers don't show their tip on the card any more — answering several
+ * low in a row meant reading a long tip on every card. Instead, one end screen
+ * says how many tips were saved to the Inbox (owner, 2026-10-09).
  */
 export function CatchUpFlow({
   questions,
@@ -38,6 +43,9 @@ export function CatchUpFlow({
   // bounce the user back into catch-up. See useSaveQueue.
   const saves = useSaveQueue();
   const [saveFailed, setSaveFailed] = useState(false);
+  const router = useRouter();
+  /** Set once finished with low answers: how many tips went to the Inbox. */
+  const [tipsSaved, setTipsSaved] = useState<number | null>(null);
 
   async function finish() {
     for (const uq of questions) {
@@ -49,7 +57,10 @@ export function CatchUpFlow({
       setSaveFailed(true);
       return;
     }
-    onDone();
+    // A tip exists for every answer below 7 (lib/checkins.ts).
+    const tips = Object.values(answers).filter((a) => a.score < 7).length;
+    if (tips > 0) setTipsSaved(tips);
+    else onDone();
   }
 
   const total = questions.length;
@@ -99,6 +110,36 @@ export function CatchUpFlow({
       if (!isLast) setIdx(idx + 1);
       else void finish();
     }, !isLast);
+  }
+
+  if (tipsSaved !== null) {
+    return (
+      <div className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col items-center justify-center bg-lav-bg px-5 pb-8 pt-6">
+        <div className="screen-enter w-full rounded-card bg-white px-5 py-7 text-center shadow-card">
+          <div className="mx-auto flex h-13 w-13 items-center justify-center rounded-2xl bg-lav-soft text-2xl font-black text-brand">
+            ✓
+          </div>
+          <h1 className="mt-3 font-display text-[22px] font-black text-ink">{t.tipsTitle}</h1>
+          <p className="mt-1.5 text-[13px] leading-relaxed text-ink-2">
+            {fill(t.tipsBody, { count: `${tipsSaved} ${tipsSaved === 1 ? "tip" : "tips"}` })}
+          </p>
+          <button
+            type="button"
+            onClick={() => router.push("/inbox")}
+            className="mt-5 w-full rounded-2xl bg-brand py-3.5 font-display text-sm font-black text-white transition active:scale-[0.98]"
+          >
+            {t.tipsSeeButton}
+          </button>
+          <button
+            type="button"
+            onClick={onDone}
+            className="mt-2 w-full rounded-2xl bg-lav-soft py-3.5 font-display text-sm font-black text-brand transition active:scale-[0.98]"
+          >
+            {t.tipsContinueButton}
+          </button>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -170,15 +211,6 @@ export function CatchUpFlow({
               );
             })}
           </div>
-
-          {selected && selected.score < 7 && (
-            <div className="mt-3 rounded-xl bg-lav-soft p-3">
-              <p className="text-[11px] font-bold text-brand">{COPY.inbox.recommendationLabel}</p>
-              <p className="mt-1 text-[12px] leading-relaxed text-ink-2">
-                {q.recommendation}
-              </p>
-            </div>
-          )}
 
           <button
             type="button"
