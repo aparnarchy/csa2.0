@@ -167,6 +167,7 @@ export const COPY = {
   "insight": {
     "eyebrowHappening": "{name} — here's what's happening",
     "eyebrowChanged": "{name} — something changed this week",
+    "loading": "Looking through your answers…",
     "bigChangeUp": "{pillar} rose from {from} to {to} this week.",
     "bigChangeDown": "{pillar} dropped from {from} to {to} this week.",
     "shift": "On “{question}”, you went from “{from}” to “{to}”.",

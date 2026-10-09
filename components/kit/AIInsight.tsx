@@ -18,8 +18,11 @@ export function AIInsight({
   eyebrow,
   foot,
   footHref,
+  loading = false,
 }: {
   text?: string;
+  /** The insight is still being worked out: a soft pulsing placeholder line. */
+  loading?: boolean;
   /** Heading; defaults to the shared "AI insight" title. */
   eyebrow?: string;
   /** Small italic context line under the insight (never advice). */
@@ -37,8 +40,14 @@ export function AIInsight({
           <p className="font-display text-[13px] font-black uppercase leading-tight tracking-[0.02em]">
             {eyebrow ?? COPY.shared.aiInsightTitle}
           </p>
-          <p className="mt-2 text-[15px] font-normal leading-[1.45]">{text ?? COPY.shared.aiInsightFallback}</p>
-          {foot &&
+          {loading ? (
+            <p className="mt-2 animate-pulse text-[15px] font-normal leading-[1.45] text-white/80">
+              {COPY.insight.loading}
+            </p>
+          ) : (
+            <p className="mt-2 text-[15px] font-normal leading-[1.45]">{text ?? COPY.shared.aiInsightFallback}</p>
+          )}
+          {!loading && foot &&
             (footHref ? (
               <Link href={footHref} className={`${footClass} underline decoration-white/50 underline-offset-2`}>
                 {foot}

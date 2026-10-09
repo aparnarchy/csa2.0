@@ -32,16 +32,15 @@ type Tab = "strengths" | "concerns";
 export function AnalysisView({
   session,
   initial,
-  initialInsight,
 }: {
   session: SessionUser;
   initial: EmployeeScores;
-  initialInsight: EmployeeInsightCard | null;
 }) {
   const router = useRouter();
   const [window, setWindow] = useState<Window>("3M");
   const [data, setData] = useState<EmployeeScores>(initial);
-  const [aiCard, setAiCard] = useState<EmployeeInsightCard | null>(initialInsight);
+  /** undefined = still being worked out; null = none available. */
+  const [aiCard, setAiCard] = useState<EmployeeInsightCard | null | undefined>(undefined);
   const [tab, setTab] = useState<Tab>("strengths");
   const [selectedPillar, setSelectedPillar] = useState<PillarId | null>(null);
   /** Accordion: at most one question row is expanded at a time. */
@@ -53,7 +52,8 @@ export function AnalysisView({
   // (real aggregation over the user's own check-ins).
   useEffect(() => {
     getEmployeeScoresAction(window).then(setData);
-    getEmployeeInsightAction(window).then(setAiCard);
+    setAiCard(undefined);
+    getEmployeeInsightAction(window).then(setAiCard, () => setAiCard(null));
   }, [window]);
 
   if (selectedPillar) {
@@ -133,7 +133,9 @@ export function AnalysisView({
         </div>
       )}
       {/* 1. The AI insight — "here's what I noticed", never advice. */}
-      {aiCard ? (
+      {aiCard === undefined ? (
+        <AIInsight loading eyebrow={fill(COPY.insight.eyebrowHappening, { name: firstName })} />
+      ) : aiCard ? (
         <AIInsight text={aiCard.text} eyebrow={aiCard.eyebrow} foot={aiCard.foot} footHref={aiCard.footHref} />
       ) : (
         <AIInsight />

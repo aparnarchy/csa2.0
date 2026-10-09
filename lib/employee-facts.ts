@@ -21,15 +21,21 @@ import { careerFacts, hasAnyCareerHistory } from "./career";
 import { callGroq, writeCache } from "./ai";
 import { visibleAffectedActions } from "./feedback";
 import { PILLAR_ORDER } from "./pillars";
-import { planInsight, type AnswerHistory, type EmployeeInsightCard, type SignalInput } from "./insight-signals";
+import {
+  aiReplyOk,
+  INSIGHT_SYSTEM_PROMPT,
+  angleSheet,
+  findAngles,
+  monthsBetween,
+  planInsight,
+  type AnswerHistory,
+  type CareerJob,
+  type EmployeeInsightCard,
+  type SignalInput,
+} from "./insight-signals";
 import type { QuestionOptionCols } from "./responses";
 import type { EmployeeScores, Window } from "./data";
 import type { PillarId, SessionUser } from "./types";
-
-/** Longest reply accepted from the AI; anything longer isn't "one line". */
-const MAX_AI_CHARS = 260;
-/** The AI is told never to advise; this catches it if it does anyway. */
-const ADVICE = /\b(try|consider|should|recommend|make sure|why not|you could|you might want)\b/i;
 
 function sinceLabel(iso: string): string {
   const d = new Date(iso.replace(" ", "T"));
@@ -103,7 +109,7 @@ export async function getEmployeeInsight(
 
   try {
     const db = getDB();
-    const [ciRes, qRes, hasCareer, priorAction, extremes] = await Promise.all([
+    const [ciRes, qRes, hasCareer, priorAction, extremes, emp, jobRes] = await Promise.all([
       db
         .prepare("SELECT questionId, weekId, score FROM checkIns WHERE userId = ? ORDER BY timestamp, weekId")
         .bind(userId)
@@ -116,6 +122,31 @@ export async function getEmployeeInsight(
       hasAnyCareerHistory(session, userId),
       priorActionFact(userId),
       careerExtremes(userId, scores),
+      db
+        .prepare(
+          `SELECT e.companyName, e.designation, e.grade, e.startedAt, d.name AS department
+             FROM employment e LEFT JOIN departments d ON d.id = e.departmentId
+            WHERE e.userId = ? AND e.status = 'active' ORDER BY e.startedAt DESC LIMIT 1`,
+        )
+        .bind(userId)
+        .first<{
+          companyName: string | null;
+          designation: string | null;
+          grade: string | null;
+          startedAt: string | null;
+          department: string | null;
+        }>(),
+      db
+        .prepare("SELECT name, role, startDate, endDate, overallScore, pillarScores FROM careerCompanies WHERE userId = ?")
+        .bind(userId)
+        .all<{
+          name: string;
+          role: string | null;
+          startDate: string | null;
+          endDate: string | null;
+          overallScore: number | null;
+          pillarScores: string | null;
+        }>(),
     ]);
 
     // Same weeks the dashboard is showing (the window's trend weeks).
@@ -165,10 +196,53 @@ export async function getEmployeeInsight(
       foot: plan.foot,
       footHref: plan.footHref,
     });
-    const plain = plan.facts.join(" ");
+
+    const pastJobs: CareerJob[] = jobRes.results.map((j) => {
+      let pillars: CareerJob["pillars"] = {};
+      try {
+        pillars = j.pillarScores ? JSON.parse(j.pillarScores) : {};
+      } catch {
+        // a malformed row just contributes no pillar scores
+      }
+      return {
+        name: j.name,
+        role: j.role,
+        months: monthsBetween(j.startDate, j.endDate),
+        overall: j.overallScore,
+        pillars,
+      };
+    });
+    const sheetInput = {
+      history: [...byQ.values()],
+      pillars: Object.fromEntries(scores.pillars.map((p) => [p.pillarId, p.score])),
+      overall: scores.overall,
+      weeks: scores.trend.length,
+      profile: {
+        designation: emp?.designation ?? null,
+        grade: emp?.grade ?? null,
+        department: emp?.department ?? null,
+        company: emp?.companyName ?? null,
+        months: monthsBetween(emp?.startedAt ?? null),
+      },
+      pastJobs,
+      priorAction,
+    };
+    const angles = findAngles(sheetInput);
+    // A sharp week-over-week move always leads (the card's heading says so too).
+    if (plan.changed) {
+      angles.unshift({
+        weight: 100,
+        fact: plan.facts.join(" "),
+        meaning: "A sharp move in a single week usually means something specific happened, not a gradual drift.",
+      });
+    }
+    // No pattern strong enough for the AI: the plain "what's happening" line.
+    if (angles.length === 0) return card(plan.facts.join(" "));
+    const sheet = angleSheet(sheetInput, angles);
+
 
     // Reuse the AI's wording while the facts are unchanged.
-    const fingerprint = JSON.stringify(plan.facts);
+    const fingerprint = sheet;
     const id = `employee:${userId}|${window}`;
     const cached = await db
       .prepare("SELECT fingerprint, text FROM aiInsights WHERE id = ?")
@@ -177,20 +251,15 @@ export async function getEmployeeInsight(
     if (cached && cached.fingerprint === fingerprint) return card(cached.text);
 
     const apiKey = getRequestContext().env.GROQ_API_KEY;
+    const plain = angles[0].fact;
     if (!apiKey) return card(plain);
 
-    const system =
-      "You turn one or two facts about a person's own answers to workplace check-in questions into the short " +
-      "insight at the top of their dashboard, addressed to them as \"you\". Rules: " +
-      "At most 2 short sentences and 35 words in total. " +
-      "Say only what the facts say; add no numbers, causes, feelings, praise or warnings of your own. " +
-      "Never give advice, suggestions or next steps. " +
-      "Keep every answer option exactly as written, in quotation marks. You may shorten a question to its topic " +
-      "(for example \"Are you learning new skills in your current role?\" becomes learning new skills). " +
-      "Warm, plain British English. No emojis, headings or lists.";
-
-    const text = await callGroq(apiKey, system, plan.facts.join("\n")).catch(() => null);
-    if (!text || text.length > MAX_AI_CHARS || text.includes("\n") || ADVICE.test(text)) return card(plain);
+    const text = await callGroq(apiKey, INSIGHT_SYSTEM_PROMPT, sheet, {
+      reasoningEffort: "low",
+      maxTokens: 700,
+      timeoutMs: 12000,
+    }).catch(() => null);
+    if (!text || !aiReplyOk(text, sheet)) return card(plain);
 
     await writeCache(id, fingerprint, text);
     return card(text);

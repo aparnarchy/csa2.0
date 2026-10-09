@@ -103,8 +103,14 @@ export async function getDashboardInsight(
   }
 }
 
-/** One chat completion, or null on any failure. */
-export async function callGroq(apiKey: string, system: string, user: string): Promise<string | null> {
+/** One chat completion, or null on any failure. `opts` gives a call more
+ *  thinking room than the default short dashboard summary needs. */
+export async function callGroq(
+  apiKey: string,
+  system: string,
+  user: string,
+  opts: { reasoningEffort?: "low" | "medium" | "high"; maxTokens?: number; timeoutMs?: number } = {},
+): Promise<string | null> {
   const res = await fetch(GROQ_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
@@ -118,10 +124,10 @@ export async function callGroq(apiKey: string, system: string, user: string): Pr
       // gpt-oss is a reasoning model — it spends some of max_tokens on a
       // hidden "reasoning" pass before the visible answer, so the budget
       // needs headroom beyond just the ~55-word answer itself.
-      max_tokens: 350,
-      reasoning_effort: "low",
+      max_tokens: opts.maxTokens ?? 350,
+      reasoning_effort: opts.reasoningEffort ?? "low",
     }),
-    signal: AbortSignal.timeout(TIMEOUT_MS),
+    signal: AbortSignal.timeout(opts.timeoutMs ?? TIMEOUT_MS),
   });
   if (!res.ok) return null;
 

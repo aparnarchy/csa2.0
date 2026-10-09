@@ -3,7 +3,6 @@ export const runtime = "edge";
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth-session";
 import { getEmployeeScores } from "@/lib/scores";
-import { getEmployeeInsight } from "@/lib/employee-facts";
 import { getDueCheckIns, getUnansweredCheckIns, getReturnCheckIn } from "@/lib/checkins";
 import { AnalysisView } from "./AnalysisView";
 
@@ -28,12 +27,12 @@ export default async function EmployeeDashboard() {
 
   // Nothing due — show the dashboard. (Access-control guards run in the layer.)
   const initial = await getEmployeeScores(session.user, session.user.id, "3M");
-  const initialInsight = await getEmployeeInsight(session.user, session.user.id, "3M", initial);
+  // The AI insight isn't awaited here — the dashboard renders straight away
+  // and the card fills itself in (AnalysisView fetches it on mount).
   return (
     <AnalysisView
       session={session.user}
       initial={initial}
-      initialInsight={initialInsight}
     />
   );
 }
