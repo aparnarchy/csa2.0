@@ -158,8 +158,7 @@ export const COPY = {
     "waitingSub": "Your first questions will arrive as a notification.",
     "unlockTitle": "{count} and your dashboard unlocks!",
     "unlockSub": "Your next questions will arrive as a notification.",
-    "highlightsTitle": "Highlights",
-    "otherPillarsTitle": "Your other pillars",
+    "pillarsTitle": "Your pillars",
     "seeAll": "See all {count} →",
     "showFewer": "Show fewer",
     "earlyRead": "Based on {count} — this gets more accurate with every check-in."

@@ -21,11 +21,31 @@ export function BigScore({
   score,
   caption,
   trailing,
+  inline = false,
 }: {
   score: number | null;
   caption?: string;
   trailing?: ReactNode;
+  /** Slim layout: `trailing` and the tagline stack beside the numeral
+   *  instead of the tagline sitting underneath (employee dashboard). */
+  inline?: boolean;
 }) {
+  if (inline && score !== null) {
+    return (
+      <div>
+        <p className="text-[11px] font-medium uppercase tracking-wider text-brand">{caption ?? "Overall Happiness"}</p>
+        <div className="mt-1.5 flex items-center gap-3.5">
+          <span className="block font-display text-[60px] font-black leading-[0.85] tracking-tight text-[#8B82F6]">
+            <CountUp target={score} />
+          </span>
+          <div className="flex min-w-0 flex-col items-start gap-1.5">
+            {trailing}
+            <p className="text-xs font-semibold text-ink-2">{scoreTagline(score)}</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
   return (
     <div>
       <p className="text-[11px] font-medium uppercase tracking-wider text-brand">

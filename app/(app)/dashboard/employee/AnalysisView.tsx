@@ -23,7 +23,6 @@ import { buildEmployeeInsight, type InsightSpot } from "@/lib/insight";
 import { earlyReadNote } from "@/lib/mood";
 import { chromeFor } from "@/lib/voice";
 import type { EmployeeInsightCard } from "@/lib/insight-signals";
-import type { PillarScore } from "@/lib/data";
 import type { PillarId, SessionUser } from "@/lib/types";
 import { PillarDetailView } from "./PillarDetailView";
 
@@ -94,6 +93,10 @@ export function AnalysisView({
   const insight = buildEmployeeInsight(data, persona);
   const chrome = chromeFor(persona);
   const firstName = (session.name || "there").trim().split(/\s+/)[0];
+  // The pillars not shown as a big circle — the small bubbles under them.
+  const otherPillars = data.pillars
+    .filter((p) => p.pillarId !== insight.brightSpot?.pillarId && p.pillarId !== insight.watchOut?.pillarId)
+    .map((p) => ({ pillarId: p.pillarId, pillar: PILLARS[p.pillarId].label, score: p.score }));
 
   return (
     <ScreenShell active="insights">
@@ -141,10 +144,11 @@ export function AnalysisView({
         <AIInsight />
       )}
 
-      {/* 2. Overall happiness — the first number people see. */}
+      {/* 2. Overall happiness — the first number people see, slim. */}
       {data.overall !== null && (
         <Card>
           <BigScore
+            inline
             score={data.overall}
             trailing={
               data.delta !== null ? (
@@ -156,43 +160,45 @@ export function AnalysisView({
             }
           />
           {earlyReadNote(data.responseCount) && (
-            <p className="mt-1 text-[11px] text-ink-4">{earlyReadNote(data.responseCount)}</p>
+            <p className="mt-2 text-[11px] text-ink-4">{earlyReadNote(data.responseCount)}</p>
           )}
         </Card>
       )}
 
-      {/* 3. Highlights — only the circles a pillar has earned (Bright spot
-          above 7, Watch out at 7 or below; lib/insight.ts). Play: the wavy
-          blobs. Professional: plain stat cards. */}
-      {(insight.brightSpot || insight.watchOut) && (
-        <section>
-          <p className="mb-2 text-center font-display text-sm font-black uppercase tracking-wide text-brand">
-            {COPY.mood.highlightsTitle}
-          </p>
-          {isPlay ? (
-            <div className="mb-3 pt-2">
-              <ScoreCircles bright={insight.brightSpot} watch={insight.watchOut} onSelect={setSelectedPillar} />
-            </div>
-          ) : (
-            <div className={`grid gap-2 ${insight.brightSpot && insight.watchOut ? "grid-cols-2" : "grid-cols-1"}`}>
-              {insight.brightSpot && (
-                <SpotCard title={COPY.mood.brightSpot} spot={insight.brightSpot} onSelect={setSelectedPillar} />
-              )}
-              {insight.watchOut && (
-                <SpotCard title={COPY.mood.watchOut} spot={insight.watchOut} onSelect={setSelectedPillar} />
-              )}
-            </div>
-          )}
-        </section>
-      )}
-
-      {/* 4. The pillars not already shown in a circle — never repeated. */}
-      <OtherPillars
-        pillars={data.pillars.filter(
-          (p) => p.pillarId !== insight.brightSpot?.pillarId && p.pillarId !== insight.watchOut?.pillarId,
+      {/* 3. Your pillars — all four together, apart from the score so nobody
+          reads the score as an average of some of them. The earned circles
+          (Bright spot above 7, Watch out at 7 or below; lib/insight.ts) are
+          the big ones; the rest are small bubbles tucked under them. Play:
+          wavy blobs. Professional: plain stat cards, bubbles beneath. */}
+      <section>
+        <p className="mb-2 text-center font-display text-sm font-black uppercase tracking-wide text-brand">
+          {COPY.mood.pillarsTitle}
+        </p>
+        {isPlay ? (
+          <div className="mb-2 pt-1">
+            <ScoreCircles
+              bright={insight.brightSpot}
+              watch={insight.watchOut}
+              others={otherPillars}
+              onSelect={setSelectedPillar}
+            />
+          </div>
+        ) : (
+          <>
+            {(insight.brightSpot || insight.watchOut) && (
+              <div className={`mb-3 grid gap-2 ${insight.brightSpot && insight.watchOut ? "grid-cols-2" : "grid-cols-1"}`}>
+                {insight.brightSpot && (
+                  <SpotCard title={COPY.mood.brightSpot} spot={insight.brightSpot} onSelect={setSelectedPillar} />
+                )}
+                {insight.watchOut && (
+                  <SpotCard title={COPY.mood.watchOut} spot={insight.watchOut} onSelect={setSelectedPillar} />
+                )}
+              </div>
+            )}
+            <ScoreCircles bright={null} watch={null} others={otherPillars} onSelect={setSelectedPillar} />
+          </>
         )}
-        onSelect={setSelectedPillar}
-      />
+      </section>
 
       {/* 5. Strengths / Concerns — top 3, "See all" for the rest. */}
       {tabQs.length > 0 && (
@@ -282,49 +288,6 @@ function WaitingScreen({ answers }: { answers: number }) {
       </h1>
       <p className="mt-2 text-sm text-ink-3">{answers === 0 ? COPY.mood.waitingSub : COPY.mood.unlockSub}</p>
     </div>
-  );
-}
-
-/** The pillars that aren't in a Highlights circle, as simple rows. */
-function OtherPillars({
-  pillars,
-  onSelect,
-}: {
-  pillars: PillarScore[];
-  onSelect: (pillarId: PillarId) => void;
-}) {
-  if (pillars.length === 0) return null;
-  return (
-    <Card>
-      <p className="mb-1 text-[11px] font-medium uppercase tracking-wider text-brand">
-        {COPY.mood.otherPillarsTitle}
-      </p>
-      {pillars.map((p) => (
-        <button
-          key={p.pillarId}
-          type="button"
-          onClick={() => onSelect(p.pillarId)}
-          className="flex w-full items-center gap-3 border-t border-lav-mid py-3 text-left first-of-type:border-t-0 active:opacity-70"
-        >
-          <span className="min-w-0 flex-1 font-display text-sm font-black uppercase tracking-wide text-brand">
-            {PILLARS[p.pillarId].label}
-          </span>
-          {p.score === null ? (
-            <span className="text-xs text-ink-4">{COPY.mood.pillarEmpty}</span>
-          ) : (
-            <>
-              {p.delta !== null && p.delta !== 0 && (
-                <span className="text-[11px] font-bold text-brand/50">
-                  {p.delta > 0 ? "↑" : "↓"}
-                  {Math.abs(p.delta).toFixed(1)}
-                </span>
-              )}
-              <span className="font-display text-xl font-black text-ink-2">{p.score.toFixed(1)}</span>
-            </>
-          )}
-        </button>
-      ))}
-    </Card>
   );
 }
 
