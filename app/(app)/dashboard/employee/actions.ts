@@ -9,6 +9,7 @@
 import { getSession } from "@/lib/auth-session";
 import { getEmployeeScores, getPillarDetail, type PillarDetail } from "@/lib/scores";
 import { getEmployeeInsight } from "@/lib/employee-facts";
+import type { EmployeeInsightCard } from "@/lib/insight-signals";
 import type { EmployeeScores, Window } from "@/lib/data";
 import type { PillarId } from "@/lib/types";
 
@@ -18,7 +19,7 @@ export async function getEmployeeScoresAction(window: Window): Promise<EmployeeS
   return getEmployeeScores(session.user, session.user.id, window);
 }
 
-export async function getEmployeeInsightAction(window: Window): Promise<string | null> {
+export async function getEmployeeInsightAction(window: Window): Promise<EmployeeInsightCard | null> {
   const session = await getSession();
   if (!session) throw new Error("Not signed in.");
   const scores = await getEmployeeScores(session.user, session.user.id, window);

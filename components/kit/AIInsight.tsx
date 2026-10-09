@@ -1,37 +1,69 @@
 /**
- * The AI qualitative snapshot box. Screens pass `text` from the server-side
- * insight (lib/ai.ts); when it's missing (below the anonymity floor, no key,
+ * The AI insight card, after the owner's reference design (2026-10-09): a solid
+ * brand-purple rounded card with a lavender layer offset behind it, a bold
+ * uppercase heading, the insight in regular-weight white text, an optional
+ * small italic context line, and slowly turning white rings, large and faded,
+ * in the top-right corner.
+ *
+ * Screens pass `text` from the server-side insight (lib/ai.ts,
+ * lib/employee-facts.ts); when it's missing (below the anonymity floor, no key,
  * or the AI call failed) the fallback line renders instead — a dashboard is
  * never blocked on the AI.
- *
- * The actual AI text is a real 2-3 sentence, ~55-word paragraph (see the
- * prompt in lib/ai.ts) — setting a whole paragraph in bold brand-purple reads
- * as a wall of text, not an insight. The "flashy" part lives in the CONTAINER
- * (gradient card, icon badge, glow, bold uppercase eyebrow) instead, so the
- * body text can stay normal-weight and readable.
  */
+import Link from "next/link";
 import { COPY } from "@/lib/copy";
 
-export function AIInsight({ text }: { text?: string }) {
+export function AIInsight({
+  text,
+  eyebrow,
+  foot,
+  footHref,
+}: {
+  text?: string;
+  /** Heading; defaults to the shared "AI insight" title. */
+  eyebrow?: string;
+  /** Small italic context line under the insight (never advice). */
+  foot?: string;
+  /** Makes the context line a link (e.g. the career-history nudge). */
+  footHref?: string;
+}) {
+  const footClass = "mt-2.5 block text-[11px] italic leading-snug text-white/85";
   return (
-    <div
-      className="rounded-card border border-brand/15 p-4 shadow-[0_8px_24px_-8px_rgba(124,111,255,0.35)]"
-      style={{ background: "linear-gradient(155deg, #ffffff 0%, #F5F3FF 100%)" }}
-    >
-      <div className="flex items-center gap-2">
-        <span
-          className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-brand text-xs text-white"
-          aria-hidden
-        >
-          ✨
-        </span>
-        <span className="text-[11px] font-black uppercase tracking-wide text-brand">
-          {COPY.shared.aiInsightTitle}
-        </span>
+    <div className="relative mb-3 mr-2.5">
+      <div className="absolute inset-0 translate-x-2.5 translate-y-3 rounded-[36px] bg-[#E3DCFF]" aria-hidden />
+      <div className="relative overflow-hidden rounded-[36px] bg-brand px-5 pb-[18px] pt-5 text-white">
+        <Orb />
+        <div className="relative min-w-0 pr-14">
+          <p className="font-display text-[13px] font-black uppercase leading-tight tracking-[0.02em]">
+            {eyebrow ?? COPY.shared.aiInsightTitle}
+          </p>
+          <p className="mt-2 text-[15px] font-normal leading-[1.45]">{text ?? COPY.shared.aiInsightFallback}</p>
+          {foot &&
+            (footHref ? (
+              <Link href={footHref} className={`${footClass} underline decoration-white/50 underline-offset-2`}>
+                {foot}
+              </Link>
+            ) : (
+              <p className={footClass}>{foot}</p>
+            ))}
+        </div>
       </div>
-      <p className="mt-2.5 text-[14px] font-semibold leading-relaxed text-ink-2">
-        {text ?? COPY.shared.aiInsightFallback}
-      </p>
     </div>
+  );
+}
+
+/** The decorative rings (styles and motion in globals.css, `.ai-orb`). */
+function Orb() {
+  return (
+    <svg
+      viewBox="0 0 100 100"
+      className="ai-orb pointer-events-none absolute right-1.5 top-2.5 h-24 w-24 opacity-35"
+      aria-hidden
+    >
+      <circle className="ai-orb-r1" cx="50" cy="50" r="44" fill="none" stroke="#fff" strokeWidth="5" strokeLinecap="round" strokeDasharray="4 14" />
+      <circle className="ai-orb-r2" cx="50" cy="50" r="33" fill="none" stroke="#fff" strokeWidth="6" strokeLinecap="round" strokeDasharray="90 200" />
+      <circle className="ai-orb-r3" cx="50" cy="50" r="20" fill="none" stroke="#fff" strokeWidth="7" />
+      <circle className="ai-orb-r4" cx="50" cy="50" r="7" fill="#fff" />
+    </svg>
   );
 }

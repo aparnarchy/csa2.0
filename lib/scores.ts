@@ -99,6 +99,7 @@ async function computeAggregate(userId: string, window: Window): Promise<Employe
       ...sampleTail,
       percentile: null,
       responseCount: 0,
+      totalAnswers: ciRes.results.length,
       streak,
       pillars: PILLAR_ORDER.map((pillarId) => ({
         pillarId,
@@ -187,6 +188,7 @@ async function computeAggregate(userId: string, window: Window): Promise<Employe
     delta,
     ...sampleTail,
     responseCount: rows.length,
+    totalAnswers: ciRes.results.length,
     streak,
     pillars,
     questions,

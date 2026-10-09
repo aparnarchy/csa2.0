@@ -5,7 +5,6 @@ import { getSession } from "@/lib/auth-session";
 import { getEmployeeScores } from "@/lib/scores";
 import { getEmployeeInsight } from "@/lib/employee-facts";
 import { getDueCheckIns, getUnansweredCheckIns, getReturnCheckIn } from "@/lib/checkins";
-import { hasAnyCareerHistory } from "@/lib/career";
 import { AnalysisView } from "./AnalysisView";
 
 export default async function EmployeeDashboard() {
@@ -28,17 +27,13 @@ export default async function EmployeeDashboard() {
   if (due.length > 0 || unanswered.length > 0 || returnCheckIn) redirect("/check-in");
 
   // Nothing due — show the dashboard. (Access-control guards run in the layer.)
-  const [initial, hasCareerHistory] = await Promise.all([
-    getEmployeeScores(session.user, session.user.id, "3M"),
-    hasAnyCareerHistory(session.user, session.user.id),
-  ]);
+  const initial = await getEmployeeScores(session.user, session.user.id, "3M");
   const initialInsight = await getEmployeeInsight(session.user, session.user.id, "3M", initial);
   return (
     <AnalysisView
       session={session.user}
       initial={initial}
       initialInsight={initialInsight}
-      hasCareerHistory={hasCareerHistory}
     />
   );
 }

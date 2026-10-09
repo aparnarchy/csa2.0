@@ -2,16 +2,13 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { COPY } from "@/lib/copy";
 import {
   AIInsight,
   BigScore,
   Card,
-  EmptyScoreCard,
   GradientHeader,
   InsightBarRow,
   Mascot,
-  PillarCard,
   ScoreCircles,
   ScreenShell,
   SegmentedToggle,
@@ -20,10 +17,13 @@ import {
 import { type EmployeeScores, type Window } from "@/lib/data";
 import { getEmployeeInsightAction, getEmployeeScoresAction } from "./actions";
 import { HEADER_MASCOT_SIZE, mascotForScore } from "@/lib/mascot";
-import { STRENGTH_CUTOFF } from "@/lib/pillars";
+import { PILLARS, STRENGTH_CUTOFF } from "@/lib/pillars";
+import { COPY, fill } from "@/lib/copy";
 import { buildEmployeeInsight, type InsightSpot } from "@/lib/insight";
 import { earlyReadNote } from "@/lib/mood";
 import { chromeFor } from "@/lib/voice";
+import type { EmployeeInsightCard } from "@/lib/insight-signals";
+import type { PillarScore } from "@/lib/data";
 import type { PillarId, SessionUser } from "@/lib/types";
 import { PillarDetailView } from "./PillarDetailView";
 
@@ -33,27 +33,27 @@ export function AnalysisView({
   session,
   initial,
   initialInsight,
-  hasCareerHistory,
 }: {
   session: SessionUser;
   initial: EmployeeScores;
-  initialInsight: string | null;
-  hasCareerHistory: boolean;
+  initialInsight: EmployeeInsightCard | null;
 }) {
   const router = useRouter();
   const [window, setWindow] = useState<Window>("3M");
   const [data, setData] = useState<EmployeeScores>(initial);
-  const [aiText, setAiText] = useState<string | null>(initialInsight);
+  const [aiCard, setAiCard] = useState<EmployeeInsightCard | null>(initialInsight);
   const [tab, setTab] = useState<Tab>("strengths");
   const [selectedPillar, setSelectedPillar] = useState<PillarId | null>(null);
   /** Accordion: at most one question row is expanded at a time. */
   const [openId, setOpenId] = useState<string | null>(null);
+  /** Strengths / Concerns show their top 3 until "See all" is tapped. */
+  const [showAll, setShowAll] = useState(false);
 
   // Time filter refreshes score + pillars + chart together via a server action
   // (real aggregation over the user's own check-ins).
   useEffect(() => {
     getEmployeeScoresAction(window).then(setData);
-    getEmployeeInsightAction(window).then(setAiText);
+    getEmployeeInsightAction(window).then(setAiCard);
   }, [window]);
 
   if (selectedPillar) {
@@ -67,10 +67,25 @@ export function AnalysisView({
     );
   }
 
+  // Fewer than 3 answers ever: no dashboard yet — just the mascot in the
+  // middle of the screen saying what will unlock it (owner, 2026-10-09).
+  if (data.totalAnswers < WAITING_UNTIL) {
+    return (
+      <ScreenShell active="insights">
+        <WaitingScreen answers={data.totalAnswers} />
+      </ScreenShell>
+    );
+  }
+
   const sortedQs = [...data.questions].sort((a, b) => b.score - a.score);
-  const strengthQs = sortedQs.filter((q) => q.score > STRENGTH_CUTOFF).slice(0, 3);
-  const concernQs = sortedQs.filter((q) => q.score <= STRENGTH_CUTOFF).reverse().slice(0, 3);
-  const shownQs = tab === "strengths" ? strengthQs : concernQs;
+  const allStrengths = sortedQs.filter((q) => q.score > STRENGTH_CUTOFF);
+  const allConcerns = sortedQs.filter((q) => q.score <= STRENGTH_CUTOFF).reverse();
+  // A tab with nothing in it isn't shown at all (no empty "Concerns" tab when
+  // everything is a strength), so the toggle only appears when both have rows.
+  const bothTabs = allStrengths.length > 0 && allConcerns.length > 0;
+  const activeTab: Tab = bothTabs ? tab : allStrengths.length > 0 ? "strengths" : "concerns";
+  const tabQs = activeTab === "strengths" ? allStrengths : allConcerns;
+  const shownQs = showAll ? tabQs : tabQs.slice(0, 3);
   const up = (data.delta ?? 0) >= 0;
   // Mode = design only. Play shows the fun look (mascot, blob circles, persona
   // voice); Professional is a plain, serious dashboard with neutral copy.
@@ -117,172 +132,210 @@ export function AnalysisView({
           </p>
         </div>
       )}
-
-      {!data.enoughData || data.overall === null ? (
-        // Starting state: the same score card, at 0.0 in grey, saying plainly
-        // that scores arrive with the first check-in — no mood, no spots.
-        <EmptyScoreCard message={COPY.mood.noDataEmployee} />
+      {/* 1. The AI insight — "here's what I noticed", never advice. */}
+      {aiCard ? (
+        <AIInsight text={aiCard.text} eyebrow={aiCard.eyebrow} foot={aiCard.foot} footHref={aiCard.footHref} />
       ) : (
-        <>
-          {/* Bright Spot / Watch Out — Play: animated wavy blobs. Professional:
-              plain stat cards. */}
-          {/* Each slot is filled only when earned (lib/insight.ts); otherwise
-              it stays, empty, with its "nothing here" line. */}
+        <AIInsight />
+      )}
+
+      {/* 2. Overall happiness — the first number people see. */}
+      {data.overall !== null && (
+        <Card>
+          <BigScore
+            score={data.overall}
+            trailing={
+              data.delta !== null ? (
+                <div className="inline-flex items-center gap-1 rounded-full bg-lav-soft px-2.5 py-1 text-xs font-bold text-brand">
+                  {up ? "↑" : "↓"} {Math.abs(data.delta).toFixed(1)}
+                  <span className="text-[10px] font-medium text-ink-3">vs last</span>
+                </div>
+              ) : undefined
+            }
+          />
+          {earlyReadNote(data.responseCount) && (
+            <p className="mt-1 text-[11px] text-ink-4">{earlyReadNote(data.responseCount)}</p>
+          )}
+        </Card>
+      )}
+
+      {/* 3. Highlights — only the circles a pillar has earned (Bright spot
+          above 7, Watch out at 7 or below; lib/insight.ts). Play: the wavy
+          blobs. Professional: plain stat cards. */}
+      {(insight.brightSpot || insight.watchOut) && (
+        <section>
+          <p className="mb-2 text-center font-display text-sm font-black uppercase tracking-wide text-brand">
+            {COPY.mood.highlightsTitle}
+          </p>
           {isPlay ? (
-            <div className="mb-7 pt-4">
-              <ScoreCircles
-                bright={insight.brightSpot}
-                watch={insight.watchOut}
-                onSelect={setSelectedPillar}
-              />
+            <div className="mb-3 pt-2">
+              <ScoreCircles bright={insight.brightSpot} watch={insight.watchOut} onSelect={setSelectedPillar} />
             </div>
           ) : (
-            <div className="grid grid-cols-2 gap-2">
-              <SpotCard
-                title={`☀️ ${COPY.mood.brightSpot}`}
-                spot={insight.brightSpot}
-                emptyText={COPY.mood.noBrightSpot}
-                onSelect={setSelectedPillar}
-              />
-              <SpotCard
-                title={`${insight.watchOut ? "⚠️ " : ""}${COPY.mood.watchOut}`}
-                spot={insight.watchOut}
-                emptyText={COPY.mood.noWatchOut}
-                onSelect={setSelectedPillar}
-              />
-            </div>
-          )}
-
-          {/* Happiness score + pillars first (unchanged), then Strengths/Concerns,
-              then the trend chart (owner: only these two swapped places). */}
-          <Card>
-            {/* Delta rides beside the numeral (via BigScore's `trailing` slot)
-                so score, badge and message read as one block. */}
-            <div className="mb-4">
-              <BigScore
-                score={data.overall}
-                trailing={
-                  data.delta !== null ? (
-                    <div
-                      className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold"
-                      style={{ background: up ? "#E8FBF0" : "#FDECEC", color: up ? "#059669" : "#DC2626" }}
-                    >
-                      {up ? "↑" : "↓"} {Math.abs(data.delta).toFixed(1)}
-                      <span className="text-[10px] font-medium text-ink-3">vs last</span>
-                    </div>
-                  ) : undefined
-                }
-              />
-              {earlyReadNote(data.responseCount) && (
-                <p className="mt-1 text-[11px] text-ink-4">{earlyReadNote(data.responseCount)}</p>
+            <div className={`grid gap-2 ${insight.brightSpot && insight.watchOut ? "grid-cols-2" : "grid-cols-1"}`}>
+              {insight.brightSpot && (
+                <SpotCard title={COPY.mood.brightSpot} spot={insight.brightSpot} onSelect={setSelectedPillar} />
+              )}
+              {insight.watchOut && (
+                <SpotCard title={COPY.mood.watchOut} spot={insight.watchOut} onSelect={setSelectedPillar} />
               )}
             </div>
-
-            <div className="-mx-1.5 grid grid-cols-4 gap-2">
-              {data.pillars.map((p) => (
-                <PillarCard key={p.pillarId} data={p} onClick={() => setSelectedPillar(p.pillarId)} />
-              ))}
-            </div>
-          </Card>
-
-          {/* AI insight — the ONLY insight card on this screen (there used to
-              be a second, click-through "Find the Root" entry point below
-              this; removed — its fact-gathering now feeds this card
-              directly, shown immediately, no click-through). Same shared
-              card every other dashboard uses, over this person's own data
-              (career, journal reflections, manager-action impact, not just
-              the current scores — never an aggregate, so no privacy floor
-              to enforce here). */}
-          <AIInsight text={aiText ?? undefined} />
-          {!hasCareerHistory && (
-            <button
-              type="button"
-              onClick={() => router.push("/career")}
-              className="-mt-1.5 px-1 text-left text-[11px] font-semibold italic text-brand active:opacity-70"
-            >
-              {COPY.shared.aiInsightCareerNudge}
-            </button>
           )}
+        </section>
+      )}
 
-          <Card>
-            <p className="mb-3 text-sm font-bold text-brand">Insights</p>
+      {/* 4. The pillars not already shown in a circle — never repeated. */}
+      <OtherPillars
+        pillars={data.pillars.filter(
+          (p) => p.pillarId !== insight.brightSpot?.pillarId && p.pillarId !== insight.watchOut?.pillarId,
+        )}
+        onSelect={setSelectedPillar}
+      />
+
+      {/* 5. Strengths / Concerns — top 3, "See all" for the rest. */}
+      {tabQs.length > 0 && (
+        <Card>
+          {bothTabs ? (
             <div className="mb-4">
               <SegmentedToggle
-                value={tab}
+                value={activeTab}
                 onChange={(v) => {
                   setTab(v);
                   setOpenId(null);
+                  setShowAll(false);
                 }}
                 options={[
-                  { value: "strengths", label: "💪 Strengths" },
-                  { value: "concerns", label: "⚠️ Concerns" },
+                  { value: "strengths", label: "Strengths" },
+                  { value: "concerns", label: "Concerns" },
                 ]}
               />
             </div>
-            {shownQs.map((q) => (
-              <InsightBarRow
-                key={q.id}
-                q={q}
-                isStrength={tab === "strengths"}
-                open={openId === q.id}
-                onToggle={() => setOpenId((cur) => (cur === q.id ? null : q.id))}
-              />
-            ))}
-            {shownQs.length === 0 && (
-              <p className="text-xs text-ink-4">
-                {tab === "strengths" ? COPY.mood.noStrengths : COPY.mood.noConcerns}
-              </p>
-            )}
-          </Card>
-
-          <TrendChart data={data.trend} window={window} onWindowChange={setWindow} />
-
-          {/* Career history — the second way in, alongside the Profile link. */}
-          <button
-            type="button"
-            onClick={() => router.push("/career")}
-            className="w-full rounded-card border border-lav-mid bg-white p-4 text-left shadow-card transition active:scale-[0.99]"
-          >
-            <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-2xl bg-lav-soft text-xl">
-                🗂️
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="font-display text-base font-black leading-tight text-ink">
-                  {COPY.career.insightsLinkTitle}
-                </p>
-                <p className="mt-0.5 text-[11px] text-ink-3">{COPY.career.insightsLinkSub}</p>
-              </div>
-              <span className="flex-shrink-0 text-brand-light">→</span>
-            </div>
-          </button>
-        </>
+          ) : (
+            <p className="mb-3 text-sm font-bold text-brand">
+              {activeTab === "strengths" ? "Strengths" : "Concerns"}
+            </p>
+          )}
+          {shownQs.map((q) => (
+            <InsightBarRow
+              key={q.id}
+              q={q}
+              isStrength={activeTab === "strengths"}
+              open={openId === q.id}
+              onToggle={() => setOpenId((cur) => (cur === q.id ? null : q.id))}
+            />
+          ))}
+          {tabQs.length > 3 && (
+            <button
+              type="button"
+              onClick={() => setShowAll((v) => !v)}
+              className="mt-1 text-xs font-bold text-brand active:opacity-70"
+            >
+              {showAll ? COPY.mood.showFewer : fill(COPY.mood.seeAll, { count: tabQs.length })}
+            </button>
+          )}
+        </Card>
       )}
+
+      <TrendChart data={data.trend} window={window} onWindowChange={setWindow} />
+
+      {/* Career history — the second way in, alongside the Profile link. */}
+      <button
+        type="button"
+        onClick={() => router.push("/career")}
+        className="w-full rounded-card border border-lav-mid bg-white p-4 text-left shadow-card transition active:scale-[0.99]"
+      >
+        <div className="flex items-center gap-3">
+          <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-2xl bg-lav-soft text-xl">
+            🗂️
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="font-display text-base font-black leading-tight text-ink">
+              {COPY.career.insightsLinkTitle}
+            </p>
+            <p className="mt-0.5 text-[11px] text-ink-3">{COPY.career.insightsLinkSub}</p>
+          </div>
+          <span className="flex-shrink-0 text-brand-light">→</span>
+        </div>
+      </button>
     </ScreenShell>
   );
 }
 
-/** Professional-mode Bright spot / Watch out card. `spot` null = empty slot:
- *  no score, no warning sign, just its "nothing here" line, not tappable. */
+/** The dashboard opens once someone has given this many answers in total. */
+const WAITING_UNTIL = 3;
+
+/** Before the dashboard opens: the mascot in the middle of the screen with
+ *  one big line, and nothing else. */
+function WaitingScreen({ answers }: { answers: number }) {
+  const left = WAITING_UNTIL - answers;
+  const title =
+    answers === 0
+      ? COPY.mood.waitingTitle
+      : fill(COPY.mood.unlockTitle, { count: `${left} more ${left === 1 ? "answer" : "answers"}` });
+  return (
+    <div className="flex min-h-[62vh] flex-col items-center justify-center px-6 text-center">
+      <Mascot state="welcome" size={HEADER_MASCOT_SIZE} />
+      <h1 className="mt-6 font-display text-[26px] font-black leading-tight text-brand [text-wrap:balance]">
+        {title}
+      </h1>
+      <p className="mt-2 text-sm text-ink-3">{answers === 0 ? COPY.mood.waitingSub : COPY.mood.unlockSub}</p>
+    </div>
+  );
+}
+
+/** The pillars that aren't in a Highlights circle, as simple rows. */
+function OtherPillars({
+  pillars,
+  onSelect,
+}: {
+  pillars: PillarScore[];
+  onSelect: (pillarId: PillarId) => void;
+}) {
+  if (pillars.length === 0) return null;
+  return (
+    <Card>
+      <p className="mb-1 text-[11px] font-medium uppercase tracking-wider text-brand">
+        {COPY.mood.otherPillarsTitle}
+      </p>
+      {pillars.map((p) => (
+        <button
+          key={p.pillarId}
+          type="button"
+          onClick={() => onSelect(p.pillarId)}
+          className="flex w-full items-center gap-3 border-t border-lav-mid py-3 text-left first-of-type:border-t-0 active:opacity-70"
+        >
+          <span className="min-w-0 flex-1 font-display text-sm font-black uppercase tracking-wide text-brand">
+            {PILLARS[p.pillarId].label}
+          </span>
+          {p.score === null ? (
+            <span className="text-xs text-ink-4">{COPY.mood.pillarEmpty}</span>
+          ) : (
+            <>
+              {p.delta !== null && p.delta !== 0 && (
+                <span className="text-[11px] font-bold text-brand/50">
+                  {p.delta > 0 ? "↑" : "↓"}
+                  {Math.abs(p.delta).toFixed(1)}
+                </span>
+              )}
+              <span className="font-display text-xl font-black text-ink-2">{p.score.toFixed(1)}</span>
+            </>
+          )}
+        </button>
+      ))}
+    </Card>
+  );
+}
+
+/** Professional-mode Bright spot / Watch out card (only ever an earned one). */
 function SpotCard({
   title,
   spot,
-  emptyText,
   onSelect,
 }: {
   title: string;
-  spot: InsightSpot | null;
-  emptyText: string;
+  spot: InsightSpot;
   onSelect: (pillarId: PillarId) => void;
 }) {
-  if (!spot) {
-    return (
-      <div className="rounded-card bg-lav-soft p-4 text-left shadow-card">
-        <p className="text-[11px] font-semibold uppercase tracking-wide text-brand/60">{title}</p>
-        <p className="mt-2 text-xs font-semibold leading-snug text-brand/70">{emptyText}</p>
-      </div>
-    );
-  }
   return (
     <button
       type="button"

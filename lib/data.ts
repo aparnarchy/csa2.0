@@ -77,6 +77,9 @@ export interface EmployeeScores {
   percentiles: Percentiles;
   participation: number; // %
   responseCount: number;
+  /** Every answer they've ever given, whatever the window — the dashboard
+   *  stays on its "waiting for you" screen until this reaches 3. */
+  totalAnswers: number;
   streak: number;
   pillars: PillarScore[];
   questions: QuestionInsight[];
@@ -248,6 +251,7 @@ export async function getEmployeeScores(
     percentiles: { org: 91, dept: 88, industry: 78 },
     participation: 86,
     responseCount: points * 2,
+    totalAnswers: points * 2,
     streak: 4,
     pillars: pillarScoresFrom(trend),
     questions: questionInsights(userId),

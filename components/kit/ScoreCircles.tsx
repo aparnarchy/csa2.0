@@ -11,8 +11,11 @@ const DUR = 1.0; // slow, elegant settle
 const EASE = "power2.inOut";
 
 /**
- * The two score blobs (Bright Spot / Watch Out). They settle side by side at the
- * baseline (no perpetual idle loop). Tapping a circle opens that pillar's
+ * The score blobs (Bright Spot / Watch Out). Only the circles a pillar has
+ * earned are drawn (lib/insight.ts): both side by side, or one on its own,
+ * centred at the same size. An empty slot used to show a "nothing here" circle;
+ * the owner found an empty circle looks broken (2026-10-09), so it's left out.
+ * Renders nothing when neither is earned. Tapping a circle opens that pillar's
  * detail screen via `onSelect`. Shared by the employee and manager (Play mode)
  * dashboards so both use the exact same design.
  */
@@ -23,51 +26,37 @@ export function ScoreCircles({
   watch,
   onSelect,
 }: {
-  /** From lib/insight.ts: null when no pillar earns the slot (shown empty,
-   *  with its "nothing here" line, and not tappable). */
   bright: Spot | null;
   watch: Spot | null;
   onSelect: (pillarId: PillarId) => void;
 }) {
-  const aRef = useRef<HTMLDivElement>(null); // bright
-  const bRef = useRef<HTMLDivElement>(null); // watch
+  const ref = useRef<HTMLDivElement>(null);
+  const spots = [
+    bright && { kind: "bright" as const, label: COPY.mood.brightSpot, spot: bright },
+    watch && { kind: "watch" as const, label: COPY.mood.watchOut, spot: watch },
+  ].filter((s) => s !== null);
 
   useEffect(() => {
-    const a = aRef.current;
-    const b = bRef.current;
-    if (!a || !b) return;
-    gsap.to([a, b], { flexGrow: 1, scale: BASE, y: 0, opacity: 1, duration: DUR, ease: EASE });
-    return () => gsap.killTweensOf([a, b]);
-  }, []);
+    const items = ref.current ? Array.from(ref.current.children) : [];
+    if (items.length === 0) return;
+    gsap.to(items, { scale: BASE, y: 0, opacity: 1, duration: DUR, ease: EASE });
+    return () => gsap.killTweensOf(items);
+  }, [spots.length]);
+
+  if (spots.length === 0) return null;
 
   return (
-    <div className="flex items-center gap-4 px-1 py-1">
-      <div
-        ref={aRef}
-        className={`min-w-0 flex-1 ${bright ? "cursor-pointer active:scale-95" : ""}`}
-        onClick={bright ? () => onSelect(bright.pillarId) : undefined}
-      >
-        <StatCircle
-          kind="bright"
-          label={COPY.mood.brightSpot}
-          score={bright?.score ?? null}
-          pillar={bright?.pillar ?? ""}
-          emptyText={COPY.mood.noBrightSpot}
-        />
-      </div>
-      <div
-        ref={bRef}
-        className={`min-w-0 flex-1 ${watch ? "cursor-pointer active:scale-95" : ""}`}
-        onClick={watch ? () => onSelect(watch.pillarId) : undefined}
-      >
-        <StatCircle
-          kind="watch"
-          label={COPY.mood.watchOut}
-          score={watch?.score ?? null}
-          pillar={watch?.pillar ?? ""}
-          emptyText={COPY.mood.noWatchOut}
-        />
-      </div>
+    <div ref={ref} className="flex items-center justify-center gap-4 px-1 py-1">
+      {spots.map(({ kind, label, spot }) => (
+        <div
+          key={kind}
+          // Half the row each, so a lone circle is the same size as a pair.
+          className="w-[calc(50%-0.5rem)] min-w-0 cursor-pointer active:scale-95"
+          onClick={() => onSelect(spot.pillarId)}
+        >
+          <StatCircle kind={kind} label={label} score={spot.score} pillar={spot.pillar} />
+        </div>
+      ))}
     </div>
   );
 }

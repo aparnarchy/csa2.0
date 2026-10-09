@@ -1,7 +1,7 @@
 /**
  * A wavy, gently morphing "blob" score circle — Bright Spot / Watch Out. Two
- * softer blobs float + morph behind it. Both labels curve (icon-led title along
- * the top, pillar along the bottom). The `.sc-content` group is scaled by the
+ * softer blobs float + morph behind it. Both labels curve (title along the
+ * top, pillar along the bottom). The `.sc-content` group is scaled by the
  * parent (ScoreCircles) so the text grows/shrinks proportionally with the circle.
  *
  * `score` null = an empty slot (no area earns it): no number, no pillar and no
@@ -20,12 +20,10 @@ export function StatCircle({
   pillar: string;
   emptyText?: string;
 }) {
-  // A filled slot is always earned (lib/insight.ts): Bright spot only above 7,
-  // Watch out only at 7 or below — so the slot alone sets icon and colour. An
-  // empty slot is plain white with no icon.
+  // All white on purple, no icons — the design system's palette only (owner,
+  // 2026-10-09: no extra colours). The label alone says which slot it is.
   const empty = score === null;
-  const titleColor = empty ? "#FFFFFF" : kind === "bright" ? "#FFD36B" : "#FF9E9E";
-  const icon = empty ? "" : kind === "bright" ? "☀️ " : "❗ ";
+  const titleColor = "#FFFFFF";
   const arcId = `arc-${kind}`;
 
   // The pillar sits on a fixed-length arc — roughly 91 units of this 100-wide
@@ -47,17 +45,19 @@ export function StatCircle({
       {/* foreground wavy blob — content sits a little high (top half) */}
       <div
         className="blob-front relative flex h-full items-center justify-center px-2 pb-[15%] text-center text-white shadow-card"
-        style={{ background: "linear-gradient(155deg, #9C8DFF 0%, #786AF4 100%)" }}
+        // One shade deeper than the lavender around it so the white numbers
+        // and curved labels stay readable on a phone in daylight.
+        style={{ background: "linear-gradient(155deg, #8E7FFF 0%, #6A5CEB 100%)" }}
       >
         <div className="sc-content flex w-full flex-col items-center will-change-transform">
-          {/* icon-led title, curved along the top */}
+          {/* title, curved along the top */}
           <svg viewBox="0 0 100 32" className="w-[94%]" aria-hidden>
             <defs>
               <path id={arcId} d="M 5 29 Q 50 4 95 29" fill="none" />
             </defs>
             <text fill={titleColor} fontSize="9" fontWeight="800" letterSpacing="0.2">
               <textPath href={`#${arcId}`} startOffset="50%" textAnchor="middle">
-                {icon}{label}
+                {label}
               </textPath>
             </text>
           </svg>

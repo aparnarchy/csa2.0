@@ -353,8 +353,66 @@
     <p class="txt" data-copy="mood.noDataPillar" contenteditable="plaintext-only">No answers for this area yet — it fills in as you check in.</p></div>
   <div class="entry"><span class="hint">Team / department / company views before there's enough data. {floor} is the minimum number of people (3)</span>
     <p class="txt" data-copy="mood.noDataTeam" contenteditable="plaintext-only">Scores appear here once at least {floor} people have checked in. This keeps everyone's answers anonymous.</p></div>
+  <div class="entry"><span class="hint">Employee dashboard before any answers — big line beside the mascot in the middle of the screen</span>
+    <p class="txt" data-copy="mood.waitingTitle" contenteditable="plaintext-only">We're waiting to hear how you're doing!</p></div>
+  <div class="entry"><span class="hint">Small line under it</span>
+    <p class="txt" data-copy="mood.waitingSub" contenteditable="plaintext-only">Your first questions will arrive as a notification.</p></div>
+  <div class="entry"><span class="hint">Same screen after 1 or 2 answers (the dashboard opens at 3). {count} = e.g. "1 more answer"</span>
+    <p class="txt" data-copy="mood.unlockTitle" contenteditable="plaintext-only">{count} and your dashboard unlocks!</p></div>
+  <div class="entry"><span class="hint">Small line under it</span>
+    <p class="txt" data-copy="mood.unlockSub" contenteditable="plaintext-only">Your next questions will arrive as a notification.</p></div>
+  <div class="entry"><span class="hint">Employee dashboard — heading above the Bright spot / Watch out circles</span>
+    <p class="txt" data-copy="mood.highlightsTitle" contenteditable="plaintext-only">Highlights</p></div>
+  <div class="entry"><span class="hint">Employee dashboard — heading above the pillars that aren't in the circles</span>
+    <p class="txt" data-copy="mood.otherPillarsTitle" contenteditable="plaintext-only">Your other pillars</p></div>
+  <div class="entry"><span class="hint">Strengths / Concerns — link under the top 3 to show the rest. {count} = how many in total</span>
+    <p class="txt" data-copy="mood.seeAll" contenteditable="plaintext-only">See all {count} →</p></div>
+  <div class="entry"><span class="hint">Same link once the full list is open</span>
+    <p class="txt" data-copy="mood.showFewer" contenteditable="plaintext-only">Show fewer</p></div>
   <div class="entry"><span class="hint">Small note when a score is based on only a few answers. {count} is the number of answers</span>
     <p class="txt" data-copy="mood.earlyRead" contenteditable="plaintext-only">Based on {count} — this gets more accurate with every check-in.</p></div>
+</section>
+
+<section id="insight">
+  <h2>Employee AI insight — the purple card at the top of the employee dashboard</h2>
+  <div class="entry"><span class="hint">Card heading, normal week. {name} = their first name</span>
+    <p class="txt" data-copy="insight.eyebrowHappening" contenteditable="plaintext-only">{name} — here's what's happening</p></div>
+  <div class="entry"><span class="hint">Card heading when their overall score jumped or dropped sharply this week</span>
+    <p class="txt" data-copy="insight.eyebrowChanged" contenteditable="plaintext-only">{name} — something changed this week</p></div>
+  <div class="entry"><span class="hint">Below are the plain sentences the card is built from. The AI rewords them into one smooth line; if the AI is unavailable, these show exactly as written. They state what happened — never advice.</span>
+    <p class="txt" data-copy="insight.bigChangeUp" contenteditable="plaintext-only">{pillar} rose from {from} to {to} this week.</p></div>
+  <div class="entry"><span class="hint">A pillar fell sharply this week</span>
+    <p class="txt" data-copy="insight.bigChangeDown" contenteditable="plaintext-only">{pillar} dropped from {from} to {to} this week.</p></div>
+  <div class="entry"><span class="hint">They changed their answer to a question. {question} = the question, {from}/{to} = the option they picked before / now</span>
+    <p class="txt" data-copy="insight.shift" contenteditable="plaintext-only">On “{question}”, you went from “{from}” to “{to}”.</p></div>
+  <div class="entry"><span class="hint">They gave the same answer several times in a row. {count} = how many times</span>
+    <p class="txt" data-copy="insight.streak" contenteditable="plaintext-only">You've answered “{option}” to “{question}” {count} times in a row.</p></div>
+  <div class="entry"><span class="hint">A pillar has stayed a strength for several weeks. {cutoff} = 7, {weeks} = e.g. "5 weeks"</span>
+    <p class="txt" data-copy="insight.pillarHigh" contenteditable="plaintext-only">{pillar} has stayed above {cutoff} for {weeks}.</p></div>
+  <div class="entry"><span class="hint">The same pillar has been their lowest for several weeks</span>
+    <p class="txt" data-copy="insight.pillarLowest" contenteditable="plaintext-only">{pillar} has been your lowest area for {weeks} running.</p></div>
+  <div class="entry"><span class="hint">Their manager took an action on a pillar and their answers there went up since. {since} = e.g. "3 weeks ago"</span>
+    <p class="txt" data-copy="insight.actionUp" contenteditable="plaintext-only">Your manager acted on {pillar} {since}, and your answers there have gone up since.</p></div>
+  <div class="entry"><span class="hint">Same, but their answers there haven't gone up</span>
+    <p class="txt" data-copy="insight.actionFlat" contenteditable="plaintext-only">Your manager acted on {pillar} {since}. Your answers there haven't gone up since.</p></div>
+  <div class="entry"><span class="hint">From their career history: this job is their best ever for a pillar</span>
+    <p class="txt" data-copy="insight.careerBest" contenteditable="plaintext-only">{pillar} is higher here than at any job you've had before.</p></div>
+  <div class="entry"><span class="hint">This job is their lowest ever for a pillar</span>
+    <p class="txt" data-copy="insight.careerWorst" contenteditable="plaintext-only">{pillar} is lower here than at any job you've had before.</p></div>
+  <div class="entry"><span class="hint">Early days (only a few answers): every answer was the top option</span>
+    <p class="txt" data-copy="insight.earlyAllTop" contenteditable="plaintext-only">Every answer so far is the top option.</p></div>
+  <div class="entry"><span class="hint">Early days: their best answer so far</span>
+    <p class="txt" data-copy="insight.earlyBest" contenteditable="plaintext-only">Your strongest answer so far is “{option}” on “{question}”.</p></div>
+  <div class="entry"><span class="hint">Early days: no answer is above 7 yet — just says their latest answer</span>
+    <p class="txt" data-copy="insight.earlyLatest" contenteditable="plaintext-only">So far you've answered “{option}” to “{question}”.</p></div>
+  <div class="entry"><span class="hint">Plenty of answers but nothing has changed — steady. {weeks} = e.g. "6 weeks", {score} = the highest pillar's score</span>
+    <p class="txt" data-copy="insight.steady" contenteditable="plaintext-only">Your answers have been steady over {weeks}, with {pillar} your highest at {score}.</p></div>
+  <div class="entry"><span class="hint">Small italic line at the bottom of the card — early days. {count} = e.g. "4 answers"</span>
+    <p class="txt" data-copy="insight.footEarly" contenteditable="plaintext-only">Early days: {count} so far. Patterns show up after a few more check-ins.</p></div>
+  <div class="entry"><span class="hint">Small italic line — they haven't added any career history yet (tapping it opens Career history)</span>
+    <p class="txt" data-copy="insight.footCareer" contenteditable="plaintext-only">Add your past jobs and I can compare this one with them.</p></div>
+  <div class="entry"><span class="hint">Small italic line — normal. {count} = e.g. "41 answers", {weeks} = e.g. "12 weeks"</span>
+    <p class="txt" data-copy="insight.footBasis" contenteditable="plaintext-only">Based on {count} over {weeks}.</p></div>
 </section>
 
 <section id="shared">
