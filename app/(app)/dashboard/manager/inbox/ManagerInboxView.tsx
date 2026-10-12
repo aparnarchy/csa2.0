@@ -13,6 +13,7 @@ import {
 import { getManagerInboxAction, submitManagerActionAction } from "./actions";
 import { COPY, fill } from "@/lib/copy";
 import type { SessionUser } from "@/lib/types";
+import { keepCurrent, withRetry } from "@/lib/retry";
 
 type Tab = "open" | "resolved";
 
@@ -49,7 +50,8 @@ export function ManagerInboxView({ session, initial }: { session: SessionUser; i
     let timer: ReturnType<typeof setInterval> | null = null;
     const tick = async () => {
       if (document.hidden) return;
-      const fresh = await getManagerInboxAction();
+      const fresh = await getManagerInboxAction().catch(() => null);
+      if (!fresh) return; // missed a tick; the next one catches up
       setResolved((prev) =>
         prev.map((it) => {
           if (touched.current.has(it.id)) return it;
@@ -74,7 +76,7 @@ export function ManagerInboxView({ session, initial }: { session: SessionUser; i
 
   function handleSubmit(item: ManagerActionItem, note: string) {
     touched.current.add(item.id);
-    void submitManagerActionAction(item.id, "yes", note);
+    void withRetry(() => submitManagerActionAction(item.id, "yes", note)).catch(keepCurrent);
     setOpen((prev) => prev.filter((i) => i.id !== item.id));
     setResolved((prev) => [
       {
@@ -91,7 +93,7 @@ export function ManagerInboxView({ session, initial }: { session: SessionUser; i
 
   function handleNotYet(item: ManagerActionItem) {
     touched.current.add(item.id);
-    void submitManagerActionAction(item.id, "not_yet");
+    void withRetry(() => submitManagerActionAction(item.id, "not_yet")).catch(keepCurrent);
     setOpen((prev) => prev.map((i) => (i.id === item.id ? { ...i, status: "flagged" } : i)));
   }
 

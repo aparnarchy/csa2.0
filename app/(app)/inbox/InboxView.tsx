@@ -18,6 +18,7 @@ import type { SessionUser } from "@/lib/types";
 import { COPY, fill } from "@/lib/copy";
 import { submitCheckInAction, submitFollowUpAction } from "../check-in/actions";
 import { submitActionResponseAction } from "./actions";
+import { keepCurrent, withRetry } from "@/lib/retry";
 
 const RESPONSE_META: Record<ActionResponseValue, { label: string; prompt: string | null }> = {
   yes: { label: COPY.inbox.responseYes, prompt: null },
@@ -195,7 +196,7 @@ function UnansweredCard({ questions }: { questions: CheckInQuestion[] }) {
 
   function pick(key: string, score: number) {
     setAnswers((a) => ({ ...a, [q.id]: { key, score } }));
-    void submitCheckInAction(q.assignmentId, score); // retrospective (derived server-side)
+    void withRetry(() => submitCheckInAction(q.assignmentId, score)).catch(keepCurrent); // retrospective (derived server-side)
   }
 
   return (
@@ -373,27 +374,32 @@ function RecommendationRow({
   const [answer, setAnswer] = useState<"yes" | "not_yet" | null>(null);
   const [note, setNote] = useState("");
   const [saving, setSaving] = useState(false);
+  const [saveFailed, setSaveFailed] = useState(false);
 
-  async function saveActed() {
+  // A failed save used to leave `saving` on, so the buttons stayed disabled
+  // and the row never moved. Now: one retry, then say so and re-enable.
+  async function save(input: Parameters<typeof submitFollowUpAction>[0]) {
     setSaving(true);
-    await submitFollowUpAction({
+    setSaveFailed(false);
+    try {
+      await withRetry(() => submitFollowUpAction(input));
+      onResolved();
+    } catch {
+      setSaveFailed(true);
+      setSaving(false);
+    }
+  }
+
+  const saveActed = () =>
+    save({
       questionId: item.questionId,
       pillarId: item.pillarId,
       status: "acted",
       journalText: note.trim() || undefined,
     });
-    onResolved();
-  }
 
-  async function saveNotActed() {
-    setSaving(true);
-    await submitFollowUpAction({
-      questionId: item.questionId,
-      pillarId: item.pillarId,
-      status: "not_acted",
-    });
-    onResolved();
-  }
+  const saveNotActed = () =>
+    save({ questionId: item.questionId, pillarId: item.pillarId, status: "not_acted" });
 
   return (
     <div className="rounded-2xl border border-gray-200 bg-white p-3.5">
@@ -451,6 +457,7 @@ function RecommendationRow({
           Confirm
         </button>
       )}
+      {saveFailed && <p className="mt-2 text-xs font-semibold text-bad">{COPY.checkin.saveFailed}</p>}
     </div>
   );
 }
@@ -514,13 +521,13 @@ function ActionRow({ action }: { action: FeedbackAction }) {
     setResponse(value);
     setSent(false);
     if (value === "yes") {
-      void submitActionResponseAction(action.id, value);
+      void withRetry(() => submitActionResponseAction(action.id, value)).catch(keepCurrent);
     }
   }
 
   function send() {
     if (response && response !== "yes") {
-      void submitActionResponseAction(action.id, response, note.trim() || undefined);
+      void withRetry(() => submitActionResponseAction(action.id, response, note.trim() || undefined)).catch(keepCurrent);
       setSent(true);
     }
   }

@@ -14,6 +14,7 @@ import {
 import { PILLARS, STRENGTH_CUTOFF } from "@/lib/pillars";
 import type { PillarId, SessionUser } from "@/lib/types";
 import { CeoPillarDetailView } from "./CeoPillarDetailView";
+import { keepCurrent, withRetry } from "@/lib/retry";
 
 type HighLow = "high" | "low";
 const BAND_COLOR: Record<"green" | "amber" | "red", string> = {
@@ -53,12 +54,12 @@ export function CeoInsightsView({
   const [selectedPillar, setSelectedPillar] = useState<PillarId | null>(null);
 
   useEffect(() => {
-    getDepartmentScoresAction(window).then(setDepts);
-    getManagerRankingsAction(window).then(setManagers);
+    withRetry(() => getDepartmentScoresAction(window)).then(setDepts, keepCurrent);
+    withRetry(() => getManagerRankingsAction(window)).then(setManagers, keepCurrent);
   }, [window]);
 
   useEffect(() => {
-    getCeoDashboardAction(scope, window).then(setScoped);
+    withRetry(() => getCeoDashboardAction(scope, window)).then(setScoped, keepCurrent);
   }, [scope, window]);
 
   const isPlay = session.themeMode === "play";

@@ -21,6 +21,7 @@ import { ANONYMISATION_FLOOR } from "@/lib/scoring";
 import { getManagerDetailAction, getManagerDetailInsightAction } from "../../actions";
 import { PILLARS } from "@/lib/pillars";
 import type { PillarId } from "@/lib/types";
+import { keepCurrent, withRetry } from "@/lib/retry";
 
 type HighLow = "high" | "low";
 
@@ -47,8 +48,8 @@ export function ManagerDetailView({
   const [highLow, setHighLow] = useState<HighLow>("high");
 
   useEffect(() => {
-    getManagerDetailAction(initial.managerId, window).then(setData);
-    getManagerDetailInsightAction(initial.managerId, window).then(setAiText);
+    withRetry(() => getManagerDetailAction(initial.managerId, window)).then(setData, keepCurrent);
+    withRetry(() => getManagerDetailInsightAction(initial.managerId, window)).then(setAiText, keepCurrent);
   }, [initial.managerId, window]);
 
   const up = (data.delta ?? 0) >= 0;

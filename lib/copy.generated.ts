@@ -186,6 +186,12 @@ export const COPY = {
     "footBasis": "Based on {count} over {weeks}."
   },
   "shared": {
+    "loadFailed": "This didn't load properly.",
+    "loadFailedRetry": "Tap to try again",
+    "errorTitle": "Something went wrong on our side",
+    "errorBody": "It's not you. Try again — if it keeps happening, go back to your dashboard.",
+    "errorRetry": "Try again",
+    "errorHome": "Go to my dashboard",
     "aiInsightTitle": "AI insight",
     "aiInsightFallback": "No AI summary right now — the scores above are live, and a fresh summary will appear once enough check-ins are in.",
     "aiInsightCareerNudge": "Add your career history for even more accurate insights.",

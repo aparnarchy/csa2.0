@@ -25,6 +25,7 @@ import { chromeFor } from "@/lib/voice";
 import type { EmployeeInsightCard } from "@/lib/insight-signals";
 import type { PillarId, SessionUser } from "@/lib/types";
 import { PillarDetailView } from "./PillarDetailView";
+import { keepCurrent, withRetry } from "@/lib/retry";
 
 type Tab = "strengths" | "concerns";
 
@@ -50,9 +51,9 @@ export function AnalysisView({
   // Time filter refreshes score + pillars + chart together via a server action
   // (real aggregation over the user's own check-ins).
   useEffect(() => {
-    getEmployeeScoresAction(window).then(setData);
+    withRetry(() => getEmployeeScoresAction(window)).then(setData, keepCurrent);
     setAiCard(undefined);
-    getEmployeeInsightAction(window).then(setAiCard, () => setAiCard(null));
+    withRetry(() => getEmployeeInsightAction(window)).then(setAiCard, () => setAiCard(null));
   }, [window]);
 
   if (selectedPillar) {

@@ -19,6 +19,7 @@ import {
 import { COPY, fill } from "@/lib/copy";
 import { type CareerHistory, type CompanyDetail } from "@/lib/data";
 import { deleteCareerCompanyAction, getCompanyDetailAction } from "./actions";
+import { withRetry } from "@/lib/retry";
 import { AddCompanyFlow } from "./AddCompanyFlow";
 import { scoreBand } from "@/lib/scoring";
 
@@ -60,7 +61,7 @@ export function CareerView({ history, isCeoHr = false }: { history: CareerHistor
   }
 
   useEffect(() => {
-    if (openId) getCompanyDetailAction(openId).then(setDetail);
+    if (openId) withRetry(() => getCompanyDetailAction(openId)).then(setDetail, () => setOpenId(null)); // failed: back to the list, tap again
     else setDetail(null);
   }, [openId]);
 

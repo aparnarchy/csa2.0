@@ -25,6 +25,7 @@ import { HEADER_MASCOT_SIZE, mascotForScore } from "@/lib/mascot";
 import { STRENGTH_CUTOFF } from "@/lib/pillars";
 import type { PillarId, SessionUser } from "@/lib/types";
 import { CeoPillarDetailView } from "./CeoPillarDetailView";
+import { keepCurrent, withRetry } from "@/lib/retry";
 
 /**
  * The department (or team) "head view" — reached by tapping a panel on the org
@@ -58,8 +59,8 @@ export function DeptDetailView({
   const [scOpenId, setScOpenId] = useState<string | null>(null);
 
   useEffect(() => {
-    getCeoDashboardAction(scope, window).then(setData);
-    getCeoInsightAction(scope, window).then(setAiText);
+    withRetry(() => getCeoDashboardAction(scope, window)).then(setData, keepCurrent);
+    withRetry(() => getCeoInsightAction(scope, window)).then(setAiText, keepCurrent);
   }, [scope, window]);
 
   const isPlay = session.themeMode === "play";

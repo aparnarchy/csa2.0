@@ -11,6 +11,7 @@ import type { DepartmentScore } from "@/lib/ceo";
 import { HEADER_MASCOT_SIZE, mascotForScore } from "@/lib/mascot";
 import type { PillarId, SessionUser } from "@/lib/types";
 import { CeoPillarDetailView } from "./CeoPillarDetailView";
+import { keepCurrent, withRetry } from "@/lib/retry";
 
 const BAND_COLOR: Record<"green" | "amber" | "red", string> = {
   green: "#059669",
@@ -43,8 +44,8 @@ export function OrgDashboardView({
   const [selectedPillar, setSelectedPillar] = useState<PillarId | null>(null);
 
   useEffect(() => {
-    getCeoDashboardAction("org", window).then(setOrg);
-    getDepartmentScoresAction(window).then(setDepts);
+    withRetry(() => getCeoDashboardAction("org", window)).then(setOrg, keepCurrent);
+    withRetry(() => getDepartmentScoresAction(window)).then(setDepts, keepCurrent);
   }, [window]);
 
   const isPlay = session.themeMode === "play";

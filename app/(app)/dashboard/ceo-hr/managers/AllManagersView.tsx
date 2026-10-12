@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Card, GradientHeader, NotEnoughData, CEO_NAV, ScreenShell } from "@/components/kit";
 import { type ManagerSummary, type ReviewingManagerList } from "@/lib/data";
 import { getManagerRankingsAction } from "../actions";
+import { keepCurrent, withRetry } from "@/lib/retry";
 
 const BAND_COLOR: Record<"green" | "amber" | "red", string> = {
   green: "#059669",
@@ -22,7 +23,7 @@ export function AllManagersView({ initial }: { initial: ReviewingManagerList }) 
   const [data, setData] = useState<ReviewingManagerList>(initial);
 
   useEffect(() => {
-    getManagerRankingsAction("3M").then(setData);
+    withRetry(() => getManagerRankingsAction("3M")).then(setData, keepCurrent);
   }, []);
 
   return (

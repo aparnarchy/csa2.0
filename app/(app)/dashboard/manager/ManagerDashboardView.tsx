@@ -27,6 +27,7 @@ import { buildInsight } from "@/lib/insight";
 import { ANONYMISATION_FLOOR } from "@/lib/scoring";
 import type { PillarId, SessionUser } from "@/lib/types";
 import { TeamPillarDetailView } from "./TeamPillarDetailView";
+import { keepCurrent, withRetry } from "@/lib/retry";
 
 export function ManagerDashboardView({
   session,
@@ -48,8 +49,8 @@ export function ManagerDashboardView({
   // Time filter recomputes the whole aggregate via a server action (real D1,
   // privacy-enforced). The team is resolved server-side to the signed-in manager.
   useEffect(() => {
-    getTeamAggregateAction(window).then(setData);
-    getTeamInsightAction(window).then(setAiText);
+    withRetry(() => getTeamAggregateAction(window)).then(setData, keepCurrent);
+    withRetry(() => getTeamInsightAction(window)).then(setAiText, keepCurrent);
   }, [window]);
 
   const isPlay = session.themeMode === "play";

@@ -9,6 +9,7 @@ import { COPY, fill } from "@/lib/copy";
 import { setViewModeAction } from "@/lib/view-mode";
 import type { CeoDashboard, ProfileStats } from "@/lib/data";
 import type { Persona, SessionUser, ThemeMode } from "@/lib/types";
+import { keepCurrent, withRetry } from "@/lib/retry";
 
 const PERSONAS: { key: Persona; name: string; tagline: string; emoji: string }[] = [
   { key: "spiderman", name: COPY.profile.personaSpiderman, tagline: COPY.profile.personaSpidermanTagline, emoji: "🕷️" },
@@ -49,7 +50,8 @@ export function ProfileView({
   const elevatedRoleLabel = isAdmin ? "Admin" : isCeoHr ? "CEO/HR" : "Manager";
 
   async function switchView() {
-    await setViewModeAction(viewingAsEmployee ? "manager" : "employee");
+    // Even if saving the preference fails, still go — /dashboard works either way.
+    await withRetry(() => setViewModeAction(viewingAsEmployee ? "manager" : "employee")).catch(keepCurrent);
     router.push("/dashboard");
   }
   // Compose "role · company" from whatever is set; empty for a fresh account.
@@ -293,13 +295,19 @@ function AppearanceCard({ session }: { session: SessionUser }) {
     setMode(next.themeMode);
     setPersona(next.persona);
     setSaving(true);
-    await fetch("/api/preferences", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(next),
-    });
-    router.refresh();
-    setSaving(false);
+    try {
+      await fetch("/api/preferences", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(next),
+      });
+      router.refresh();
+    } catch {
+      // Offline or cut off: the new look still shows on this screen; it's
+      // saved next time they change it.
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -378,7 +386,12 @@ function PersonalEmailCard({ initial }: { initial: string | null }) {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ personalEmail: value }),
-    });
+    }).catch(() => null);
+    if (!res) {
+      setSaving(false);
+      setError(COPY.shared.loadFailed);
+      return;
+    }
     const body = (await res.json().catch(() => ({}))) as { error?: string; personalEmail?: string | null };
     setSaving(false);
     if (!res.ok) {
@@ -428,13 +441,18 @@ function PreferencesCard({ session }: { session: SessionUser }) {
     setReminders(next.remindersEnabled);
     setWeekly(next.weeklyDigestEnabled);
     setSaving(true);
-    await fetch("/api/preferences/notifications", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(next),
-    });
-    router.refresh();
-    setSaving(false);
+    try {
+      await fetch("/api/preferences/notifications", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(next),
+      });
+      router.refresh();
+    } catch {
+      // Cut off: the toggle still shows the new value; it saves next change.
+    } finally {
+      setSaving(false);
+    }
   }
 
   const rows: { label: string; desc: string; val: boolean; set: (v: boolean) => void }[] = [
