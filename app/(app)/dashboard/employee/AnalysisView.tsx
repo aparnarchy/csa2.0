@@ -94,7 +94,7 @@ export function AnalysisView({
   const insight = buildEmployeeInsight(data, persona);
   const chrome = chromeFor(persona);
   const firstName = (session.name || "there").trim().split(/\s+/)[0];
-  // The pillars not shown as a big circle — the small bubbles under them.
+  // The pillars not shown as a big circle — the small pills under them.
   const otherPillars = data.pillars
     .filter((p) => p.pillarId !== insight.brightSpot?.pillarId && p.pillarId !== insight.watchOut?.pillarId)
     .map((p) => ({ pillarId: p.pillarId, pillar: PILLARS[p.pillarId].label, score: p.score }));
@@ -169,8 +169,8 @@ export function AnalysisView({
       {/* 3. Your pillars — all four together, apart from the score so nobody
           reads the score as an average of some of them. The earned circles
           (Bright spot above 7, Watch out at 7 or below; lib/insight.ts) are
-          the big ones; the rest are small bubbles tucked under them. Play:
-          wavy blobs. Professional: plain stat cards, bubbles beneath. */}
+          the big ones; the rest are small pills beneath them. Play:
+          wavy blobs. Professional: plain stat cards, pills beneath. */}
       <section>
         <p className="mb-2 text-center font-display text-sm font-black uppercase tracking-wide text-brand">
           {COPY.mood.pillarsTitle}
