@@ -11,11 +11,14 @@ import { useEffect, startTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Mascot } from "@/components/kit";
 import { COPY } from "@/lib/copy";
+import { checkVersion, reloadToLatest } from "@/lib/version";
 
 export default function AppError({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
   const router = useRouter();
   useEffect(() => {
     console.error(error);
+    // Most often the app is simply older than the live deploy: load it afresh.
+    void checkVersion().then((outdated) => outdated && reloadToLatest());
   }, [error]);
 
   return (

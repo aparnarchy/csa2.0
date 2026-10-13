@@ -28,3 +28,4 @@ export { LeaverNote } from "./LeaverNote";
 export { PillarScoreBlock, emptyInsightLine } from "./PillarScoreBlock";
 export { EmptyScoreCard } from "./EmptyScoreCard";
 export { LoadFailed } from "./LoadFailed";
+export { VersionWatcher } from "./VersionWatcher";

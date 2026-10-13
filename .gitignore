@@ -53,3 +53,6 @@ backups/
 
 # scratch files (artifact drafts, etc. — not app code)
 .scratch/
+
+# build version tag (scripts/stamp-version.mjs)
+/public/version.json
