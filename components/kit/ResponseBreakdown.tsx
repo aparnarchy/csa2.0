@@ -55,7 +55,6 @@ export function ResponseBreakdown({
       <Heading>{t.breakdownSplitTitle}</Heading>
       {responses.map((r) => (
         <div key={r.key} className="mb-1.5 flex items-center gap-2">
-          <span className="w-3.5 flex-shrink-0 text-[10px] font-bold text-brand">{r.key}</span>
           <div className="flex-1">
             <p className="mb-0.5 text-[11px] text-ink-2">{r.text}</p>
             <div className="h-[5px] rounded-full bg-lav-soft">
@@ -94,9 +93,6 @@ function OptionList({
             key={r.key}
             className={`flex items-start gap-2 rounded-lg px-2 py-1.5 ${on ? "bg-brand text-white" : "text-ink-3"}`}
           >
-            <span className={`w-3.5 flex-shrink-0 text-[10px] font-bold ${on ? "text-white" : "text-brand/60"}`}>
-              {r.key}
-            </span>
             <p className="min-w-0 flex-1 text-[11px] leading-snug">{r.text}</p>
             {on && tag && (
               <span className="flex-shrink-0 rounded-md bg-white/20 px-1.5 py-0.5 text-[9px] font-bold">{tag}</span>

@@ -88,7 +88,7 @@ export function CheckInFlow({
     if (leaving) return;
     setAnswers((a) => ({ ...a, [q.assignmentId]: optionKey }));
     const id = q.assignmentId;
-    saves.save(id, () => submitCheckInAction(id, score));
+    saves.save(id, () => submitCheckInAction(id, score, optionKey));
     setSaveFailed(false);
     clearTimers();
     const isLast = index + 1 >= total;
@@ -131,7 +131,6 @@ export function CheckInFlow({
           {q.options.map((o) => (
             <OptionCard
               key={o.key}
-              optionKey={o.key}
               text={o.text}
               selected={o.key === selected}
               onClick={() => pick(o.key, o.score)}

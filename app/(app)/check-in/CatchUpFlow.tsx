@@ -93,7 +93,7 @@ export function CatchUpFlow({
     if (leaving) return;
     setAnswers((a) => ({ ...a, [q.assignmentId]: { key, score } }));
     const id = q.assignmentId;
-    saves.save(id, () => submitCheckInAction(id, score)); // retrospective (derived server-side)
+    saves.save(id, () => submitCheckInAction(id, score, key)); // retrospective (derived server-side)
     // glide to the next unanswered one; on the last card, stay (Done finishes).
     if (idx + 1 < total) {
       clearTimers();
@@ -195,17 +195,10 @@ export function CatchUpFlow({
                   key={o.key}
                   type="button"
                   onClick={() => pick(o.key, o.score)}
-                  className={`flex items-center gap-3 rounded-2xl border p-3 text-left transition active:scale-[0.99] ${
+                  className={`flex items-center rounded-2xl border px-3.5 py-3 text-left transition active:scale-[0.99] ${
                     picked ? "border-good bg-good/10" : "border-gray-200 bg-white"
                   }`}
                 >
-                  <span
-                    className={`flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg text-xs font-black ${
-                      picked ? "bg-good text-white" : "bg-lav-soft text-brand"
-                    }`}
-                  >
-                    {o.key}
-                  </span>
                   <span className="text-[13px] leading-snug text-ink">{o.text}</span>
                 </button>
               );

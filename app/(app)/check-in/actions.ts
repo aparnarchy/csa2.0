@@ -12,10 +12,14 @@ import type { FollowUpStatus, PillarId } from "@/lib/types";
 
 /** Answer one delivered question. Whether it counts as retrospective (and so is
  *  excluded from the streak) is derived server-side from the assignment's week. */
-export async function submitCheckInAction(assignmentId: string, score: number): Promise<void> {
+export async function submitCheckInAction(
+  assignmentId: string,
+  score: number,
+  optionKey?: string,
+): Promise<void> {
   const session = await getSession();
   if (!session) throw new Error("Not signed in.");
-  await submitCheckIn(session.user, session.user.id, assignmentId, score);
+  await submitCheckIn(session.user, session.user.id, assignmentId, score, optionKey);
 }
 
 /** "Skip this for now" on a catch-up question — drops it off the pending list. */

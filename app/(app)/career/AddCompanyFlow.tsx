@@ -217,7 +217,6 @@ export function AddCompanyFlow({ onDone, onCancel }: { onDone: () => void; onCan
           {q.options.map((o) => (
             <OptionCard
               key={o.key}
-              optionKey={o.key}
               text={o.text}
               selected={o.key === selected}
               onClick={() => pick(q.id, o.key)}

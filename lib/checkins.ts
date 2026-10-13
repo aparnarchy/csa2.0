@@ -204,14 +204,20 @@ export async function getUnansweredCheckIns(
  * it was for, not today), and counts as retrospective when that isn't the active
  * week — retrospective answers don't advance the streak. Idempotent: the check-in
  * id is derived from (week, question, user). Own data only.
+ *
+ * `optionKey` is the picked option's own tag (A/B/C as stored in the question
+ * bank), saved next to the score. Options are displayed shuffled, so the tag —
+ * never the on-screen position — is what identifies the answer.
  */
 export async function submitCheckIn(
   session: SessionUser,
   userId: string,
   assignmentId: string,
   score: number,
+  optionKey?: string,
 ): Promise<void> {
   assertOwner(session, userId);
+  const tag = optionKey === "A" || optionKey === "B" || optionKey === "C" ? optionKey : null;
   const db = getDB();
   const a = await db
     .prepare(
@@ -236,10 +242,10 @@ export async function submitCheckIn(
   await db
     .prepare(
       `INSERT OR REPLACE INTO checkIns
-         (id, userId, questionId, pillarId, weekId, score, isRetrospective, employmentId)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+         (id, userId, questionId, pillarId, weekId, score, optionKey, isRetrospective, employmentId)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     )
-    .bind(id, userId, a.questionId, q.pillarId, a.weekId, score, isRetrospective ? 1 : 0, employmentId)
+    .bind(id, userId, a.questionId, q.pillarId, a.weekId, score, tag, isRetrospective ? 1 : 0, employmentId)
     .run();
   await db
     .prepare("UPDATE checkInAssignments SET status = 'answered' WHERE id = ?")

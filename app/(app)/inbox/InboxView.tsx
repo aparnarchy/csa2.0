@@ -196,7 +196,7 @@ function UnansweredCard({ questions }: { questions: CheckInQuestion[] }) {
 
   function pick(key: string, score: number) {
     setAnswers((a) => ({ ...a, [q.id]: { key, score } }));
-    void withRetry(() => submitCheckInAction(q.assignmentId, score)).catch(keepCurrent); // retrospective (derived server-side)
+    void withRetry(() => submitCheckInAction(q.assignmentId, score, key)).catch(keepCurrent); // retrospective (derived server-side)
   }
 
   return (
@@ -241,17 +241,10 @@ function UnansweredCard({ questions }: { questions: CheckInQuestion[] }) {
                 key={opt.key}
                 type="button"
                 onClick={() => pick(opt.key, opt.score)}
-                className={`flex items-center gap-3 rounded-xl border p-3 text-left transition active:scale-[0.99] ${
+                className={`flex items-center rounded-xl border px-3.5 py-3 text-left transition active:scale-[0.99] ${
                   picked ? "border-good bg-good/10" : "border-gray-200 bg-white"
                 }`}
               >
-                <span
-                  className={`flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg text-xs font-black ${
-                    picked ? "bg-good text-white" : "bg-lav-soft text-brand"
-                  }`}
-                >
-                  {opt.key}
-                </span>
                 <span className="text-[13px] leading-snug text-ink">{opt.text}</span>
               </button>
             );
