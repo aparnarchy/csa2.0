@@ -16,8 +16,7 @@ export async function withRetry<T>(call: () => Promise<T>, retries = 1, delayMs 
   try {
     return await call();
   } catch (err) {
-    if (await checkVersion()) {
-      reloadToLatest();
+    if ((await checkVersion()) && reloadToLatest()) {
       return new Promise<T>(() => {}); // the page is reloading; leave the screen as is
     }
     if (retries <= 0) throw err;

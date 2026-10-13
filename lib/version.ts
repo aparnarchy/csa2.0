@@ -39,13 +39,15 @@ export function isOutdated(): boolean {
 const RELOADED_AT = "csa-version-reloaded-at";
 
 /** Load the current page afresh, on the live version. At most once a minute,
- *  so a stale version file can never trap the app in a reload loop. */
-export function reloadToLatest(): void {
+ *  so a stale version file can never trap the app in a reload loop. Returns
+ *  whether it is reloading. */
+export function reloadToLatest(): boolean {
   try {
-    if (Date.now() - Number(sessionStorage.getItem(RELOADED_AT) ?? 0) < 60_000) return;
+    if (Date.now() - Number(sessionStorage.getItem(RELOADED_AT) ?? 0) < 60_000) return false;
     sessionStorage.setItem(RELOADED_AT, String(Date.now()));
   } catch {
     // storage blocked: reload anyway
   }
   window.location.reload();
+  return true;
 }
