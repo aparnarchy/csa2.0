@@ -1,31 +1,39 @@
 "use server";
 
 /**
- * Manager/employee view switch, for people who hold both — a person manages
- * a team AND has their own active employment (does check-ins themselves).
- * Persisted as a plain cookie (not a DB column): it's "which hat am I
- * wearing right now", not a durable account setting.
+ * View switch, for people who hold more than one role (e.g. admin + CEO/HR +
+ * manager, each with their own employment). Persisted as a plain cookie (not
+ * a DB column): it's "which hat am I wearing right now", not a durable
+ * account setting.
  */
 
 import { cookies } from "next/headers";
+import type { Role } from "./types";
 
-const COOKIE = "viewAs";
+const COOKIE = "activeView";
+/** Pre-picker cookie: only ever "employee" or "manager" (meaning "my top role"). */
+const LEGACY_COOKIE = "viewAs";
 
-export type ViewMode = "manager" | "employee";
+const ROLES: Role[] = ["admin", "ceo_hr", "manager", "employee"];
 
-/** Read the current override, if any. Callers still need to confirm the
-    person actually holds both the role and the employment before trusting
-    this — it's just "what they last chose", not itself an authorization. */
-export async function getViewMode(): Promise<ViewMode | null> {
-  const v = (await cookies()).get(COOKIE)?.value;
-  return v === "employee" || v === "manager" ? v : null;
+/** Read the last pick, if any. Callers must resolve it against the roles the
+    person actually holds (resolveView in lib/views.ts) — it's just "what they
+    last chose", not itself an authorization. */
+export async function getViewMode(): Promise<Role | null> {
+  const jar = await cookies();
+  const v = jar.get(COOKIE)?.value as Role | undefined;
+  if (v && ROLES.includes(v)) return v;
+  return jar.get(LEGACY_COOKIE)?.value === "employee" ? "employee" : null;
 }
 
-export async function setViewModeAction(mode: ViewMode): Promise<void> {
-  (await cookies()).set(COOKIE, mode, {
+export async function setViewModeAction(view: Role): Promise<void> {
+  if (!ROLES.includes(view)) return;
+  const jar = await cookies();
+  jar.set(COOKIE, view, {
     path: "/",
     httpOnly: true,
     sameSite: "lax",
     maxAge: 60 * 60 * 24 * 30,
   });
+  jar.delete(LEGACY_COOKIE);
 }

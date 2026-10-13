@@ -3,6 +3,8 @@ export const runtime = "edge";
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth-session";
 import { getCareerHistory } from "@/lib/career";
+import { getViewMode } from "@/lib/view-mode";
+import { resolveView } from "@/lib/views";
 import { CareerView } from "./CareerView";
 
 /** Career history (Phase 2.8) + frozen company detail (2.8b). */
@@ -20,5 +22,7 @@ export default async function CareerPage() {
 
   const history = await getCareerHistory(session.user, session.user.id);
 
-  return <CareerView history={history} isCeoHr={session.user.roles.includes("ceo_hr")} />;
+  // Bottom nav follows the view they're in (CEO/HR nav only in CEO/HR view).
+  const view = resolveView(session.user, await getViewMode());
+  return <CareerView history={history} isCeoHr={view === "ceo_hr"} />;
 }

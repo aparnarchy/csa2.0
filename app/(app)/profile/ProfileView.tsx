@@ -8,7 +8,8 @@ import { HEADER_MASCOT_SIZE, mascotForScore } from "@/lib/mascot";
 import { COPY, fill } from "@/lib/copy";
 import { setViewModeAction } from "@/lib/view-mode";
 import type { CeoDashboard, ProfileStats } from "@/lib/data";
-import type { Persona, SessionUser, ThemeMode } from "@/lib/types";
+import type { Persona, Role, SessionUser, ThemeMode } from "@/lib/types";
+import { availableViews, VIEW_LABELS } from "@/lib/views";
 import { keepCurrent, withRetry } from "@/lib/retry";
 
 const PERSONAS: { key: Persona; name: string; tagline: string; emoji: string }[] = [
@@ -19,15 +20,15 @@ const PERSONAS: { key: Persona; name: string; tagline: string; emoji: string }[]
 export function ProfileView({
   session,
   stats,
-  viewingAsEmployee,
+  view,
   orgScore,
   orgParticipation,
   personalEmail,
 }: {
   session: SessionUser;
   stats: ProfileStats;
-  /** Only meaningful when isDualRole — which "hat" they're currently viewing. */
-  viewingAsEmployee: boolean;
+  /** Which "hat" they're currently wearing (resolved server-side from their pick). */
+  view: Role;
   /** CEO/HR only — org-wide happiness score, "dashboard style". */
   orgScore: CeoDashboard | null;
   orgParticipation: { respondedCount: number; peopleCount: number; participation: number } | null;
@@ -38,20 +39,19 @@ export function ProfileView({
   const isPlay = session.themeMode === "play";
   const firstName = (session.name || "there").trim().split(/\s+/)[0];
   const isManager = session.roles.includes("manager");
-  const isCeoHr = session.roles.includes("ceo_hr");
-  const isAdmin = session.roles.includes("admin");
-  // Anyone who holds an elevated role (manager/CEO-HR/admin) AND has their
-  // own active employment (does check-ins themselves) can switch between
-  // that role's view and the plain employee experience.
-  const isDualRole = (isManager || isCeoHr || isAdmin) && session.hasEmployment;
-  // Same priority order /dashboard's redirect actually uses (admin > ceo_hr >
-  // manager) — the "switch back" label has to match where the button really
-  // sends them, not just assume "manager" for every elevated account.
-  const elevatedRoleLabel = isAdmin ? "Admin" : isCeoHr ? "CEO/HR" : "Manager";
+  const hasCeoRole = session.roles.includes("ceo_hr");
+  const viewingAsEmployee = view === "employee";
+  // CEO/HR's org-scoped profile goes with the CEO/HR VIEW: someone who also
+  // manages a team and switches to Manager view gets the manager profile.
+  const isCeoHr = view === "ceo_hr";
+  // Every view this person can switch between (Admin / CEO/HR / Manager /
+  // Employee). Two → one simple switch row; three or more → a picker.
+  const views = availableViews(session);
 
-  async function switchView() {
+  async function switchTo(next: Role) {
+    if (next === view) return;
     // Even if saving the preference fails, still go — /dashboard works either way.
-    await withRetry(() => setViewModeAction(viewingAsEmployee ? "manager" : "employee")).catch(keepCurrent);
+    await withRetry(() => setViewModeAction(next)).catch(keepCurrent);
     router.push("/dashboard");
   }
   // Compose "role · company" from whatever is set; empty for a fresh account.
@@ -65,7 +65,7 @@ export function ProfileView({
       // standard employee nav (Profile/Insights/Wisdom/Inbox) — jumping back
       // to the Admin or CEO/HR nav here would silently pull them out of the
       // employee context they just switched into, which reads as broken.
-      navItems={viewingAsEmployee ? undefined : isAdmin ? ADMIN_NAV : isCeoHr ? CEO_NAV : undefined}
+      navItems={view === "admin" ? ADMIN_NAV : view === "ceo_hr" ? CEO_NAV : undefined}
     >
       {/* Header — matches the dashboard look (mascot only in Play). CEO/HR
           gets no personal stat row here — their numbers are org-wide and
@@ -171,7 +171,7 @@ export function ProfileView({
           Exception: currently viewing as an employee (Switch view) — that IS
           the personal surface right now, same reasoning as hasEmployment
           gating Career's own page guard. */}
-      {(!isManager && !isCeoHr) || viewingAsEmployee ? (
+      {(!isManager && !hasCeoRole) || viewingAsEmployee ? (
         <button
           type="button"
           onClick={() => router.push("/career")}
@@ -199,29 +199,54 @@ export function ProfileView({
           Anyone with a job record, since that's who has a work inbox to lose. */}
       {session.hasEmployment && <PersonalEmailCard initial={personalEmail} />}
 
-      {/* Switch view — only for someone who genuinely plays both roles: leads
-          a team AND has their own employment. Toggles which experience
-          (Insights/Inbox) the bottom nav's shared tabs show. */}
-      {isDualRole && (
+      {/* Switch view — for anyone holding more than one role. Two views (e.g.
+          a manager who also does their own check-ins) keep the one-tap row;
+          three or more (e.g. admin + CEO/HR + manager) get a picker so every
+          view is reachable, not just the top role and Employee. */}
+      {views.length === 2 && (
         <button
           type="button"
-          onClick={switchView}
+          onClick={() => switchTo(views.find((v) => v !== view)!)}
           className="flex w-full items-center justify-between rounded-card bg-white p-4 text-left shadow-card transition active:scale-[0.99]"
         >
           <div>
             <p className="text-sm font-bold text-ink">
               {viewingAsEmployee
-                ? fill(COPY.profile.switchElevatedTitle, { role: elevatedRoleLabel })
+                ? fill(COPY.profile.switchElevatedTitle, { role: VIEW_LABELS[views[0]] })
                 : COPY.profile.switchEmployeeTitle}
             </p>
             <p className="mt-0.5 text-xs text-ink-3">
               {viewingAsEmployee
-                ? fill(COPY.profile.switchElevatedSub, { role: elevatedRoleLabel })
+                ? fill(COPY.profile.switchElevatedSub, { role: VIEW_LABELS[views[0]] })
                 : COPY.profile.switchEmployeeSub}
             </p>
           </div>
           <span className="text-xl text-ink-4">›</span>
         </button>
+      )}
+      {views.length > 2 && (
+        <Card>
+          <p className="text-sm font-bold text-brand">{COPY.profile.viewPickerTitle}</p>
+          <p className="mt-0.5 text-xs text-ink-3">{COPY.profile.viewPickerSub}</p>
+          <div className="mt-3 grid grid-cols-2 gap-2">
+            {views.map((v) => {
+              const on = v === view;
+              return (
+                <button
+                  key={v}
+                  type="button"
+                  onClick={() => switchTo(v)}
+                  aria-pressed={on}
+                  className={`rounded-2xl px-3 py-3 text-sm font-bold transition active:scale-[0.98] ${
+                    on ? "bg-brand text-white shadow-card" : "bg-lav-soft text-brand"
+                  }`}
+                >
+                  {VIEW_LABELS[v]}
+                </button>
+              );
+            })}
+          </div>
+        </Card>
       )}
 
       <div className="flex justify-center pt-1">

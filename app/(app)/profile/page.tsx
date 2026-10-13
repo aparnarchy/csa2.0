@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth-session";
 import { getDB } from "@/lib/db";
 import { getViewMode } from "@/lib/view-mode";
+import { resolveView } from "@/lib/views";
 import { getProfileStats } from "@/lib/profile";
 import { getCeoDashboard, getOrgParticipation } from "@/lib/ceo";
 import { ProfileView } from "./ProfileView";
@@ -17,15 +18,15 @@ export default async function ProfilePage() {
   if (!session.user.onboardingComplete) redirect("/onboarding");
 
   const stats = await getProfileStats(session.user, session.user.id);
-  const viewMode = (await getViewMode()) ?? "manager";
+  const view = resolveView(session.user, await getViewMode());
   // Own record only — the session user's id, never a parameter.
   const own = await getDB()
     .prepare("SELECT personalEmail FROM user WHERE id = ?")
     .bind(session.user.id)
     .first<{ personalEmail: string | null }>();
 
-  const isCeoHr = session.user.roles.includes("ceo_hr");
-  const org = isCeoHr
+  // The CEO/HR (org-scoped) profile goes with the CEO/HR view, not just the role.
+  const org = view === "ceo_hr"
     ? await Promise.all([getCeoDashboard(session.user, "org", "3M"), getOrgParticipation(session.user)])
     : null;
 
@@ -33,7 +34,7 @@ export default async function ProfilePage() {
     <ProfileView
       session={session.user}
       stats={stats}
-      viewingAsEmployee={viewMode === "employee"}
+      view={view}
       orgScore={org ? org[0] : null}
       orgParticipation={org ? org[1] : null}
       personalEmail={own?.personalEmail ?? null}

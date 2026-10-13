@@ -282,6 +282,8 @@ export const COPY = {
     "switchElevatedSub": "Back to your {role} tools",
     "switchEmployeeTitle": "Switch to Employee view",
     "switchEmployeeSub": "See your own check-ins & progress",
+    "viewPickerTitle": "Switch view",
+    "viewPickerSub": "Pick which side of the app you want to see",
     "signOut": "Sign out",
     "signedInAs": "Signed in as {name} · {email}"
   },
