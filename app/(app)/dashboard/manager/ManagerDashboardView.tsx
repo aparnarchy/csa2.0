@@ -223,13 +223,26 @@ export function ManagerDashboardView({
                 {COPY.managerDashboard.whereToFocusSub}
               </p>
               <div className="space-y-3">
-                {lowPillars.map((p) => (
-                  <RecommendationCard
-                    key={p.pillarId}
-                    pillarId={p.pillarId}
-                    text={`${fill(COPY.managerDashboard.teamPillarAt, { pillar: PILLARS[p.pillarId].label, score: p.score!.toFixed(1) })} ${recommendationFor(p.pillarId)}`.trim()}
-                  />
-                ))}
+                {lowPillars.map((p) =>
+                  recommendationFor(p.pillarId) ? (
+                    <RecommendationCard
+                      key={p.pillarId}
+                      pillarId={p.pillarId}
+                      text={`${fill(COPY.managerDashboard.teamPillarAt, { pillar: PILLARS[p.pillarId].label, score: p.score!.toFixed(1) })} ${recommendationFor(p.pillarId)}`}
+                    />
+                  ) : (
+                    // No manager recommendation written for it yet: just the
+                    // pillar and its score — a "tip" heading with no tip read
+                    // as broken.
+                    <div
+                      key={p.pillarId}
+                      className="flex items-center justify-between rounded-card bg-lav-soft px-4 py-3"
+                    >
+                      <span className="text-sm font-bold text-ink">{PILLARS[p.pillarId].label}</span>
+                      <span className="font-display text-base font-black text-brand">{p.score!.toFixed(1)}</span>
+                    </div>
+                  ),
+                )}
               </div>
               <button
                 type="button"

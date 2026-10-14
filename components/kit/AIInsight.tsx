@@ -30,22 +30,22 @@ export function AIInsight({
   /** Makes the context line a link (e.g. the career-history nudge). */
   footHref?: string;
 }) {
-  const footClass = "mt-2.5 block text-[11px] italic leading-snug text-white/85";
+  const footClass = "mt-2 block text-[11px] italic leading-snug text-white/85";
   return (
     <div className="relative mb-3 mr-2.5">
-      <div className="absolute inset-0 translate-x-2.5 translate-y-3 rounded-[36px] bg-[#E3DCFF]" aria-hidden />
-      <div className="relative overflow-hidden rounded-[36px] bg-brand px-5 pb-[18px] pt-5 text-white">
+      <div className="absolute inset-0 translate-x-2.5 translate-y-2.5 rounded-[32px] bg-[#E3DCFF]" aria-hidden />
+      <div className="relative overflow-hidden rounded-[32px] bg-brand px-5 pb-4 pt-4 text-white">
         <Orb />
-        <div className="relative min-w-0 pr-14">
+        <div className="relative min-w-0 pr-12">
           <p className="font-display text-[13px] font-black uppercase leading-tight tracking-[0.02em]">
             {eyebrow ?? COPY.shared.aiInsightTitle}
           </p>
           {loading ? (
-            <p className="mt-2 animate-pulse text-[15px] font-normal leading-[1.45] text-white/80">
+            <p className="mt-1.5 animate-pulse text-[14px] font-normal leading-[1.4] text-white/80">
               {COPY.insight.loading}
             </p>
           ) : (
-            <p className="mt-2 text-[15px] font-normal leading-[1.45]">{text ?? COPY.shared.aiInsightFallback}</p>
+            <p className="mt-1.5 text-[14px] font-normal leading-[1.4]">{text ?? COPY.shared.aiInsightFallback}</p>
           )}
           {!loading && foot &&
             (footHref ? (
@@ -66,7 +66,7 @@ function Orb() {
   return (
     <svg
       viewBox="0 0 100 100"
-      className="ai-orb pointer-events-none absolute right-1.5 top-2.5 h-24 w-24 opacity-35"
+      className="ai-orb pointer-events-none absolute right-1 top-2 h-20 w-20 opacity-35"
       aria-hidden
     >
       <circle className="ai-orb-r1" cx="50" cy="50" r="44" fill="none" stroke="#fff" strokeWidth="5" strokeLinecap="round" strokeDasharray="4 14" />

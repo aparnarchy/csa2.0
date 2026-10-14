@@ -55,6 +55,9 @@ export async function getDashboardInsight(
   if (scored.length === 0) return null;
 
   const fingerprint = JSON.stringify({
+    // Bump when the prompt changes so saved insights are rewritten (v2:
+    // shorter, 1-2 sentences / 35 words — owner, 2026-10-14).
+    v: 2,
     s: facts.score,
     d: facts.delta,
     p: facts.participation,
@@ -76,7 +79,7 @@ export async function getDashboardInsight(
     const scopeNoun = { team: "team", dept: "department", org: "organisation" }[facts.kind];
     const system =
       `You write the short "AI insight" box on a workplace-happiness dashboard for a ${scopeNoun} leader. ` +
-      "Write 2-3 sentences, at most 55 words, in warm plain British English. " +
+      "Write 1-2 short sentences, at most 35 words, in warm plain British English. " +
       "Name the strongest and weakest pillars and give one practical, low-effort suggestion aimed at the weakest. " +
       "Use only the numbers provided - never invent data, and never refer to individuals (the data is an anonymous aggregate). " +
       "No headings, bullet points, emojis or quotation marks.";

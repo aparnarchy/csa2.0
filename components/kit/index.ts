@@ -3,6 +3,7 @@ export { Card } from "./Card";
 export { ScreenShell, CEO_NAV, ADMIN_NAV, type NavItem } from "./ScreenShell";
 export { GradientHeader } from "./GradientHeader";
 export { ViewSwitcher } from "./ViewSwitcher";
+export { AnswerMascot } from "./AnswerMascot";
 export { BackButton } from "./BackButton";
 export { Avatar } from "./Avatar";
 export { Mascot } from "./Mascot";
