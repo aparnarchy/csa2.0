@@ -12,7 +12,7 @@
 
 import { getDB } from "./db";
 import { assertOwner } from "./access-control";
-import { loadRecommendations, pickRecommendation } from "./recommendations";
+import { hasEmployeeRecSql, loadRecommendations, pickRecommendation } from "./recommendations";
 import { ensureUserAssignments, ensureActiveWeek } from "./scheduler";
 import type {
   CheckInQuestion,
@@ -354,7 +354,7 @@ export async function getOpenRecommendation(
     .prepare(
       `SELECT c.questionId AS questionId, c.pillarId AS pillarId, c.weekId AS weekId, q.text AS questionText
          FROM checkIns c JOIN questions q ON q.id = c.questionId
-        WHERE c.userId = ? AND c.score < 7 AND c.followUpStatus IS NULL
+        WHERE c.userId = ? AND c.score < 7 AND c.followUpStatus IS NULL AND ${hasEmployeeRecSql("c.")}
         ORDER BY c.timestamp DESC, c.weekId DESC
         LIMIT 1`,
     )
@@ -418,7 +418,7 @@ export async function getOpenRecommendations(
     .prepare(
       `SELECT c.questionId AS questionId, c.pillarId AS pillarId, c.weekId AS weekId, q.text AS questionText
          FROM checkIns c JOIN questions q ON q.id = c.questionId
-        WHERE c.userId = ? AND c.score < 7 AND c.followUpStatus IS NULL
+        WHERE c.userId = ? AND c.score < 7 AND c.followUpStatus IS NULL AND ${hasEmployeeRecSql("c.")}
           AND c.id = (
             SELECT c2.id FROM checkIns c2
              WHERE c2.userId = c.userId AND c2.questionId = c.questionId

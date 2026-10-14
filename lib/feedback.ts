@@ -300,7 +300,7 @@ export async function submitManagerAction(
 
   const week = (await activeWeek(db)) ?? "";
   const id = `ma-${team}-${pid}`; // one action per pillar per team (idempotent)
-  const rec = pickRecommendation(await loadRecommendations("manager"), questionId, pid);
+  const rec = pickRecommendation(await loadRecommendations("manager"), questionId, pid) || null;
 
   if (input.decision === "yes") {
     const now = new Date();

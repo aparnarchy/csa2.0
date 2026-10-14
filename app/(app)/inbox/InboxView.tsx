@@ -147,7 +147,7 @@ function LatestCheckInCard({ latest }: { latest: LatestCheckIn }) {
       {latest.isLow && latest.recommendation ? (
         <div className="mt-3 rounded-card bg-lav-soft p-3.5">
           <p className="text-xs font-bold text-brand">{COPY.inbox.recommendationLabel}</p>
-          <p className="mt-1 text-[13px] leading-relaxed text-ink-2">{latest.recommendation}</p>
+          <p className="whitespace-pre-line mt-1 text-[13px] leading-relaxed text-ink-2">{latest.recommendation}</p>
         </div>
       ) : shared ? (
         <div className="mt-3 rounded-card bg-good/10 p-3 text-center">
@@ -251,10 +251,10 @@ function UnansweredCard({ questions }: { questions: CheckInQuestion[] }) {
           })}
         </div>
 
-        {selected && selected.score < 7 && (
+        {selected && selected.score < 7 && q.recommendation && (
           <div className="mt-3 rounded-xl bg-lav-soft p-3">
             <p className="text-[11px] font-bold text-brand">{COPY.inbox.recommendationLabel}</p>
-            <p className="mt-1 text-[12px] leading-relaxed text-ink-2">
+            <p className="whitespace-pre-line mt-1 text-[12px] leading-relaxed text-ink-2">
               {q.recommendation}
             </p>
           </div>
@@ -398,9 +398,11 @@ function RecommendationRow({
     <div className="rounded-2xl border border-gray-200 bg-white p-3.5">
       <span className="text-[11px] font-semibold text-ink-4">{item.weekLabel}</span>
       <p className="mt-1 text-sm font-semibold leading-snug text-ink">&ldquo;{item.questionText}&rdquo;</p>
-      <div className="mt-2 rounded-xl bg-lav-soft p-3">
-        <p className="text-[12px] leading-relaxed text-ink-2">{item.recommendation}</p>
-      </div>
+      {item.recommendation && (
+        <div className="mt-2 rounded-xl bg-lav-soft p-3">
+          <p className="whitespace-pre-line text-[12px] leading-relaxed text-ink-2">{item.recommendation}</p>
+        </div>
+      )}
 
       <p className="mt-3 text-xs font-semibold text-ink-3">Were you able to act on it?</p>
       <div className="mt-2 flex gap-2">
@@ -655,7 +657,9 @@ function HistoryView({
                 <span className="text-[11px] text-ink-4">{r.respondedAtLabel}</span>
               </div>
               <p className="mt-2 text-[13px] font-semibold leading-relaxed text-ink">&ldquo;{r.questionText}&rdquo;</p>
-              <p className="mt-1 text-[12px] italic leading-relaxed text-ink-3">{r.recommendation}</p>
+              {r.recommendation && (
+                <p className="whitespace-pre-line mt-1 text-[12px] italic leading-relaxed text-ink-3">{r.recommendation}</p>
+              )}
               <p className="mt-2 text-xs font-bold text-ink">
                 <span className={r.status === "acted" ? "text-good" : "text-ink-3"}>
                   {REC_STATUS_LABEL[r.status]}

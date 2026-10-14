@@ -2,13 +2,13 @@
  * Real, admin-authored recommendation text (server-only), backing the
  * `recommendations` table. Every consumer loads the whole table in one query
  * (there are only ever ~15 questions) and looks up per question in memory,
- * rather than one query per question. Falls back to the generic pillar-level
- * placeholder in lib/data.ts for any question the admin hasn't written one
- * for yet, so nothing ever breaks while content is still being filled in.
+ * rather than one query per question. A question the admin hasn't written one
+ * for gets NO recommendation (empty string) — never a generic stand-in, which
+ * read as irrelevant to the question asked (owner, 2026-10-14). Every screen
+ * hides its recommendation box when the text is empty.
  */
 
 import { getDB } from "@/lib/db";
-import { getSampleRecommendation } from "@/lib/data";
 import type { PillarId } from "@/lib/types";
 
 export type RecommendationAudience = "employee" | "manager";
@@ -27,12 +27,20 @@ export async function loadRecommendations(
   return new Map(results.map((r) => [r.questionId, r.text]));
 }
 
-/** The real recommendation for this question if one's been written, else the
- *  generic pillar-level placeholder. */
+/** The admin-written recommendation for this question, or "" if there isn't
+ *  one yet. (pillarId is kept so callers needn't change; it's no longer used.) */
 export function pickRecommendation(
   map: Map<string, string>,
   questionId: string,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   pillarId: PillarId,
 ): string {
-  return map.get(questionId) ?? getSampleRecommendation(pillarId).text;
+  return map.get(questionId)?.trim() ?? "";
+}
+
+/** SQL fragment: only check-ins whose question has an employee recommendation.
+ *  An open "did you act on it?" follow-up only makes sense when there was a
+ *  recommendation to act on. Append to a WHERE on checkIns aliased `alias`. */
+export function hasEmployeeRecSql(alias: string): string {
+  return `${alias}questionId IN (SELECT questionId FROM recommendations WHERE audience = 'employee' AND trim(text) <> '')`;
 }

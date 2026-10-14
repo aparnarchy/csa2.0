@@ -84,12 +84,16 @@ export function InsightBarRow({
           <div className="mt-2 rounded-xl border border-lav-soft bg-lav-light p-3">
           <ResponseBreakdown responses={q.responses} breakdown={q.breakdown} score={q.score} />
 
-          {!isStrength && (
+          {!isStrength && (q.recommendation || onGoToInbox) && (
             <div className="mt-2.5 rounded-xl bg-lav-soft p-3">
-              <p className="mb-1.5 text-[10px] font-bold uppercase tracking-wide text-brand">
-                Recommendation
-              </p>
-              <p className="mb-2.5 text-xs leading-relaxed text-ink-2">{q.recommendation}</p>
+              {q.recommendation && (
+                <>
+                  <p className="mb-1.5 text-[10px] font-bold uppercase tracking-wide text-brand">
+                    Recommendation
+                  </p>
+                  <p className="whitespace-pre-line mb-2.5 text-xs leading-relaxed text-ink-2">{q.recommendation}</p>
+                </>
+              )}
               {onGoToInbox && (
                 <button
                   type="button"

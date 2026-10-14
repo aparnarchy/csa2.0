@@ -99,7 +99,7 @@ export function ReturnCheckIn({
         <div className="mt-5 rounded-card bg-lav-soft p-4">
           <span className="text-[11px] font-semibold text-ink-3">{rec.weekLabel}</span>
           <p className="mt-2 text-xs leading-relaxed text-ink-3">{t.recallIntro}</p>
-          <p className="mt-2 text-sm font-semibold italic leading-relaxed text-ink">
+          <p className="whitespace-pre-line mt-2 text-sm font-semibold italic leading-relaxed text-ink">
             &ldquo;{rec.recommendation}&rdquo;
           </p>
         </div>

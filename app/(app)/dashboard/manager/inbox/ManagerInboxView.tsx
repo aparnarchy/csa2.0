@@ -282,10 +282,12 @@ function OpenActionCard({
         <ResponseBar item={item} />
       </div>
 
-      <div className="mt-4 rounded-card bg-lav-soft p-3">
-        <p className="text-[10px] font-bold uppercase tracking-wide text-brand">{fill(COPY.managerInbox.tipLabel, { pillar: PILLARS[item.pillarId].label })}</p>
-        <p className="mt-1 text-[13px] leading-relaxed text-ink-2">{item.recommendation}</p>
-      </div>
+      {item.recommendation && (
+        <div className="mt-4 rounded-card bg-lav-soft p-3">
+          <p className="text-[10px] font-bold uppercase tracking-wide text-brand">{fill(COPY.managerInbox.tipLabel, { pillar: PILLARS[item.pillarId].label })}</p>
+          <p className="whitespace-pre-line mt-1 text-[13px] leading-relaxed text-ink-2">{item.recommendation}</p>
+        </div>
+      )}
 
       {!composing ? (
         <div className="mt-4 flex gap-2">

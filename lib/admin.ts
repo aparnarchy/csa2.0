@@ -360,7 +360,8 @@ export async function upsertRecommendation(
   text: string,
 ): Promise<RecommendationRow[]> {
   assertRole(session, "admin");
-  if (!text.trim()) throw new Error("Recommendation text is required.");
+  text = cleanPastedText(text);
+  if (!text) throw new Error("Recommendation text is required.");
   const db = getDB();
   const q = await db
     .prepare("SELECT pillarId FROM questions WHERE id = ?")
@@ -372,21 +373,38 @@ export async function upsertRecommendation(
     .bind(questionId, audience)
     .first<{ id: string }>();
   if (existing) {
-    await db.prepare("UPDATE recommendations SET text = ? WHERE id = ?").bind(text.trim(), existing.id).run();
+    await db.prepare("UPDATE recommendations SET text = ? WHERE id = ?").bind(text, existing.id).run();
   } else {
     await db
       .prepare(
         `INSERT INTO recommendations (id, questionId, pillarId, scoreBandMin, scoreBandMax, text, audience)
          VALUES (?, ?, ?, 0, 6, ?, ?)`,
       )
-      .bind(`rec-${questionId}-${audience}`, questionId, q.pillarId, text.trim(), audience)
+      .bind(`rec-${questionId}-${audience}`, questionId, q.pillarId, text, audience)
       .run();
   }
   return getRecommendationsCms(session);
 }
 
-/** Remove one audience's recommendation for a question, reverting it to the
- *  generic pillar placeholder. Admin only. */
+/**
+ * Tidy text pasted from Google Docs / Word: their soft line breaks arrive as
+ * invisible vertical-tab characters (which glued sentences together on
+ * screen, e.g. "on it.This week"), plus zero-width spaces and doubled spaces.
+ * Line breaks become real ones (screens show them); wording is untouched.
+ */
+function cleanPastedText(text: string): string {
+  return text
+    .replace(/\r\n?|[\v\u2028\u2029]/g, "\n")
+    .replace(/[\u200b\u200c\u200d\ufeff]/g, "")
+    .replace(/\u00a0/g, " ")
+    .replace(/[ \t]{2,}/g, " ")
+    .replace(/ *\n */g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
+/** Remove one audience's recommendation for a question — that question then
+ *  shows no recommendation. Admin only. */
 export async function clearRecommendation(
   session: SessionUser,
   questionId: string,

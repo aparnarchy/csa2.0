@@ -57,8 +57,10 @@ export function CatchUpFlow({
       setSaveFailed(true);
       return;
     }
-    // A tip exists for every answer below 7 (lib/checkins.ts).
-    const tips = Object.values(answers).filter((a) => a.score < 7).length;
+    // Low answers whose question has a recommendation written for it.
+    const tips = questions.filter(
+      (cq) => (answers[cq.assignmentId]?.score ?? 10) < 7 && cq.recommendation,
+    ).length;
     if (tips > 0) setTipsSaved(tips);
     else onDone();
   }

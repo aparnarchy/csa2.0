@@ -25,7 +25,7 @@ export function RecommendationCard({
           {meta ? `${meta.label} tip` : "A small step"}
         </span>
       </div>
-      <p className="mt-2 text-sm leading-relaxed text-ink-2">{text}</p>
+      <p className="mt-2 whitespace-pre-line text-sm leading-relaxed text-ink-2">{text}</p>
       {onAction && (
         <button
           type="button"

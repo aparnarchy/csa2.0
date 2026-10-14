@@ -18,7 +18,7 @@ import {
   SegmentedToggle,
   TrendChart,
 } from "@/components/kit";
-import { getSampleRecommendation, type TeamAggregate, type Window } from "@/lib/data";
+import type { TeamAggregate, Window } from "@/lib/data";
 import { COPY, fill } from "@/lib/copy";
 import { getTeamAggregateAction, getTeamInsightAction } from "./actions";
 import { HEADER_MASCOT_SIZE, mascotForScore } from "@/lib/mascot";
@@ -73,14 +73,12 @@ export function ManagerDashboardView({
     .filter((p) => p.score !== null && p.score < 7)
     .sort((a, b) => (a.score ?? 0) - (b.score ?? 0));
 
-  // The real recommendation for each low pillar's weakest question (admin-
-  // authored if one's been written, same generic pillar fallback otherwise —
-  // getSampleRecommendation is that fallback's own source, not a mock we're
-  // bypassing the real data for).
+  // The admin-written recommendation for each low pillar's weakest question,
+  // or "" when none has been written (no generic stand-in — owner, 2026-10-14).
   const recommendationFor = (pid: PillarId): string => {
     const qs = data.questions.filter((q) => q.pillarId === pid);
     const weakest = qs.length ? [...qs].sort((a, b) => a.score - b.score)[0] : null;
-    return weakest?.recommendation ?? getSampleRecommendation(pid).text;
+    return weakest?.recommendation ?? "";
   };
 
   // Team-level highest / lowest pillar — same rules as the employee dashboard
@@ -227,7 +225,7 @@ export function ManagerDashboardView({
                   <RecommendationCard
                     key={p.pillarId}
                     pillarId={p.pillarId}
-                    text={`${fill(COPY.managerDashboard.teamPillarAt, { pillar: PILLARS[p.pillarId].label, score: p.score!.toFixed(1) })} ${recommendationFor(p.pillarId)}`}
+                    text={`${fill(COPY.managerDashboard.teamPillarAt, { pillar: PILLARS[p.pillarId].label, score: p.score!.toFixed(1) })} ${recommendationFor(p.pillarId)}`.trim()}
                   />
                 ))}
               </div>
