@@ -92,7 +92,7 @@ export function WisdomView({
           eyebrow={eyebrow}
           title={heading}
           avatar={<Mascot state={mascotState} size={HEADER_MASCOT_SIZE} float={false} sparkle={false} />}
-          className="flex min-h-[180px] flex-col justify-center"
+          className="flex min-h-[132px] flex-col justify-center"
         >
           <ProgressMeter pct={pct} doneCount={doneCount} totalCount={totalCount} />
         </GradientHeader>

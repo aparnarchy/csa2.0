@@ -74,7 +74,7 @@ export function OrgDashboardView({
               sparkle={false}
             />
           }
-          className="flex min-h-[180px] flex-col justify-center"
+          className="flex min-h-[132px] flex-col justify-center"
         >
           <p className="mt-2 text-sm font-bold text-brand">Company-wide aggregates — never an individual.</p>
         </GradientHeader>

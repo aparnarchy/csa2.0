@@ -118,19 +118,20 @@ export function AnalysisView({
               sparkle={false}
             />
           }
-          className="flex min-h-[212px] flex-col justify-center"
+          className="flex min-h-[132px] flex-col justify-center"
         >
-          <p className="mt-3 font-display text-lg font-black leading-tight text-brand">
+          <p className="mt-2 font-display text-base font-black leading-tight text-brand">
             {insight.headline}.
           </p>
         </GradientHeader>
       ) : (
         <div
-          className="rounded-card px-5 py-6"
+          className="rounded-card px-5 py-5"
           style={{ background: "linear-gradient(135deg, #EDE7FF 0%, #C9B4FF 100%)" }}
         >
+          <ViewSwitcher session={session} current="employee" />
           <p className="text-xs font-semibold text-brand/70">{chrome.eyebrow}</p>
-          <h1 className="mt-1 font-display text-[34px] font-black leading-tight text-brand">
+          <h1 className="mt-1 font-display text-[30px] font-black leading-tight text-brand">
             {chrome.greeting(firstName)}
           </h1>
           <p className="mt-2 font-display text-base font-black leading-snug text-brand-light">

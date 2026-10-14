@@ -1,5 +1,6 @@
 /**
- * Mascot pose selection. The processed art lives in public/mascot/*.png.
+ * Mascot pose selection. The mascot is drawn in code
+ * (components/kit/AnswerMascot.tsx — MascotArt).
  * Mapping is intentionally in one place so screens never hardcode it and the
  * owner can re-map poses later with a single edit.
  *
@@ -11,7 +12,7 @@ import { scoreLevel } from "./mood";
 export type MascotState = "welcome" | "happy" | "sad" | "angry";
 
 /** Standard mascot size for screen headers (dashboard, pillar, welcome-back). */
-export const HEADER_MASCOT_SIZE = 160;
+export const HEADER_MASCOT_SIZE = 120;
 
 /**
  * Pick the mascot pose for a happiness score, following the same levels as

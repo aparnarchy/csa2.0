@@ -9,7 +9,7 @@ import { COPY } from "@/lib/copy";
 import type { Role, SessionUser } from "@/lib/types";
 
 /**
- * Small "Manager view ⇄" chip for the top of a dashboard header, shown only to
+ * Small, quiet "⇄ Manager view" link for the top of a dashboard header, shown only to
  * people who hold more than one view (Admin / CEO/HR / Manager / Employee).
  * Tapping opens a short list of their views; picking one switches straight
  * there. Same choice as the Profile "Switch view" card — the server still
@@ -41,15 +41,15 @@ export function ViewSwitcher({ session, current }: { session: SessionUser; curre
   }
 
   return (
-    <div ref={ref} className="relative mb-2 inline-block">
+    <div ref={ref} className="relative mb-1 inline-block">
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
-        className="inline-flex items-center gap-1.5 rounded-full bg-white/80 px-3 py-1.5 text-xs font-bold text-brand shadow-sm transition active:scale-95"
+        className="inline-flex items-center gap-1 py-0.5 text-[11px] font-semibold text-brand/70 transition active:opacity-60"
       >
+        <span aria-hidden className="text-[13px] leading-none">⇄</span>
         {VIEW_LABELS[current]} view
-        <span aria-hidden className="text-sm leading-none">⇄</span>
       </button>
       {open && (
         <div className="absolute left-0 top-full z-30 mt-1.5 w-48 rounded-2xl bg-white p-1.5 shadow-card">

@@ -1,3 +1,5 @@
+"use client";
+
 /**
  * The AI insight card, after the owner's reference design (2026-10-09): a solid
  * brand-purple rounded card with a lavender layer offset behind it, a bold
@@ -10,6 +12,7 @@
  * or the AI call failed) the fallback line renders instead — a dashboard is
  * never blocked on the AI.
  */
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { COPY } from "@/lib/copy";
 
@@ -31,12 +34,20 @@ export function AIInsight({
   footHref?: string;
 }) {
   const footClass = "mt-2 block text-[11px] italic leading-snug text-white/85";
+  // At most 3 lines; a "more" tap shows the rest (only when it's cut off).
+  const textRef = useRef<HTMLParagraphElement>(null);
+  const [expanded, setExpanded] = useState(false);
+  const [clipped, setClipped] = useState(false);
+  useEffect(() => {
+    const el = textRef.current;
+    if (el && !expanded) setClipped(el.scrollHeight > el.clientHeight + 1);
+  }, [text, expanded]);
   return (
     <div className="relative mb-3 mr-2.5">
       <div className="absolute inset-0 translate-x-2.5 translate-y-2.5 rounded-[32px] bg-[#E3DCFF]" aria-hidden />
       <div className="relative overflow-hidden rounded-[32px] bg-brand px-5 pb-4 pt-4 text-white">
         <Orb />
-        <div className="relative min-w-0 pr-12">
+        <div className="relative min-w-0 pr-10">
           <p className="font-display text-[13px] font-black uppercase leading-tight tracking-[0.02em]">
             {eyebrow ?? COPY.shared.aiInsightTitle}
           </p>
@@ -45,7 +56,20 @@ export function AIInsight({
               {COPY.insight.loading}
             </p>
           ) : (
-            <p className="mt-1.5 text-[14px] font-normal leading-[1.4]">{text ?? COPY.shared.aiInsightFallback}</p>
+            <>
+              <p ref={textRef} className={`mt-1.5 text-[14px] font-normal leading-[1.4] ${expanded ? "" : "line-clamp-3"}`}>
+                {text ?? COPY.shared.aiInsightFallback}
+              </p>
+              {(clipped || expanded) && (
+                <button
+                  type="button"
+                  onClick={() => setExpanded((e) => !e)}
+                  className="mt-1 text-[12px] font-bold text-white/90 underline decoration-white/50 underline-offset-2"
+                >
+                  {expanded ? "Less" : "More"}
+                </button>
+              )}
+            </>
           )}
           {!loading && foot &&
             (footHref ? (
@@ -66,7 +90,7 @@ function Orb() {
   return (
     <svg
       viewBox="0 0 100 100"
-      className="ai-orb pointer-events-none absolute right-1 top-2 h-20 w-20 opacity-35"
+      className="ai-orb pointer-events-none absolute right-1 top-2 h-16 w-16 opacity-30"
       aria-hidden
     >
       <circle className="ai-orb-r1" cx="50" cy="50" r="44" fill="none" stroke="#fff" strokeWidth="5" strokeLinecap="round" strokeDasharray="4 14" />

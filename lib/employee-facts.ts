@@ -18,7 +18,7 @@ import { getRequestContext } from "@cloudflare/next-on-pages";
 import { getDB } from "./db";
 import { assertOwner } from "./access-control";
 import { careerFacts, hasAnyCareerHistory } from "./career";
-import { callGroq, writeCache } from "./ai";
+import { AI_WORDING, callGroq, writeCache } from "./ai";
 import { visibleAffectedActions } from "./feedback";
 import { PILLAR_ORDER } from "./pillars";
 import {
@@ -238,6 +238,8 @@ export async function getEmployeeInsight(
     }
     // No pattern strong enough for the AI: the plain "what's happening" line.
     if (angles.length === 0) return card(plan.facts.join(" "));
+    // AI wording off (lib/ai.ts AI_WORDING): the plain, code-written fact only.
+    if (!AI_WORDING) return card(angles[0].fact);
     const sheet = angleSheet(sheetInput, angles);
 
 

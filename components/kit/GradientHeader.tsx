@@ -33,7 +33,7 @@ export function GradientHeader({
 }) {
   return (
     <div
-      className={`relative rounded-card px-5 pb-6 pt-5 ${className}`}
+      className={`relative rounded-card px-5 pb-5 pt-4 ${className}`}
       style={{ background: "linear-gradient(160deg, #EDE7FF 0%, #E1D7FF 100%)" }}
     >
       {/* Text on the left, mascot on the right — a flex row so the mascot can

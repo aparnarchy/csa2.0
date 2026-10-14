@@ -107,7 +107,7 @@ export function ManagerInboxView({ session, initial }: { session: SessionUser; i
           eyebrow={COPY.managerInbox.eyebrow}
           title={COPY.managerInbox.title}
           avatar={<Mascot state="happy" size={HEADER_MASCOT_SIZE} float={false} sparkle={false} />}
-          className="flex min-h-[180px] flex-col justify-center"
+          className="flex min-h-[132px] flex-col justify-center"
         >
           <ResolvedMeter pct={resolvedPct} resolved={resolved.length} total={open.length + resolved.length} />
           <ParticipationLine respondedCount={initial.respondedCount} reporteeCount={initial.reporteeCount} participation={initial.participation} />

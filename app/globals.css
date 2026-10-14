@@ -170,10 +170,29 @@ body {
 .answer-mascot .am-arm-l { transform-origin: 100% 0%; }
 .answer-mascot .am-arm-r { transform-origin: 0% 0%; }
 .answer-mascot .am-happy-eye,
-.answer-mascot .am-mouth-big { opacity: 0; }
+.answer-mascot .am-mouth-big,
+.answer-mascot .am-lids,
+.answer-mascot .am-brows-sad,
+.answer-mascot .am-brows-angry,
+.answer-mascot .am-mouth-frown,
+.answer-mascot .am-mouth-cross,
+.answer-mascot .am-tear { opacity: 0; }
 .answer-mascot .am-heart { opacity: 0; transform: translate(110px, 125px) scale(0); }
 
-.am-idle .am-eye { animation: am-blink 4s 1.2s infinite; }
+/* Static moods (the Mascot component). welcome = the default parts. */
+.am-welcome .am-eye { animation: am-blink 4s 1.2s infinite; }
+.am-happy .am-eye, .am-happy .am-mouth-small { opacity: 0; }
+.am-happy .am-happy-eye, .am-happy .am-mouth-big { opacity: 1; }
+.am-happy .am-cheeks { opacity: .75; }
+.am-happy .am-arm-l { transform: rotate(78deg); }
+.am-happy .am-arm-r { transform: rotate(-78deg); }
+.am-happy .am-heart { opacity: 1; transform: translate(var(--tx), var(--ty)) scale(var(--s)); }
+.am-sad .am-mouth-small, .am-angry .am-mouth-small { opacity: 0; }
+.am-sad .am-brows-sad, .am-sad .am-mouth-frown, .am-sad .am-tear { opacity: 1; }
+.am-sad .am-arm-l { transform: rotate(-12deg); }
+.am-sad .am-arm-r { transform: rotate(12deg); }
+.am-angry .am-brows-angry, .am-angry .am-lids, .am-angry .am-mouth-cross { opacity: 1; }
+.am-angry .am-cheeks { opacity: .8; }
 @keyframes am-blink { 0%, 94%, 100% { transform: scaleY(1); } 97% { transform: scaleY(0.08); } }
 
 .am-play .am-body { animation: am-bounce 620ms cubic-bezier(.3,.7,.4,1) both; }
@@ -207,5 +226,5 @@ body {
   100% { opacity: 1; transform: translate(var(--tx), var(--ty)) scale(var(--s)) rotate(0); }
 }
 @media (prefers-reduced-motion: reduce) {
-  .am-play *, .am-idle * { animation-duration: 1ms !important; animation-delay: 0ms !important; animation-iteration-count: 1 !important; }
+  .am-play *, .am-welcome * { animation-duration: 1ms !important; animation-delay: 0ms !important; animation-iteration-count: 1 !important; }
 }

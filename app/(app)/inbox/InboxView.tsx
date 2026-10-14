@@ -71,7 +71,7 @@ export function InboxView({
           eyebrow={COPY.inbox.eyebrow}
           title={fill(COPY.inbox.greeting, { name: firstName })}
           avatar={<Mascot state="welcome" size={HEADER_MASCOT_SIZE} float={false} sparkle={false} />}
-          className="flex min-h-[180px] flex-col justify-center"
+          className="flex min-h-[132px] flex-col justify-center"
         >
           <p className="mt-2 text-sm font-bold leading-snug text-brand">
             {COPY.inbox.tagline}

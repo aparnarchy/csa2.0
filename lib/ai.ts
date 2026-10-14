@@ -37,6 +37,28 @@ interface InsightFacts {
   pillars: PillarScore[];
 }
 
+/**
+ * Let the AI write the insight wording? OFF (owner, 2026-10-14): it invented
+ * causes that aren't in the data ("the new development programme you
+ * joined", "a recent reshuffle") and slipped in advice. While off, every
+ * insight card shows a plain sentence built straight from the numbers — never
+ * anything that isn't in the data. Flip back on only with stricter grounding.
+ */
+export const AI_WORDING = false;
+
+/** Plain, factual one-liner for a team / department / organisation card. */
+function plainDashboardLine(facts: InsightFacts, scored: PillarScore[]): string {
+  const whose = { team: "your team's", dept: `${facts.label}'s`, org: "the organisation's" }[facts.kind];
+  const sorted = [...scored].sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
+  const top = sorted[0];
+  const low = sorted[sorted.length - 1];
+  const name = (p: PillarScore) => PILLARS[p.pillarId].label;
+  if (sorted.length === 1 || top.score === low.score) {
+    return `${name(top)} is ${whose} strongest pillar at ${top.score!.toFixed(1)}.`;
+  }
+  return `${name(top)} is ${whose} strongest pillar at ${top.score!.toFixed(1)}; ${name(low)} is the lowest at ${low.score!.toFixed(1)}.`;
+}
+
 export function signed(n: number): string {
   return `${n >= 0 ? "+" : ""}${n}`;
 }
@@ -53,6 +75,7 @@ export async function getDashboardInsight(
 ): Promise<string | null> {
   const scored = facts.pillars.filter((p) => p.score !== null);
   if (scored.length === 0) return null;
+  if (!AI_WORDING) return plainDashboardLine(facts, scored);
 
   const fingerprint = JSON.stringify({
     // Bump when the prompt changes so saved insights are rewritten (v2:
