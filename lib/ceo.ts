@@ -20,7 +20,7 @@ import type {
   Window,
 } from "./data";
 import { PILLAR_ORDER } from "./pillars";
-import { ANONYMISATION_FLOOR, scoreBand } from "./scoring";
+import { ANONYMISATION_FLOOR, isTrendReady, scoreBand } from "./scoring";
 import { groupBreakdown } from "./responses";
 import type { PillarId, SessionUser } from "./types";
 
@@ -117,6 +117,7 @@ export async function getCeoDashboard(
     pillars: [],
     questions: [],
     trend: [],
+    trendReady: false,
     impact: null,
   });
 
@@ -243,6 +244,7 @@ export async function getCeoDashboard(
     pillars,
     questions,
     trend,
+    trendReady: isTrendReady(startById.get(distinctWeeks[0])),
     impact: await computeImpact(db, kind, scope),
   };
 }
@@ -396,6 +398,8 @@ export interface CeoPillarDetail {
   percentile: number | null;
   band: ReturnType<typeof scoreBand> | null;
   trend: TrendPoint[];
+  /** Show the trend graph? False until this scope has 3 months of answers. */
+  trendReady: boolean;
   questions: QuestionInsight[];
 }
 
@@ -422,6 +426,7 @@ export async function getCeoPillarDetail(
     percentile: p?.percentile ?? null,
     band: p?.band ?? null,
     trend: agg.trend,
+    trendReady: agg.trendReady,
     questions: agg.questions.filter((q) => q.pillarId === pillarId),
   };
 }

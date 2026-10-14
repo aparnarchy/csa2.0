@@ -47,6 +47,24 @@ function average(nums: number[]): number {
  */
 export const SPLIT_MIN_PEOPLE = 5;
 
+/**
+ * Trend graphs stay hidden until the data behind them spans this many calendar
+ * months — a line drawn from a few weeks reads as a trend that isn't one yet
+ * (owner, 2026-10-14). Measured from the first week that has any answers in
+ * that scope (a person, a team, a department, the company).
+ */
+export const TREND_MIN_MONTHS = 3;
+
+/** True when `firstWeekStart` (YYYY-MM-DD) is at least TREND_MIN_MONTHS ago. */
+export function isTrendReady(firstWeekStart: string | undefined, now: Date = new Date()): boolean {
+  if (!firstWeekStart) return false;
+  const first = new Date(`${firstWeekStart.slice(0, 10)}T00:00:00Z`);
+  if (Number.isNaN(first.getTime())) return false;
+  const ready = new Date(first);
+  ready.setUTCMonth(ready.getUTCMonth() + TREND_MIN_MONTHS);
+  return now.getTime() >= ready.getTime();
+}
+
 /** True once there are at least ANONYMISATION_FLOOR responses. */
 export function hasEnoughData(responseCount: number): boolean {
   return responseCount >= ANONYMISATION_FLOOR;

@@ -123,6 +123,7 @@ export async function getReviewingManagerDetail(
       resolutionPct: null,
       pillars: [],
       trend: [],
+      trendReady: false,
     };
   }
 
@@ -139,6 +140,7 @@ export async function getReviewingManagerDetail(
       resolutionPct: null,
       pillars: [],
       trend: [],
+      trendReady: false,
     };
   }
 
@@ -153,5 +155,6 @@ export async function getReviewingManagerDetail(
     resolutionPct: await teamResolutionPct(db, team.teamId),
     pillars: agg.pillars,
     trend: agg.trend,
+    trendReady: agg.trendReady,
   };
 }

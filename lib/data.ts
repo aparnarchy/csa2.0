@@ -84,6 +84,8 @@ export interface EmployeeScores {
   pillars: PillarScore[];
   questions: QuestionInsight[];
   trend: TrendPoint[];
+  /** Show the trend graph? False until this scope has 3 months of answers. */
+  trendReady: boolean;
 }
 
 /** Aggregated team view for a manager (no individuals, ever). */
@@ -99,6 +101,8 @@ export interface TeamAggregate {
   pillars: PillarScore[];
   questions: QuestionInsight[];
   trend: TrendPoint[];
+  /** Show the trend graph? False until this scope has 3 months of answers. */
+  trendReady: boolean;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -256,6 +260,7 @@ export async function getEmployeeScores(
     pillars: pillarScoresFrom(trend),
     questions: questionInsights(userId),
     trend,
+    trendReady: true,
   };
 }
 
@@ -279,6 +284,7 @@ export async function getPillarDetail(
     percentile: Math.max(20, Math.min(98, Math.round(score * 10 + 4))),
     band: scoreBand(score),
     trend,
+    trendReady: true,
     questions: questionInsights(userId + pillarId).filter((q) => q.pillarId === pillarId),
   };
 }
@@ -312,6 +318,7 @@ export async function getTeamAggregate(
     pillars: [],
     questions: [],
     trend: [],
+    trendReady: false,
   };
 
   if (reporteeCount < ANONYMISATION_FLOOR) return empty;
@@ -331,6 +338,7 @@ export async function getTeamAggregate(
     pillars: pillarScoresFrom(trend),
     questions: questionInsights("team-" + teamId),
     trend,
+    trendReady: true,
   };
 }
 
@@ -1269,6 +1277,8 @@ export interface ManagerDetail {
   leaverCount?: number;
   pillars: PillarScore[];
   trend: TrendPoint[];
+  /** Show the trend graph? False until this scope has 3 months of answers. */
+  trendReady: boolean;
 }
 
 /** Sample managers reporting to the reviewer. One sits below the floor on purpose. */
@@ -1361,6 +1371,7 @@ export async function getReviewingManagerDetail(
       resolutionPct: null,
       pillars: [],
       trend: [],
+      trendReady: false,
     };
   }
 
@@ -1379,6 +1390,7 @@ export async function getReviewingManagerDetail(
     resolutionPct: resolutionFor(m.id),
     pillars: pillarScoresFrom(trend),
     trend,
+    trendReady: true,
   };
 }
 
@@ -1421,6 +1433,8 @@ export interface CeoDashboard {
   pillars: PillarScore[];
   questions: QuestionInsight[];
   trend: TrendPoint[];
+  /** Show the trend graph? False until this scope has 3 months of answers. */
+  trendReady: boolean;
   impact: ActionImpact | null;
 }
 
@@ -1523,6 +1537,7 @@ export async function getCeoDashboard(
       pillars: [],
       questions: [],
       trend: [],
+      trendReady: false,
       impact: null,
     };
   }
@@ -1545,6 +1560,7 @@ export async function getCeoDashboard(
     pillars: pillarScoresFrom(trend),
     questions: questionInsights(s.seedKey),
     trend,
+    trendReady: true,
     impact: impactFor(s.seedKey),
   };
 }

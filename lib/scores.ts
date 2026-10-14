@@ -23,7 +23,7 @@ import type {
   Window,
 } from "./data";
 import { PILLAR_ORDER } from "./pillars";
-import { scoreBand } from "./scoring";
+import { isTrendReady, scoreBand } from "./scoring";
 import { myBreakdown, type QuestionOptionCols } from "./responses";
 import type { PillarId, SessionUser } from "./types";
 
@@ -111,6 +111,7 @@ async function computeAggregate(userId: string, window: Window): Promise<Employe
       })),
       questions: [],
       trend: [],
+      trendReady: false,
     };
   }
 
@@ -193,6 +194,7 @@ async function computeAggregate(userId: string, window: Window): Promise<Employe
     pillars,
     questions,
     trend,
+    trendReady: isTrendReady(startById.get(distinctWeeks[0])),
   };
 }
 
@@ -215,6 +217,8 @@ export interface PillarDetail {
   percentile: number | null;
   band: ReturnType<typeof scoreBand> | null;
   trend: TrendPoint[];
+  /** Show the trend graph? False until this scope has 3 months of answers. */
+  trendReady: boolean;
   questions: QuestionInsight[];
 }
 
@@ -235,6 +239,7 @@ export async function getPillarDetail(
     percentile: p?.percentile ?? null,
     band: p?.band ?? null,
     trend: agg.trend,
+    trendReady: agg.trendReady,
     questions: agg.questions.filter((q) => q.pillarId === pillarId),
   };
 }

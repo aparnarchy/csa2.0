@@ -272,8 +272,8 @@ export function ManagerDashboardView({
             )}
           </Card>
 
-          {/* Trend — team vs org / dept / industry */}
-          <TrendChart data={data.trend} window={window} onWindowChange={setWindow} />
+          {/* Trend — hidden until the team has 3 months of answers */}
+          {data.trendReady && <TrendChart data={data.trend} window={window} onWindowChange={setWindow} />}
 
           <p className="pb-2 text-center text-[11px] text-ink-4">
             {COPY.managerDashboard.footnote}

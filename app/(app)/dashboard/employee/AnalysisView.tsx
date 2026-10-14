@@ -245,7 +245,7 @@ export function AnalysisView({
         </Card>
       )}
 
-      <TrendChart data={data.trend} window={window} onWindowChange={setWindow} />
+      {data.trendReady && <TrendChart data={data.trend} window={window} onWindowChange={setWindow} />}
 
       {/* Career history — the second way in, alongside the Profile link. */}
       <button

@@ -17,7 +17,7 @@ import { assertRole } from "./access-control";
 import { loadRecommendations, pickRecommendation } from "./recommendations";
 import type { PillarScore, QuestionInsight, TeamAggregate, TrendPoint, Window } from "./data";
 import { PILLAR_ORDER } from "./pillars";
-import { ANONYMISATION_FLOOR, scoreBand } from "./scoring";
+import { ANONYMISATION_FLOOR, isTrendReady, scoreBand } from "./scoring";
 import { groupBreakdown } from "./responses";
 import type { PillarId, SessionUser } from "./types";
 
@@ -63,6 +63,7 @@ export async function getTeamAggregate(
     pillars: [],
     questions: [],
     trend: [],
+    trendReady: false,
   };
 
   // A plain manager is always scoped to the team they manage, whatever teamId
@@ -236,6 +237,7 @@ export async function getTeamAggregate(
     pillars,
     questions,
     trend,
+    trendReady: isTrendReady(startById.get(distinctWeeks[0])),
   };
 }
 
@@ -260,6 +262,8 @@ export interface TeamPillarDetail {
   percentile: number | null;
   band: ReturnType<typeof scoreBand> | null;
   trend: TrendPoint[];
+  /** Show the trend graph? False until this scope has 3 months of answers. */
+  trendReady: boolean;
   questions: QuestionInsight[];
 }
 
@@ -286,6 +290,7 @@ export async function getTeamPillarDetail(
     percentile: p?.percentile ?? null,
     band: p?.band ?? null,
     trend: agg.trend,
+    trendReady: agg.trendReady,
     questions: agg.questions.filter((q) => q.pillarId === pillarId),
   };
 }

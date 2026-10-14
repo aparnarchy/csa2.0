@@ -128,7 +128,7 @@ export function ManagerDetailView({
             </div>
           </Card>
 
-          <TrendChart data={data.trend} window={window} onWindowChange={setWindow} />
+          {data.trendReady && <TrendChart data={data.trend} window={window} onWindowChange={setWindow} />}
 
           <p className="pb-2 text-center text-[11px] text-ink-4">
             Aggregates only. Nothing here can identify an individual.

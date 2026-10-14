@@ -97,7 +97,7 @@ export function TeamPillarDetailView({
         )}
       </Card>
 
-      <TrendChart data={detail?.trend ?? []} window={window} onWindowChange={setWindow} accent="#7C6FFF" />
+      {detail?.trendReady && <TrendChart data={detail.trend} window={window} onWindowChange={setWindow} accent="#7C6FFF" />}
     </div>
   );
 }
