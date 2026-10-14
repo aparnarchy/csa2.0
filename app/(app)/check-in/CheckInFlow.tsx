@@ -27,7 +27,8 @@ export function CheckInFlow({
 }: {
   session: SessionUser;
   questions: CheckInQuestion[];
-  onDone: () => void;
+  /** `anyLow`: at least one answer this round scored below 7. */
+  onDone: (anyLow: boolean) => void;
 }) {
   const [index, setIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string>>({});
@@ -80,7 +81,12 @@ export function CheckInFlow({
         setLeaving(false); // stay on this question, offering a retry
         return;
       }
-      onDone();
+      onDone(
+        questions.some((cq) => {
+          const picked = cq.options.find((o) => o.key === answers[cq.assignmentId]);
+          return picked !== undefined && picked.score < 7;
+        }),
+      );
     }
   }
 

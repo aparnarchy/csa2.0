@@ -30,7 +30,8 @@ export function CatchUpFlow({
   onDone,
 }: {
   questions: CheckInQuestion[];
-  onDone: () => void;
+  /** `anyLow`: at least one answer this round scored below 7. */
+  onDone: (anyLow: boolean) => void;
 }) {
   const [idx, setIdx] = useState(0);
   const [answers, setAnswers] = useState<Record<string, { key: string; score: number }>>({});
@@ -61,8 +62,9 @@ export function CatchUpFlow({
     const tips = questions.filter(
       (cq) => (answers[cq.assignmentId]?.score ?? 10) < 7 && cq.recommendation,
     ).length;
+    const anyLow = questions.some((cq) => (answers[cq.assignmentId]?.score ?? 10) < 7);
     if (tips > 0) setTipsSaved(tips);
-    else onDone();
+    else onDone(anyLow);
   }
 
   const total = questions.length;
@@ -134,7 +136,7 @@ export function CatchUpFlow({
           </button>
           <button
             type="button"
-            onClick={onDone}
+            onClick={() => onDone(true)}
             className="mt-2 w-full rounded-2xl bg-lav-soft py-3.5 font-display text-sm font-black text-brand transition active:scale-[0.98]"
           >
             {t.tipsContinueButton}

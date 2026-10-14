@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Mascot } from "@/components/kit";
 import { COPY, fill } from "@/lib/copy";
@@ -21,7 +21,9 @@ type Phase = "followup" | "fresh" | "catchup" | "done";
  *      only when there are unanswered questions from previous weeks,
  *   3. return check-in — did you act on your last recommendation? — never for
  *      first-timers, only when there's an open low-score recommendation,
- *   4. a short "done" screen → the dashboard.
+ *   4. a short "done" screen → the dashboard — skipped entirely when every
+ *      answer this session was 7 or above: straight to the (refreshed)
+ *      dashboard, no message (owner, 2026-10-14).
  * Each step is skipped when there's nothing for it, so a first-time user (or
  * anyone with no backlog and no open recommendation) goes straight from this
  * week's questions to the dashboard.
@@ -46,18 +48,40 @@ export function CheckInSession({
         ? "followup"
         : "done";
   const [phase, setPhase] = useState<Phase>(initial);
+  // Any answer below 7 this session (fresh or catch-up)? Decides whether the
+  // session ends on the "done" screen or goes straight to the dashboard.
+  const [hadLow, setHadLow] = useState(false);
+  const didAnything = due.length > 0 || unanswered.length > 0;
+  const skipDone = phase === "done" && didAnything && !hadLow;
+
+  useEffect(() => {
+    if (!skipDone) return;
+    router.replace("/dashboard/employee");
+    router.refresh(); // fresh scores, not a cached dashboard
+  }, [skipDone, router]);
 
   if (phase === "fresh" && due.length) {
     return (
       <CheckInFlow
         session={session}
         questions={due}
-        onDone={() => setPhase(unanswered.length ? "catchup" : openRec ? "followup" : "done")}
+        onDone={(anyLow) => {
+          if (anyLow) setHadLow(true);
+          setPhase(unanswered.length ? "catchup" : openRec ? "followup" : "done");
+        }}
       />
     );
   }
   if (phase === "catchup" && unanswered.length) {
-    return <CatchUpFlow questions={unanswered} onDone={() => setPhase(openRec ? "followup" : "done")} />;
+    return (
+      <CatchUpFlow
+        questions={unanswered}
+        onDone={(anyLow) => {
+          if (anyLow) setHadLow(true);
+          setPhase(openRec ? "followup" : "done");
+        }}
+      />
+    );
   }
   if (phase === "followup" && openRec) {
     return (
@@ -77,8 +101,10 @@ export function CheckInSession({
   // Done — a short confirmation (reached automatically after the last answer),
   // then the dashboard. A back arrow returns to the previous step if the user
   // wants to change an answer.
+  // All answers 7+: leave for the dashboard (effect above), showing nothing.
+  if (skipDone) return <div className="min-h-[100dvh] bg-lav-bg" />;
+
   const first = (session.name || "there").trim().split(/\s+/)[0];
-  const didAnything = due.length > 0 || unanswered.length > 0;
   const prevPhase: Phase | null = openRec
     ? "followup"
     : unanswered.length
