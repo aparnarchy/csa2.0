@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { InboxDot } from "./InboxDot";
 
 export interface NavItem {
   key: string;
@@ -96,7 +97,10 @@ export function ScreenShell({
                   isActive ? "text-brand" : "text-ink-4"
                 }`}
               >
-                <span className="text-lg" aria-hidden>{item.icon}</span>
+                <span className="relative text-lg" aria-hidden>
+                  {item.icon}
+                  {item.key === "inbox" && <InboxDot />}
+                </span>
                 {item.label}
               </Link>
             );

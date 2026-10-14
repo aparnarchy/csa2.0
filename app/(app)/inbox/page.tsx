@@ -12,6 +12,7 @@ import {
   getReflections,
   getUnansweredCheckIns,
 } from "@/lib/checkins";
+import { getEmployeeScores } from "@/lib/scores";
 import { InboxView } from "./InboxView";
 import { ManagerInboxView } from "../dashboard/manager/inbox/ManagerInboxView";
 
@@ -44,6 +45,11 @@ export default async function InboxPage() {
     getOpenRecommendations(session.user, session.user.id),
     getRecommendationHistory(session.user, session.user.id),
   ]);
+  // Each recommendation card leads with the person's current pillar score.
+  const scores = openRecs.length
+    ? await getEmployeeScores(session.user, session.user.id).catch(() => null)
+    : null;
+  const pillarScores = Object.fromEntries((scores?.pillars ?? []).map((p) => [p.pillarId, p.score]));
 
   return (
     <InboxView
@@ -54,6 +60,7 @@ export default async function InboxPage() {
       history={history}
       reflections={reflections}
       openRecommendations={openRecs}
+      pillarScores={pillarScores}
       recommendationHistory={recHistory}
     />
   );

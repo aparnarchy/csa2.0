@@ -3,6 +3,7 @@ export const runtime = "edge";
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth-session";
 import { getDueCheckIns, getReturnCheckIn, getUnansweredCheckIns } from "@/lib/checkins";
+import { getEmployeeScores } from "@/lib/scores";
 import { CheckInSession } from "./CheckInSession";
 
 export default async function CheckInPage() {
@@ -15,7 +16,20 @@ export default async function CheckInPage() {
     getDueCheckIns(session.user, session.user.id),
   ]);
 
+  // Recommendation cards at the end of the session lead with the pillar score.
+  const scores =
+    due.length || unanswered.length
+      ? await getEmployeeScores(session.user, session.user.id).catch(() => null)
+      : null;
+  const pillarScores = Object.fromEntries((scores?.pillars ?? []).map((p) => [p.pillarId, p.score]));
+
   return (
-    <CheckInSession session={session.user} unanswered={unanswered} openRec={openRec} due={due} />
+    <CheckInSession
+      session={session.user}
+      unanswered={unanswered}
+      openRec={openRec}
+      due={due}
+      pillarScores={pillarScores}
+    />
   );
 }

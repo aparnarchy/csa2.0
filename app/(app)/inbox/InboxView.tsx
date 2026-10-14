@@ -1,9 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { BackButton, Card, GradientHeader, Mascot, ScreenShell } from "@/components/kit";
+import { BackButton, Card, GradientHeader, Mascot, RecommendationStack, ScreenShell } from "@/components/kit";
 import { HEADER_MASCOT_SIZE } from "@/lib/mascot";
-import { PILLARS } from "@/lib/pillars";
 import {
   type ActionHistoryItem,
   type ActionResponseValue,
@@ -14,7 +13,8 @@ import {
   type Reflection,
   type RecommendationHistoryItem,
 } from "@/lib/data";
-import type { SessionUser } from "@/lib/types";
+import type { PillarId, SessionUser } from "@/lib/types";
+import { questionTitle } from "@/lib/question-titles";
 import { COPY, fill } from "@/lib/copy";
 import { submitCheckInAction, submitFollowUpAction } from "../check-in/actions";
 import { submitActionResponseAction } from "./actions";
@@ -34,6 +34,7 @@ export function InboxView({
   history,
   reflections,
   openRecommendations,
+  pillarScores,
   recommendationHistory,
 }: {
   session: SessionUser;
@@ -43,6 +44,8 @@ export function InboxView({
   history: ActionHistoryItem[];
   reflections: Reflection[];
   openRecommendations: OpenRecommendationItem[];
+  /** The person's current score per pillar (shown on each recommendation card). */
+  pillarScores: Partial<Record<PillarId, number | null>>;
   recommendationHistory: RecommendationHistoryItem[];
 }) {
   const [showHistory, setShowHistory] = useState(false);
@@ -95,15 +98,28 @@ export function InboxView({
       {/* Latest recommendation (from the most recent check-in) */}
       {latest && <LatestCheckInCard latest={latest} />}
 
-      {/* Un-actioned recommendations — every open low-score recommendation,
-          not just the most recent one. Acting here removes it from the list;
-          it then shows up in the history space below. */}
+      {/* Un-actioned recommendations as a card stack (owner, 2026-10-14):
+          lowest score first, one card in front at a time — tap for the next.
+          Acting on the top card removes it; it then shows up in history. */}
       {visibleOpenRecs.length > 0 && (
-        <OpenRecommendationsCard
-          items={visibleOpenRecs}
-          onResolved={(questionId) =>
-            setResolvedRecs((s) => new Set(s).add(questionId))
-          }
+        <RecommendationStack
+          userKey={session.id}
+          items={visibleOpenRecs.map((r) => ({
+            id: r.questionId,
+            title: questionTitle(r.questionId, r.questionText),
+            score: pillarScores[r.pillarId] ?? null,
+            text: r.recommendation,
+          }))}
+          below={(top) => {
+            const item = visibleOpenRecs.find((r) => r.questionId === top.id);
+            return item ? (
+              <FollowUpActions
+                key={top.id}
+                item={item}
+                onResolved={() => setResolvedRecs((s) => new Set(s).add(item.questionId))}
+              />
+            ) : null;
+          }}
         />
       )}
 
@@ -145,10 +161,9 @@ function LatestCheckInCard({ latest }: { latest: LatestCheckIn }) {
       </p>
 
       {latest.isLow && latest.recommendation ? (
-        <div className="mt-3 rounded-card bg-lav-soft p-3.5">
-          <p className="text-xs font-bold text-brand">{COPY.inbox.recommendationLabel}</p>
-          <p className="whitespace-pre-line mt-1 text-[13px] leading-relaxed text-ink-2">{latest.recommendation}</p>
-        </div>
+        // The recommendation itself lives in the card stack below — shown
+        // once, never twice.
+        <p className="mt-3 text-[13px] font-semibold text-brand">Your recommendation for this is in the cards below.</p>
       ) : shared ? (
         <div className="mt-3 rounded-card bg-good/10 p-3 text-center">
           <p className="text-sm font-bold text-good">{COPY.inbox.sharedThanks}</p>
@@ -298,66 +313,8 @@ function UnansweredCard({ questions }: { questions: CheckInQuestion[] }) {
 // newest — lib/checkins.ts); the rest are one line each and open on tap, one
 // at a time. Several low answers at once used to stack every tip in full —
 // one long wall of text (owner, 2026-10-09).
-function OpenRecommendationsCard({
-  items,
-  onResolved,
-}: {
-  items: OpenRecommendationItem[];
-  onResolved: (questionId: string) => void;
-}) {
-  const [openId, setOpenId] = useState<string | null>(null);
-  const [first, ...rest] = items;
-  return (
-    <>
-      <Card>
-        <p className="text-[11px] font-bold uppercase tracking-wide text-brand">{COPY.inbox.recStartHere}</p>
-        <div className="mt-3">
-          <RecommendationRow key={first.questionId} item={first} onResolved={() => onResolved(first.questionId)} />
-        </div>
-      </Card>
-      {rest.length > 0 && (
-        <Card>
-          <p className="text-[11px] font-bold uppercase tracking-wide text-brand">
-            {fill(COPY.inbox.recMore, { count: rest.length })}
-          </p>
-          <div className="mt-2">
-            {rest.map((r) =>
-              openId === r.questionId ? (
-                <div key={r.questionId} className="py-2">
-                  <RecommendationRow item={r} onResolved={() => onResolved(r.questionId)} />
-                  <button
-                    type="button"
-                    onClick={() => setOpenId(null)}
-                    className="mt-1.5 w-full py-1 text-center text-[11px] font-semibold text-ink-4"
-                  >
-                    Close
-                  </button>
-                </div>
-              ) : (
-                <button
-                  key={r.questionId}
-                  type="button"
-                  onClick={() => setOpenId(r.questionId)}
-                  className="flex w-full items-center gap-3 border-t border-lav-mid py-3 text-left first:border-t-0 active:opacity-70"
-                >
-                  <span className="min-w-0 flex-1">
-                    <span className="block text-[9px] font-bold uppercase tracking-wide text-brand-light">
-                      {PILLARS[r.pillarId].label}
-                    </span>
-                    <span className="mt-0.5 block text-[13px] leading-snug text-ink">{r.questionText}</span>
-                  </span>
-                  <span className="flex-shrink-0 text-ink-4">›</span>
-                </button>
-              ),
-            )}
-          </div>
-        </Card>
-      )}
-    </>
-  );
-}
-
-function RecommendationRow({
+/** "Were you able to act on it?" for the recommendation on top of the stack. */
+function FollowUpActions({
   item,
   onResolved,
 }: {
@@ -395,16 +352,11 @@ function RecommendationRow({
     save({ questionId: item.questionId, pillarId: item.pillarId, status: "not_acted" });
 
   return (
-    <div className="rounded-2xl border border-gray-200 bg-white p-3.5">
-      <span className="text-[11px] font-semibold text-ink-4">{item.weekLabel}</span>
-      <p className="mt-1 text-sm font-semibold leading-snug text-ink">&ldquo;{item.questionText}&rdquo;</p>
-      {item.recommendation && (
-        <div className="mt-2 rounded-xl bg-lav-soft p-3">
-          <p className="whitespace-pre-line text-[12px] leading-relaxed text-ink-2">{item.recommendation}</p>
-        </div>
-      )}
-
-      <p className="mt-3 text-xs font-semibold text-ink-3">Were you able to act on it?</p>
+    <div className="rounded-2xl bg-white p-3.5 shadow-card">
+      <p className="text-[11px] text-ink-4">
+        From your answer to &ldquo;{item.questionText}&rdquo; · {item.weekLabel}
+      </p>
+      <p className="mt-2 text-xs font-semibold text-ink-3">Were you able to act on it?</p>
       <div className="mt-2 flex gap-2">
         {[
           { key: "yes" as const, label: "Yes" },

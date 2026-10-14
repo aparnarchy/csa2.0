@@ -27,11 +27,14 @@ export function CheckInFlow({
 }: {
   session: SessionUser;
   questions: CheckInQuestion[];
-  /** `anyLow`: at least one answer this round scored below 7. */
-  onDone: (anyLow: boolean) => void;
+  /** The questions answered below 7 this round (empty when all were 7+). */
+  onDone: (lows: CheckInQuestion[]) => void;
 }) {
   const [index, setIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string>>({});
+  // Same answers, always current: the finish step runs from a timer set
+  // before the last tap's state update lands, so it must not read `answers`.
+  const answersRef = useRef<Record<string, string>>({});
   const [leaving, setLeaving] = useState(false);
   const beat = useRef<number | null>(null);
   const leave = useRef<number | null>(null);
@@ -85,8 +88,8 @@ export function CheckInFlow({
         return;
       }
       onDone(
-        questions.some((cq) => {
-          const picked = cq.options.find((o) => o.key === answers[cq.assignmentId]);
+        questions.filter((cq) => {
+          const picked = cq.options.find((o) => o.key === answersRef.current[cq.assignmentId]);
           return picked !== undefined && picked.score < 7;
         }),
       );
@@ -95,6 +98,7 @@ export function CheckInFlow({
 
   function pick(optionKey: string, score: number) {
     if (leaving) return;
+    answersRef.current = { ...answersRef.current, [q.assignmentId]: optionKey };
     setAnswers((a) => ({ ...a, [q.assignmentId]: optionKey }));
     setReaction((r) => ({ id: q.assignmentId, n: (r?.id === q.assignmentId ? r.n : 0) + 1 }));
     const id = q.assignmentId;
