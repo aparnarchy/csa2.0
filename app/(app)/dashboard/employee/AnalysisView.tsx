@@ -13,6 +13,7 @@ import {
   ScreenShell,
   SegmentedToggle,
   TrendChart,
+  ViewSwitcher,
 } from "@/components/kit";
 import { type EmployeeScores, type Window } from "@/lib/data";
 import { getEmployeeInsightAction, getEmployeeScoresAction } from "./actions";
@@ -106,6 +107,7 @@ export function AnalysisView({
           welcome text (all in lilac to match the theme). */}
       {isPlay ? (
         <GradientHeader
+          switcher={<ViewSwitcher session={session} current="employee" />}
           eyebrow={chrome.eyebrow}
           title={chrome.greeting(firstName)}
           avatar={

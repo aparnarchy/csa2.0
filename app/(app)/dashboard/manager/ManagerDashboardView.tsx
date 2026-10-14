@@ -17,6 +17,7 @@ import {
   ScreenShell,
   SegmentedToggle,
   TrendChart,
+  ViewSwitcher,
 } from "@/components/kit";
 import type { TeamAggregate, Window } from "@/lib/data";
 import { COPY, fill } from "@/lib/copy";
@@ -112,6 +113,7 @@ export function ManagerDashboardView({
           mascot. Same palette and fonts as every other screen. */}
       {isPlay ? (
         <GradientHeader
+          switcher={<ViewSwitcher session={session} current="manager" />}
           eyebrow={COPY.managerDashboard.eyebrow}
           title={fill(COPY.managerDashboard.teamTitle, { name: firstName })}
           avatar={

@@ -12,6 +12,7 @@ export function GradientHeader({
   subtitle,
   avatar,
   back,
+  switcher,
   children,
   below,
   className = "",
@@ -21,6 +22,9 @@ export function GradientHeader({
   subtitle?: string;
   avatar?: ReactNode;
   back?: { label: string; onClick: () => void };
+  /** Optional view switcher chip (ViewSwitcher) above the eyebrow — in the
+      text column, so it can never collide with the mascot. */
+  switcher?: ReactNode;
   children?: ReactNode;
   /** Full-width content rendered BELOW the title+mascot row (e.g. a stats row
       that would be squished if placed in the narrow left column). */
@@ -37,6 +41,7 @@ export function GradientHeader({
       <div className="flex items-center gap-3">
         <div className="min-w-0 flex-1">
           {back && <BackButton label={back.label} onClick={back.onClick} />}
+          {switcher}
 
           {eyebrow && <p className="mb-1.5 text-xs text-ink-3">{eyebrow}</p>}
           <h1 className="font-display text-[28px] font-black leading-tight text-brand">{title}</h1>

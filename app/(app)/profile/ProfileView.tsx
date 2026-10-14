@@ -100,6 +100,57 @@ export function ProfileView({
         </div>
       )}
 
+      {/* Switch view — first thing under the header so people can find it
+          (owner, 2026-10-14). For anyone holding more than one role. Two views (e.g.
+          a manager who also does their own check-ins) keep the one-tap row;
+          three or more (e.g. admin + CEO/HR + manager) get a picker so every
+          view is reachable, not just the top role and Employee. */}
+      {views.length === 2 && (
+        <button
+          type="button"
+          onClick={() => switchTo(views.find((v) => v !== view)!)}
+          className="flex w-full items-center justify-between rounded-card bg-white p-4 text-left shadow-card transition active:scale-[0.99]"
+        >
+          <div>
+            <p className="text-sm font-bold text-ink">
+              {viewingAsEmployee
+                ? fill(COPY.profile.switchElevatedTitle, { role: VIEW_LABELS[views[0]] })
+                : COPY.profile.switchEmployeeTitle}
+            </p>
+            <p className="mt-0.5 text-xs text-ink-3">
+              {viewingAsEmployee
+                ? fill(COPY.profile.switchElevatedSub, { role: VIEW_LABELS[views[0]] })
+                : COPY.profile.switchEmployeeSub}
+            </p>
+          </div>
+          <span className="text-xl text-ink-4">›</span>
+        </button>
+      )}
+      {views.length > 2 && (
+        <Card>
+          <p className="text-sm font-bold text-brand">{COPY.profile.viewPickerTitle}</p>
+          <p className="mt-0.5 text-xs text-ink-3">{COPY.profile.viewPickerSub}</p>
+          <div className="mt-3 grid grid-cols-2 gap-2">
+            {views.map((v) => {
+              const on = v === view;
+              return (
+                <button
+                  key={v}
+                  type="button"
+                  onClick={() => switchTo(v)}
+                  aria-pressed={on}
+                  className={`rounded-2xl px-3 py-3 text-sm font-bold transition active:scale-[0.98] ${
+                    on ? "bg-brand text-white shadow-card" : "bg-lav-soft text-brand"
+                  }`}
+                >
+                  {VIEW_LABELS[v]}
+                </button>
+              );
+            })}
+          </div>
+        </Card>
+      )}
+
       {/* Org happiness + participation — CEO/HR only, same dashboard-style
           card (BigScore + a full-width data-confidence row) used on the Org
           dashboard and Manager dashboard, for visual consistency app-wide. */}
@@ -198,56 +249,6 @@ export function ProfileView({
       {/* Personal email — optional, one small note, no nudging (testing phase).
           Anyone with a job record, since that's who has a work inbox to lose. */}
       {session.hasEmployment && <PersonalEmailCard initial={personalEmail} />}
-
-      {/* Switch view — for anyone holding more than one role. Two views (e.g.
-          a manager who also does their own check-ins) keep the one-tap row;
-          three or more (e.g. admin + CEO/HR + manager) get a picker so every
-          view is reachable, not just the top role and Employee. */}
-      {views.length === 2 && (
-        <button
-          type="button"
-          onClick={() => switchTo(views.find((v) => v !== view)!)}
-          className="flex w-full items-center justify-between rounded-card bg-white p-4 text-left shadow-card transition active:scale-[0.99]"
-        >
-          <div>
-            <p className="text-sm font-bold text-ink">
-              {viewingAsEmployee
-                ? fill(COPY.profile.switchElevatedTitle, { role: VIEW_LABELS[views[0]] })
-                : COPY.profile.switchEmployeeTitle}
-            </p>
-            <p className="mt-0.5 text-xs text-ink-3">
-              {viewingAsEmployee
-                ? fill(COPY.profile.switchElevatedSub, { role: VIEW_LABELS[views[0]] })
-                : COPY.profile.switchEmployeeSub}
-            </p>
-          </div>
-          <span className="text-xl text-ink-4">›</span>
-        </button>
-      )}
-      {views.length > 2 && (
-        <Card>
-          <p className="text-sm font-bold text-brand">{COPY.profile.viewPickerTitle}</p>
-          <p className="mt-0.5 text-xs text-ink-3">{COPY.profile.viewPickerSub}</p>
-          <div className="mt-3 grid grid-cols-2 gap-2">
-            {views.map((v) => {
-              const on = v === view;
-              return (
-                <button
-                  key={v}
-                  type="button"
-                  onClick={() => switchTo(v)}
-                  aria-pressed={on}
-                  className={`rounded-2xl px-3 py-3 text-sm font-bold transition active:scale-[0.98] ${
-                    on ? "bg-brand text-white shadow-card" : "bg-lav-soft text-brand"
-                  }`}
-                >
-                  {VIEW_LABELS[v]}
-                </button>
-              );
-            })}
-          </div>
-        </Card>
-      )}
 
       <div className="flex justify-center pt-1">
         <button

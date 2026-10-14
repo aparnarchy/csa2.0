@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { ADMIN_NAV, Card, GradientHeader, Mascot, ScreenShell } from "@/components/kit";
+import { ADMIN_NAV, Card, GradientHeader, Mascot, ScreenShell, ViewSwitcher } from "@/components/kit";
 import { HEADER_MASCOT_SIZE } from "@/lib/mascot";
 import type { SessionUser } from "@/lib/types";
 
@@ -55,6 +55,7 @@ export function AdminHubView({ session }: { session: SessionUser }) {
       {/* Header — Play: lavender + mascot; Professional: gradient, no mascot. */}
       {isPlay ? (
         <GradientHeader
+          switcher={<ViewSwitcher session={session} current="admin" />}
           eyebrow="⚙️ Admin"
           title={`Hi ${firstName}`}
           avatar={
