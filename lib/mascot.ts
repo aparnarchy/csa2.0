@@ -1,6 +1,5 @@
 /**
- * Mascot pose selection. The mascot is drawn in code
- * (components/kit/AnswerMascot.tsx — MascotArt).
+ * Mascot pose selection. The processed art lives in public/mascot/*.png.
  * Mapping is intentionally in one place so screens never hardcode it and the
  * owner can re-map poses later with a single edit.
  *

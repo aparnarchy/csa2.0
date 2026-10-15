@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { AnswerMascot, OptionCard } from "@/components/kit";
+import { Mascot, OptionCard } from "@/components/kit";
 import { COPY, fill } from "@/lib/copy";
 import { type CheckInQuestion } from "@/lib/data";
 import type { SessionUser } from "@/lib/types";
@@ -11,7 +11,7 @@ import { useSaveQueue } from "./useSaveQueue";
 const t = COPY.checkin;
 
 const LEAVE_MS = 280; // matches the .q-leave animation
-const HIGHLIGHT_MS = 750; // let the mascot react (~0.7s) before we glide away
+const HIGHLIGHT_MS = 200; // let the tapped answer register before we glide away
 
 /**
  * This week's fresh check-in: one question at a time, A/B/C tappable cards
@@ -44,9 +44,6 @@ export function CheckInFlow({
   // the user straight back here. See useSaveQueue.
   const saves = useSaveQueue();
   const [saveFailed, setSaveFailed] = useState(false);
-  // The mascot reacts to each tap on the current question (a counter so a
-  // changed answer replays it); other questions start idle.
-  const [reaction, setReaction] = useState<{ id: string; n: number } | null>(null);
 
   const first = (session.name || "there").trim().split(/\s+/)[0];
   const total = questions.length;
@@ -100,7 +97,6 @@ export function CheckInFlow({
     if (leaving) return;
     answersRef.current = { ...answersRef.current, [q.assignmentId]: optionKey };
     setAnswers((a) => ({ ...a, [q.assignmentId]: optionKey }));
-    setReaction((r) => ({ id: q.assignmentId, n: (r?.id === q.assignmentId ? r.n : 0) + 1 }));
     const id = q.assignmentId;
     saves.save(id, () => submitCheckInAction(id, score, optionKey));
     setSaveFailed(false);
@@ -134,7 +130,7 @@ export function CheckInFlow({
         className={`${leaving ? "q-leave" : "q-enter"} flex flex-1 flex-col justify-center`}
       >
         <div className="flex flex-col items-center text-center">
-          <AnswerMascot size={180} play={reaction?.id === q.assignmentId ? reaction.n : 0} />
+          <Mascot state="welcome" size={198} float={false} />
           <p className="mt-2 font-display text-base font-black text-brand">
             {fill(t.greeting, { name: first })}
           </p>

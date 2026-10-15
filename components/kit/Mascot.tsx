@@ -1,5 +1,5 @@
+import Image from "next/image";
 import type { MascotState } from "@/lib/mascot";
-import { MascotArt } from "./AnswerMascot";
 
 // A few sparkles that drift/twinkle around the mascot. Decorative only.
 const SPARKLES: { pos: React.CSSProperties; size: number; delay: string }[] = [
@@ -9,10 +9,9 @@ const SPARKLES: { pos: React.CSSProperties; size: number; delay: string }[] = [
 ];
 
 /**
- * The CSA mascot (an original character drawn in code — components/kit/
- * AnswerMascot.tsx), posed by `state`, gently floating with a few twinkling
- * sparkles around it. Always drawn inside a `size` square, so sizing and
- * placement stay consistent across poses.
+ * The owner's mascot character, picked by `state`, gently floating with a few
+ * twinkling sparkles around it. Each pose is a free-floating cut-out on a
+ * uniform square canvas, so sizing/placement stays consistent across poses.
  */
 export function Mascot({
   state,
@@ -26,6 +25,8 @@ export function Mascot({
   /** Gentle up/down bob. Set false for a still character. */
   float?: boolean;
 }) {
+  const src = `/mascot/${state}.png`;
+
   return (
     <div className="relative" style={{ width: size, height: size }} aria-hidden>
       {sparkle &&
@@ -39,7 +40,15 @@ export function Mascot({
           </span>
         ))}
       <div className={`relative h-full w-full ${float ? "mascot-float" : ""}`}>
-        <MascotArt mood={state} />
+        <Image
+          src={src}
+          alt=""
+          fill
+          sizes={`${size}px`}
+          className="object-contain"
+          priority
+          unoptimized
+        />
       </div>
     </div>
   );
