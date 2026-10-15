@@ -15,6 +15,7 @@ import { COPY, fill } from "./copy";
 import { PILLARS, PILLAR_ORDER, STRENGTH_CUTOFF } from "./pillars";
 import type { TrendPoint } from "./data";
 import type { PillarId } from "./types";
+import { questionTitle } from "./question-titles";
 
 /** Below this many answers in the window, or with one week of data, it's "early days". */
 export const EARLY_ANSWERS = 6;
@@ -402,6 +403,8 @@ const SPLIT_MEANING: Record<PillarId, string> = {
 };
 
 /** The patterns in their data worth an insight, strongest first. */
+const SPLIT_ANGLE_ON = false;
+
 export function findAngles(input: SheetInput): Angle[] {
   const { history, profile, pillars } = input;
   const angles: Angle[] = [];
@@ -409,8 +412,11 @@ export function findAngles(input: SheetInput): Angle[] {
   const quote = (h: AnswerHistory) => `“${optionText(h, h.answers.at(-1)!)}”`;
   const scored = PILLAR_ORDER.filter((p) => pillars[p] != null) as PillarId[];
 
-  // 1. Parts of one pillar that disagree.
-  for (const pid of PILLAR_ORDER) {
+  // 1. Parts of one pillar that disagree. SWITCHED OFF (owner, 2026-10-15):
+  // any two questions in a pillar aren't necessarily opposites, and the
+  // per-pillar explanation rarely fitted the pair it was shown with. Comes
+  // back only with per-question phrasing the owner approves.
+  for (const pid of SPLIT_ANGLE_ON ? PILLAR_ORDER : []) {
     const qs = history.filter((h) => h.pillarId === pid && h.answers.length > 0).map((h) => ({ h, avg: avgOf(h.answers) }));
     if (qs.length < 2) continue;
     const hi = qs.reduce((a, b) => (b.avg > a.avg ? b : a));
@@ -532,7 +538,7 @@ export function findAngles(input: SheetInput): Angle[] {
     if (h.answers.length >= 3 && trailingRun(h.answers) >= 3) {
       angles.push({
         weight: 50 + h.answers.length,
-        fact: `You've answered ${quote(h)} to “${h.text}” ${plural(trailingRun(h.answers), "time")} in a row.`,
+        fact: `Your answer on ${questionTitle(h.questionId, h.text)} has been ${quote(h)} ${plural(trailingRun(h.answers), "time")} in a row.`,
         meaning: "An answer that never moves is a settled view, not a mood.",
       });
     }

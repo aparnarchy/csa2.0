@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 
 export interface StackItem {
-  /** Stable id for "seen" tracking (e.g. questionId|weekId). */
+  /** Stable id for "seen" tracking (e.g. the questionId). */
   id: string;
   title: string;
   /** The person's current score for this pillar (shown before the title). */
@@ -23,14 +23,24 @@ function readSeen(userKey: string): Set<string> {
   }
 }
 
+/** How far each card behind the top one sits (px down) and shrinks. */
+const PEEK_Y = 14;
+const PEEK_SCALE = 0.05;
+const VISIBLE_BEHIND = 2;
+const FLICK_MS = 420;
+
 /**
- * Recommendations as a stack of cards (owner's reference, 2026-10-14): one
- * card on top with the next one peeking out behind it, offset down-right;
- * cards alternate light lavender and deep purple. Tap the card and it lifts
- * away while the next one rises into place. Only one recommendation is ever
- * in front of you — never a bundle. A "N new" badge counts cards not yet seen
- * on top (remembered on this device). `below` renders under the top card
- * (e.g. "Were you able to act on it?").
+ * Recommendations as a real deck of cards (owner's reference, 2026-10-14):
+ * the top card in front, the next two layered beneath it (each a little lower
+ * and smaller), alternating light lavender and deep purple. Tapping flicks the
+ * top card off to the left while every card behind slides up one place in
+ * the same motion; the flicked card rejoins at the back. All cards are the
+ * same elements throughout (keyed by id), so movement is one continuous CSS
+ * transition — nothing is re-mounted or faded in.
+ *
+ * Only one recommendation is ever readable at a time — never a bundle. A
+ * "N new" badge counts cards not yet seen on top (remembered on this
+ * device). `below` renders under the deck (e.g. "Were you able to act on it?").
  */
 export function RecommendationStack({
   items,
@@ -43,14 +53,38 @@ export function RecommendationStack({
   heading?: string;
   below?: (item: StackItem) => ReactNode;
 }) {
-  const [index, setIndex] = useState(0);
-  const [leaving, setLeaving] = useState(false);
-  const [seen, setSeen] = useState<Set<string>>(new Set());
   const n = items.length;
-  const i = n ? index % n : 0;
-  const top = items[i];
+  // Deck order as item indexes; order[0] is the card on top.
+  const [order, setOrder] = useState<number[]>(() => items.map((_, k) => k));
+  const [flicking, setFlicking] = useState<number | null>(null);
+  const [seen, setSeen] = useState<Set<string>>(new Set());
+  const [topHeight, setTopHeight] = useState<number | null>(null);
+  const topRef = useRef<HTMLDivElement>(null);
 
-  // Load what this person has already seen (device-local, per account).
+  // Items can change (e.g. one is acted on): rebuild the order, keeping the
+  // current top where possible.
+  useEffect(() => {
+    setOrder((prev) => {
+      const kept = prev.filter((k) => k < n);
+      const missing = items.map((_, k) => k).filter((k) => !kept.includes(k));
+      return [...kept, ...missing];
+    });
+  }, [items, n]);
+
+  const topIdx = order.find((k) => k !== flicking && k < n) ?? 0;
+  const top = items[topIdx];
+
+  // Measure the top card so the deck (and the cards behind it) match its height.
+  useLayoutEffect(() => {
+    const el = topRef.current;
+    if (!el) return;
+    const measure = () => setTopHeight(el.offsetHeight);
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [topIdx, n]);
+
   useEffect(() => setSeen(readSeen(userKey)), [userKey]);
 
   // The card on top counts as seen once it's been there a moment.
@@ -65,7 +99,7 @@ export function RecommendationStack({
         } catch {}
         return next;
       });
-    }, 600);
+    }, 700);
     return () => window.clearTimeout(t);
   }, [top, userKey]);
 
@@ -79,21 +113,20 @@ export function RecommendationStack({
 
   if (!top) return null;
 
-  const dark = (k: number) => k % 2 === 1;
-  const nextIdx = (i + 1) % n;
-
-  function advance() {
-    if (n < 2 || leaving) return;
-    setLeaving(true);
+  function flick() {
+    if (n < 2 || flicking !== null) return;
+    const leaving = order[0];
+    setFlicking(leaving);
     window.setTimeout(() => {
-      setIndex((x) => x + 1);
-      setLeaving(false);
-    }, 260);
+      setOrder((o) => [...o.slice(1), o[0]]);
+      setFlicking(null);
+    }, FLICK_MS);
   }
 
-  const topDark = dark(i);
-  // Behind-card colour: the next card's, or the opposite shade for a lone card.
-  const backDark = n > 1 ? dark(nextIdx) : !topDark;
+  // Position of each card in the deck, ignoring the one being flicked away.
+  const settled = order.filter((k) => k !== flicking && k < n);
+  const behind = Math.min(VISIBLE_BEHIND, Math.max(0, n - 1));
+  const deckHeight = (topHeight ?? 0) + behind * PEEK_Y;
 
   return (
     <section>
@@ -106,40 +139,60 @@ export function RecommendationStack({
         )}
       </div>
 
-      <div className="relative mb-3 mr-2.5">
-        {/* the card peeking out behind */}
-        <div
-          aria-hidden
-          className={`absolute inset-0 translate-x-2.5 translate-y-3 rounded-[28px] ${backDark ? "bg-brand" : "bg-[#E3DCFF]"}`}
-        />
-        <button
-          key={top.id + index}
-          type="button"
-          onClick={advance}
-          aria-label={n > 1 ? "Show the next recommendation" : undefined}
-          className={`rec-card relative block w-full rounded-[28px] px-5 py-4 text-left ${
-            topDark ? "bg-brand text-white" : "bg-[#E8E2FF] text-brand"
-          } ${leaving ? "rec-leave" : "rec-enter"}`}
-        >
-          <p className={`font-display text-[17px] font-black leading-snug ${topDark ? "text-white" : "text-brand"}`}>
-            {top.score !== null ? `${top.score.toFixed(1)} | ` : ""}Low Score on {top.title}
-          </p>
-          <p
-            className={`mt-2 whitespace-pre-line text-[14px] leading-relaxed ${
-              topDark ? "text-white/90" : "text-[#5b4fd6]"
-            }`}
-          >
-            {top.text}
-          </p>
-          {n > 1 && (
-            <p className={`mt-3 text-[11px] font-semibold ${topDark ? "text-white/70" : "text-brand/60"}`}>
-              {i + 1} of {n} · tap for the next one
-            </p>
-          )}
-        </button>
+      <div
+        className="relative transition-[height] duration-300 ease-out"
+        style={{ height: topHeight === null ? undefined : deckHeight }}
+      >
+        {items.map((it, k) => {
+          const isFlicking = k === flicking;
+          const depth = settled.indexOf(k); // 0 = top
+          const isTop = depth === 0;
+          const hidden = !isFlicking && depth > VISIBLE_BEHIND;
+          const dark = k % 2 === 1;
+          const transform = isFlicking
+            ? "translate(-120%, -10px) rotate(-14deg)"
+            : `translateY(${depth * PEEK_Y}px) scale(${1 - depth * PEEK_SCALE})`;
+          return (
+            <div
+              key={it.id}
+              ref={isTop ? topRef : undefined}
+              onClick={isTop ? flick : undefined}
+              role={isTop && n > 1 ? "button" : undefined}
+              aria-label={isTop && n > 1 ? "Show the next recommendation" : undefined}
+              aria-hidden={!isTop}
+              className={`rec-deck-card absolute inset-x-0 top-0 rounded-[28px] px-5 py-4 text-left shadow-[0_10px_24px_-14px_rgba(80,60,200,0.55)] ${
+                dark ? "bg-brand text-white" : "bg-[#E8E2FF] text-brand"
+              } ${isTop && n > 1 ? "cursor-pointer" : ""}`}
+              style={{
+                transform,
+                transformOrigin: "50% 100%", // shrink toward the bottom so edges peek below
+                zIndex: isFlicking ? 50 : 40 - Math.max(depth, 0),
+                opacity: isFlicking || hidden ? 0 : 1,
+                // cards behind take the top card's height: only their edges show
+                height: isTop || topHeight === null ? undefined : topHeight,
+                overflow: isTop ? undefined : "hidden",
+                pointerEvents: isTop ? "auto" : "none",
+              }}
+            >
+              <div className={`transition-opacity duration-200 ${isTop || isFlicking ? "opacity-100" : "opacity-0"}`}>
+                <p className={`font-display text-[17px] font-black leading-snug ${dark ? "text-white" : "text-brand"}`}>
+                  {it.score !== null ? `${it.score.toFixed(1)} | ` : ""}Low Score on {it.title}
+                </p>
+                <p className={`mt-2 whitespace-pre-line text-[14px] leading-relaxed ${dark ? "text-white/90" : "text-[#5b4fd6]"}`}>
+                  {it.text}
+                </p>
+                {n > 1 && (
+                  <p className={`mt-3 text-[11px] font-semibold ${dark ? "text-white/70" : "text-brand/60"}`}>
+                    {k + 1} of {n} · tap for the next one
+                  </p>
+                )}
+              </div>
+            </div>
+          );
+        })}
       </div>
 
-      {below?.(top)}
+      {below && <div className="mt-5">{below(top)}</div>}
     </section>
   );
 }

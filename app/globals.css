@@ -164,9 +164,10 @@ body {
   }
 }
 
-/* ── RecommendationStack: tap → top card lifts away, next one rises up ──── */
-.rec-enter { animation: rec-rise 300ms cubic-bezier(.2,1.3,.4,1) both; }
-.rec-leave { animation: rec-lift 260ms ease-in both; }
-@keyframes rec-rise { from { transform: translate(10px, 12px) scale(.97); opacity: .6; } to { transform: none; opacity: 1; } }
-@keyframes rec-lift { to { transform: translateY(-18px) rotate(-2deg) scale(.97); opacity: 0; } }
-@media (prefers-reduced-motion: reduce) { .rec-enter, .rec-leave { animation-duration: 1ms; } }
+/* ── RecommendationStack: a deck — the top card flicks away while every card
+   behind slides up one place, all as one continuous transition. ──────────── */
+.rec-deck-card {
+  transition: transform 420ms cubic-bezier(.22,.8,.24,1), opacity 320ms ease, height 300ms ease;
+  will-change: transform;
+}
+@media (prefers-reduced-motion: reduce) { .rec-deck-card { transition: none; } }

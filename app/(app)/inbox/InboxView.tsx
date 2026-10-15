@@ -169,7 +169,7 @@ function LatestCheckInCard({ latest }: { latest: LatestCheckIn }) {
       </p>
       <p className="mt-2 text-sm font-semibold leading-snug text-ink">&ldquo;{latest.questionText}&rdquo;</p>
       <p className="mt-2 flex items-baseline gap-1">
-        <span className={`font-display text-3xl font-black ${latest.isLow ? "text-bad" : "text-brand"}`}>
+        <span className={`font-display text-3xl font-black text-brand`}>
           {latest.score}
         </span>
         <span className="text-sm text-ink-4">/10</span>
@@ -180,8 +180,8 @@ function LatestCheckInCard({ latest }: { latest: LatestCheckIn }) {
         // once, never twice.
         <p className="mt-3 text-[13px] font-semibold text-brand">Your recommendation for this is in the cards above.</p>
       ) : shared ? (
-        <div className="mt-3 rounded-card bg-good/10 p-3 text-center">
-          <p className="text-sm font-bold text-good">{COPY.inbox.sharedThanks}</p>
+        <div className="mt-3 rounded-card bg-lav-soft p-3 text-center">
+          <p className="text-sm font-bold text-brand">{COPY.inbox.sharedThanks}</p>
         </div>
       ) : (
         <div className="mt-3">
@@ -214,7 +214,7 @@ function UnansweredCard({ questions }: { questions: CheckInQuestion[] }) {
   if (questions.length === 0) {
     return (
       <Card>
-        <p className="text-[11px] font-bold uppercase tracking-wide text-amber-600">{COPY.inbox.unansweredLabel}</p>
+        <p className="text-[11px] font-bold uppercase tracking-wide text-brand">{COPY.inbox.unansweredLabel}</p>
         <p className="mt-2 text-sm text-ink-3">{COPY.inbox.allCaughtUpEmpty}</p>
       </Card>
     );
@@ -232,7 +232,7 @@ function UnansweredCard({ questions }: { questions: CheckInQuestion[] }) {
   return (
     <Card>
       <div className="flex items-center justify-between">
-        <p className="text-[11px] font-bold uppercase tracking-wide text-amber-600">{COPY.inbox.unansweredLabel}</p>
+        <p className="text-[11px] font-bold uppercase tracking-wide text-brand">{COPY.inbox.unansweredLabel}</p>
         <span className="text-[11px] font-bold text-brand">
           {fill(COPY.inbox.answeredCount, { answered: answeredCount, total: questions.length })}
         </span>
@@ -244,7 +244,7 @@ function UnansweredCard({ questions }: { questions: CheckInQuestion[] }) {
           <span
             key={uq.id}
             className={`h-2 rounded-full transition-all ${
-              answers[uq.id] ? "w-2 bg-good" : i === idx ? "w-5 bg-brand" : "w-2 bg-lav-mid"
+              answers[uq.id] ? "w-2 bg-brand" : i === idx ? "w-5 bg-brand" : "w-2 bg-lav-mid"
             }`}
           />
         ))}
@@ -252,12 +252,12 @@ function UnansweredCard({ questions }: { questions: CheckInQuestion[] }) {
 
       <div
         className={`mt-3 rounded-2xl border p-3.5 transition ${
-          selected ? "border-good bg-good/5" : "border-gray-200 bg-white"
+          selected ? "border-brand bg-lav-soft" : "border-gray-200 bg-white"
         }`}
       >
         {q.weekLabel && <p className="mb-1 text-[11px] font-semibold text-ink-4">{q.weekLabel}</p>}
         {selected && (
-          <span className="mb-2 inline-block rounded-md bg-good/15 px-2 py-0.5 text-[10px] font-bold text-good">
+          <span className="mb-2 inline-block rounded-md bg-lav-soft px-2 py-0.5 text-[10px] font-bold text-brand">
             {COPY.inbox.answeredChip}
           </span>
         )}
@@ -272,7 +272,7 @@ function UnansweredCard({ questions }: { questions: CheckInQuestion[] }) {
                 type="button"
                 onClick={() => pick(opt.key, opt.score)}
                 className={`flex items-center rounded-xl border px-3.5 py-3 text-left transition active:scale-[0.99] ${
-                  picked ? "border-good bg-good/10" : "border-gray-200 bg-white"
+                  picked ? "border-brand bg-lav-soft" : "border-gray-200 bg-white"
                 }`}
               >
                 <span className="text-[13px] leading-snug text-ink">{opt.text}</span>
@@ -315,7 +315,7 @@ function UnansweredCard({ questions }: { questions: CheckInQuestion[] }) {
       </div>
 
       {answeredCount === questions.length && (
-        <p className="mt-3 text-center text-xs font-semibold text-good">
+        <p className="mt-3 text-center text-xs font-semibold text-brand">
           {COPY.inbox.allAnsweredNote}
         </p>
       )}
@@ -467,7 +467,7 @@ function ReflectionsCard({ reflections }: { reflections: Reflection[] }) {
 function FeedbackActionsCard({ actions }: { actions: FeedbackAction[] }) {
   return (
     <Card>
-      <p className="text-[11px] font-bold uppercase tracking-wide text-good">{COPY.inbox.actionsLabel}</p>
+      <p className="text-[11px] font-bold uppercase tracking-wide text-brand">{COPY.inbox.actionsLabel}</p>
       {actions.length === 0 ? (
         <p className="mt-2 text-sm leading-relaxed text-ink-3">
           {COPY.inbox.noActionsBody}
@@ -536,8 +536,8 @@ function ActionRow({ action }: { action: FeedbackAction }) {
       </div>
 
       {response === "yes" && (
-        <div className="mt-2 rounded-xl bg-good/10 p-2.5 text-center">
-          <p className="text-[13px] font-bold text-good">{COPY.inbox.resolvedGreat}</p>
+        <div className="mt-2 rounded-xl bg-lav-soft p-2.5 text-center">
+          <p className="text-[13px] font-bold text-brand">{COPY.inbox.resolvedGreat}</p>
         </div>
       )}
 
@@ -638,7 +638,7 @@ function HistoryView({
                 <p className="whitespace-pre-line mt-1 text-[12px] italic leading-relaxed text-ink-3">{r.recommendation}</p>
               )}
               <p className="mt-2 text-xs font-bold text-ink">
-                <span className={r.status === "acted" ? "text-good" : "text-ink-3"}>
+                <span className={r.status === "acted" ? "text-brand" : "text-ink-3"}>
                   {REC_STATUS_LABEL[r.status]}
                 </span>
               </p>
