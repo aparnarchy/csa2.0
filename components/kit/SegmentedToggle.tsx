@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 /**
  * Two-or-more option pill toggle (Current Company / Overall Career,
  * Strengths / Concerns, etc.). Controlled — parent owns the value.
@@ -9,7 +10,7 @@ export function SegmentedToggle<T extends string>({
 }: {
   value: T;
   onChange: (v: T) => void;
-  options: { value: T; label: string }[];
+  options: { value: T; label: ReactNode }[];
 }) {
   return (
     <div className="flex rounded-2xl bg-lav-soft p-1">

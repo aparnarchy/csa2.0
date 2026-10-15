@@ -18,6 +18,8 @@ import {
   SegmentedToggle,
   TrendChart,
   ViewSwitcher,
+  WINS_LABEL,
+  WORRIES_LABEL,
 } from "@/components/kit";
 import type { TeamAggregate, Window } from "@/lib/data";
 import { COPY, fill } from "@/lib/copy";
@@ -267,8 +269,8 @@ export function ManagerDashboardView({
                   setScOpenId(undefined);
                 }}
                 options={[
-                  { value: "strengths", label: "Wins" },
-                  { value: "concerns", label: "Worries" },
+                  { value: "strengths", label: WINS_LABEL },
+                  { value: "concerns", label: WORRIES_LABEL },
                 ]}
               />
             </div>

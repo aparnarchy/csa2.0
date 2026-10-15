@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { COPY } from "@/lib/copy";
-import { Card, CustomDropdown, GradientHeader, CEO_NAV, ScreenShell, SegmentedToggle } from "@/components/kit";
+import { Card, CEO_NAV, CustomDropdown, GradientHeader, ScreenShell, SegmentedToggle, WINS_LABEL, WORRIES_LABEL } from "@/components/kit";
 import { type CeoDashboard, type ManagerSummary, type ReviewingManagerList, type Window } from "@/lib/data";
 import type { DepartmentScore } from "@/lib/ceo";
 import {
@@ -193,8 +193,8 @@ export function CeoInsightsView({
             value={highLow}
             onChange={setHighLow}
             options={[
-              { value: "high", label: "Wins" },
-              { value: "low", label: "Watch-outs" },
+              { value: "high", label: WINS_LABEL },
+              { value: "low", label: WORRIES_LABEL },
             ]}
           />
         </div>

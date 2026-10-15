@@ -167,7 +167,9 @@ body {
 /* ── RecommendationStack: a deck — the top card flicks away while every card
    behind slides up one place, all as one continuous transition. ──────────── */
 .rec-deck-card {
-  transition: transform 420ms cubic-bezier(.22,.8,.24,1), opacity 320ms ease, height 300ms ease;
-  will-change: transform;
+  transition: transform 520ms cubic-bezier(.25,.1,.25,1), opacity 380ms ease, height 420ms cubic-bezier(.25,.1,.25,1);
+  will-change: transform, opacity;
 }
+/* the card returning to the back: no movement, just a soft fade-in */
+.rec-deck-card-arrive { transition: opacity 0ms; }
 @media (prefers-reduced-motion: reduce) { .rec-deck-card { transition: none; } }

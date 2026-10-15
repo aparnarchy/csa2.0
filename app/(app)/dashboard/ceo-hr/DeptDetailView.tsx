@@ -6,16 +6,18 @@ import {
   AIInsight,
   BigScore,
   Card,
+  CEO_NAV,
+  EmptyScoreCard,
   GradientHeader,
   InsightBarRow,
-  Mascot,
   LeaverNote,
-  EmptyScoreCard,
+  Mascot,
   PillarCard,
   ScreenShell,
   SegmentedToggle,
   TrendChart,
-  CEO_NAV,
+  WINS_LABEL,
+  WORRIES_LABEL,
 } from "@/components/kit";
 import { type CeoDashboard, type Window } from "@/lib/data";
 import { COPY, fill } from "@/lib/copy";
@@ -154,8 +156,8 @@ export function DeptDetailView({
                   setScOpenId(undefined);
                 }}
                 options={[
-                  { value: "strengths", label: "Wins" },
-                  { value: "concerns", label: "Worries" },
+                  { value: "strengths", label: WINS_LABEL },
+                  { value: "concerns", label: WORRIES_LABEL },
                 ]}
               />
             </div>

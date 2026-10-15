@@ -14,6 +14,8 @@ import {
   SegmentedToggle,
   TrendChart,
   ViewSwitcher,
+  WINS_LABEL,
+  WORRIES_LABEL,
 } from "@/components/kit";
 import { type EmployeeScores, type Window } from "@/lib/data";
 import { getEmployeeInsightAction, getEmployeeScoresAction } from "./actions";
@@ -218,8 +220,8 @@ export function AnalysisView({
                   setShowAll(false);
                 }}
                 options={[
-                  { value: "strengths", label: "Wins" },
-                  { value: "concerns", label: "Worries" },
+                  { value: "strengths", label: WINS_LABEL },
+                  { value: "concerns", label: WORRIES_LABEL },
                 ]}
               />
             </div>

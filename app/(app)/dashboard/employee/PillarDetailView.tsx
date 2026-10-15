@@ -3,14 +3,16 @@
 import { useEffect, useState } from "react";
 import {
   Card,
+  emptyInsightLine,
   GradientHeader,
   InsightBarRow,
+  LoadFailed,
   Mascot,
+  PillarScoreBlock,
   SegmentedToggle,
   TrendChart,
-  PillarScoreBlock,
-  emptyInsightLine,
-  LoadFailed,
+  WINS_LABEL,
+  WORRIES_LABEL,
 } from "@/components/kit";
 import { PILLARS, STRENGTH_CUTOFF } from "@/lib/pillars";
 import { type Window } from "@/lib/data";
@@ -74,8 +76,8 @@ export function PillarDetailView({
               setOpenId(undefined);
             }}
             options={[
-              { value: "strengths", label: "Wins" },
-              { value: "concerns", label: "Worries" },
+              { value: "strengths", label: WINS_LABEL },
+              { value: "concerns", label: WORRIES_LABEL },
             ]}
           />
         </div>

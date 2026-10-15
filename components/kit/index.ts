@@ -31,3 +31,4 @@ export { PillarScoreBlock, emptyInsightLine } from "./PillarScoreBlock";
 export { EmptyScoreCard } from "./EmptyScoreCard";
 export { LoadFailed } from "./LoadFailed";
 export { VersionWatcher } from "./VersionWatcher";
+export { Icon, ICON_PATHS, WINS_LABEL, WORRIES_LABEL, type IconName } from "./Icons";

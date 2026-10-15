@@ -1,3 +1,5 @@
+import { ICON_PATHS } from "./Icons";
+
 /**
  * A wavy, gently morphing "blob" score circle — Bright Spot / Watch Out. Two
  * softer blobs float + morph behind it. Both labels curve (title along the
@@ -20,9 +22,17 @@ export function StatCircle({
   pillar: string;
   emptyText?: string;
 }) {
-  // All white on purple, no icons — the design system's palette only (owner,
-  // 2026-10-09: no extra colours). The label alone says which slot it is.
+  // White on colour. Bright spot is purple; Watch out blends purple into a
+  // soft pink with a touch of peach (owner, 2026-10-15) so the two read as a
+  // pair but are told apart at a glance. A small line icon (sparkles / eye)
+  // sits above each curved title.
   const empty = score === null;
+  const watch = kind === "watch";
+  const front = watch
+    ? "linear-gradient(155deg, #A68AF0 0%, #E58FA9 62%, #F0A495 100%)"
+    : "linear-gradient(155deg, #8E7FFF 0%, #6A5CEB 100%)";
+  const haloOuter = watch ? "bg-[#F8E2E8]" : "bg-[#D9D1FF]";
+  const haloInner = watch ? "bg-[#F3CFD9]" : "bg-[#C6BAFF]";
   const titleColor = "#FFFFFF";
   const arcId = `arc-${kind}`;
 
@@ -40,14 +50,17 @@ export function StatCircle({
   return (
     <div className="relative aspect-square w-full">
       {/* two floating blobs behind, each morphing + drifting on its own rhythm */}
-      <div className="blob-back absolute -inset-2 bg-[#D9D1FF]" aria-hidden />
-      <div className="blob-back2 absolute -inset-1 bg-[#C6BAFF]" aria-hidden />
+      <div className={`blob-back absolute -inset-2 ${haloOuter}`} aria-hidden />
+      <div className={`blob-back2 absolute -inset-1 ${haloInner}`} aria-hidden />
       {/* foreground wavy blob — content sits a little high (top half) */}
       <div
         className="blob-front relative flex h-full items-center justify-center px-2 pb-[15%] text-center text-white shadow-card"
         // One shade deeper than the lavender around it so the white numbers
         // and curved labels stay readable on a phone in daylight.
-        style={{ background: "linear-gradient(155deg, #8E7FFF 0%, #6A5CEB 100%)" }}
+        style={{
+          background: front,
+          boxShadow: watch ? "0 10px 24px -12px rgba(210,110,140,0.55)" : undefined,
+        }}
       >
         <div className="sc-content flex w-full flex-col items-center will-change-transform">
           {/* title, curved along the top */}
@@ -55,6 +68,17 @@ export function StatCircle({
             <defs>
               <path id={arcId} d="M 5 29 Q 50 4 95 29" fill="none" />
             </defs>
+            {/* icon just above the top of the curve */}
+            <g
+              transform="translate(45.5 0) scale(0.375)"
+              fill="none"
+              stroke={titleColor}
+              strokeWidth={2.4}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              {watch ? ICON_PATHS.eye : ICON_PATHS.sparkles}
+            </g>
             <text fill={titleColor} fontSize="9" fontWeight="800" letterSpacing="0.2">
               <textPath href={`#${arcId}`} startOffset="50%" textAnchor="middle">
                 {label}

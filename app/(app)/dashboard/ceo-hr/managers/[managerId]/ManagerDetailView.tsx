@@ -6,14 +6,16 @@ import {
   AIInsight,
   BigScore,
   Card,
+  CEO_NAV,
+  EmptyScoreCard,
   GradientHeader,
   LeaverNote,
-  EmptyScoreCard,
   PillarCard,
-  CEO_NAV,
   ScreenShell,
   SegmentedToggle,
   TrendChart,
+  WINS_LABEL,
+  WORRIES_LABEL,
 } from "@/components/kit";
 import { type ManagerDetail, type Window } from "@/lib/data";
 import { COPY, fill } from "@/lib/copy";
@@ -116,8 +118,8 @@ export function ManagerDetailView({
                 value={highLow}
                 onChange={setHighLow}
                 options={[
-                  { value: "high", label: "Wins" },
-                  { value: "low", label: "Watch-outs" },
+                  { value: "high", label: WINS_LABEL },
+                  { value: "low", label: WORRIES_LABEL },
                 ]}
               />
             </div>

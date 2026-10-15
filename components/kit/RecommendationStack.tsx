@@ -27,16 +27,17 @@ function readSeen(userKey: string): Set<string> {
 const PEEK_Y = 14;
 const PEEK_SCALE = 0.05;
 const VISIBLE_BEHIND = 2;
-const FLICK_MS = 420;
+const FLICK_MS = 380;
 
 /**
  * Recommendations as a real deck of cards (owner's reference, 2026-10-14):
  * the top card in front, the next two layered beneath it (each a little lower
- * and smaller), alternating light lavender and deep purple. Tapping flicks the
- * top card off to the left while every card behind slides up one place in
- * the same motion; the flicked card rejoins at the back. All cards are the
- * same elements throughout (keyed by id), so movement is one continuous CSS
- * transition — nothing is re-mounted or faded in.
+ * and smaller), alternating light lavender and deep purple. Tapping gently
+ * lifts the top card and fades it out while the card behind eases up into
+ * its place (owner, 2026-10-15: subtle and smooth, no flinging). The faded
+ * card then reappears at the back without travelling across the deck. All
+ * cards are the same elements throughout (keyed by id), so every movement is
+ * one continuous CSS transition — nothing is re-mounted.
  *
  * Only one recommendation is ever readable at a time — never a bundle. A
  * "N new" badge counts cards not yet seen on top (remembered on this
@@ -57,6 +58,8 @@ export function RecommendationStack({
   // Deck order as item indexes; order[0] is the card on top.
   const [order, setOrder] = useState<number[]>(() => items.map((_, k) => k));
   const [flicking, setFlicking] = useState<number | null>(null);
+  // The card that just went to the back: it snaps there invisibly, then fades in.
+  const [arriving, setArriving] = useState<number | null>(null);
   const [seen, setSeen] = useState<Set<string>>(new Set());
   const [topHeight, setTopHeight] = useState<number | null>(null);
   const topRef = useRef<HTMLDivElement>(null);
@@ -120,6 +123,8 @@ export function RecommendationStack({
     window.setTimeout(() => {
       setOrder((o) => [...o.slice(1), o[0]]);
       setFlicking(null);
+      setArriving(leaving);
+      window.setTimeout(() => setArriving(null), 40);
     }, FLICK_MS);
   }
 
@@ -140,7 +145,7 @@ export function RecommendationStack({
       </div>
 
       <div
-        className="relative transition-[height] duration-300 ease-out"
+        className="relative transition-[height] duration-500 ease-[cubic-bezier(.25,.1,.25,1)]"
         style={{ height: topHeight === null ? undefined : deckHeight }}
       >
         {items.map((it, k) => {
@@ -149,8 +154,9 @@ export function RecommendationStack({
           const isTop = depth === 0;
           const hidden = !isFlicking && depth > VISIBLE_BEHIND;
           const dark = k % 2 === 1;
+          const isArriving = k === arriving;
           const transform = isFlicking
-            ? "translate(-120%, -10px) rotate(-14deg)"
+            ? "translateY(-10px) scale(1.01)"
             : `translateY(${depth * PEEK_Y}px) scale(${1 - depth * PEEK_SCALE})`;
           return (
             <div
@@ -160,21 +166,23 @@ export function RecommendationStack({
               role={isTop && n > 1 ? "button" : undefined}
               aria-label={isTop && n > 1 ? "Show the next recommendation" : undefined}
               aria-hidden={!isTop}
-              className={`rec-deck-card absolute inset-x-0 top-0 rounded-[28px] px-5 py-4 text-left shadow-[0_10px_24px_-14px_rgba(80,60,200,0.55)] ${
+              className={`${isArriving ? "rec-deck-card-arrive" : "rec-deck-card"} absolute inset-x-0 top-0 rounded-[28px] px-5 py-4 text-left shadow-[0_10px_24px_-14px_rgba(80,60,200,0.55)] ${
                 dark ? "bg-brand text-white" : "bg-[#E8E2FF] text-brand"
               } ${isTop && n > 1 ? "cursor-pointer" : ""}`}
               style={{
                 transform,
                 transformOrigin: "50% 100%", // shrink toward the bottom so edges peek below
                 zIndex: isFlicking ? 50 : 40 - Math.max(depth, 0),
-                opacity: isFlicking || hidden ? 0 : 1,
+                opacity: isFlicking || hidden || isArriving ? 0 : 1,
                 // cards behind take the top card's height: only their edges show
                 height: isTop || topHeight === null ? undefined : topHeight,
                 overflow: isTop ? undefined : "hidden",
                 pointerEvents: isTop ? "auto" : "none",
               }}
             >
-              <div className={`transition-opacity duration-200 ${isTop || isFlicking ? "opacity-100" : "opacity-0"}`}>
+              <div
+                className={`transition-opacity ${isTop ? "opacity-100 delay-150 duration-300" : "opacity-0 duration-150"}`}
+              >
                 <p className={`font-display text-[17px] font-black leading-snug ${dark ? "text-white" : "text-brand"}`}>
                   {it.score !== null ? `${it.score.toFixed(1)} | ` : ""}Low Score on {it.title}
                 </p>
