@@ -7,6 +7,8 @@ import { ADMIN_NAV, BigScore, Card, CEO_NAV, GradientHeader, Mascot, ScreenShell
 import { HEADER_MASCOT_SIZE, mascotForScore } from "@/lib/mascot";
 import { COPY, fill } from "@/lib/copy";
 import { setViewModeAction } from "@/lib/view-mode";
+import { giveQuestionNowAction } from "../check-in/actions";
+import { TESTING_MODE } from "@/lib/testing-mode";
 import type { CeoDashboard, ProfileStats } from "@/lib/data";
 import type { Persona, Role, SessionUser, ThemeMode } from "@/lib/types";
 import { availableViews, VIEW_LABELS } from "@/lib/views";
@@ -150,6 +152,9 @@ export function ProfileView({
           </div>
         </Card>
       )}
+
+      {/* Demo helper — admins, testing mode only: a question right now. */}
+      {TESTING_MODE && session.roles.includes("admin") && <QuestionNowButton />}
 
       {/* Org happiness + participation — CEO/HR only, same dashboard-style
           card (BigScore + a full-width data-confidence row) used on the Org
@@ -524,5 +529,41 @@ function PreferencesCard({ session }: { session: SessionUser }) {
         ))}
       </div>
     </Card>
+  );
+}
+
+/** Admin + testing mode: put a fresh check-in question in front of you now. */
+function QuestionNowButton() {
+  const router = useRouter();
+  const [state, setState] = useState<"idle" | "busy" | "none" | "failed">("idle");
+  async function go() {
+    setState("busy");
+    try {
+      const ok = await withRetry(() => giveQuestionNowAction());
+      if (ok) router.push("/check-in");
+      else setState("none");
+    } catch {
+      setState("failed");
+    }
+  }
+  return (
+    <button
+      type="button"
+      onClick={go}
+      disabled={state === "busy"}
+      className="flex w-full items-center justify-between rounded-card bg-white p-4 text-left shadow-card transition active:scale-[0.99] disabled:opacity-60"
+    >
+      <div>
+        <p className="text-sm font-bold text-ink">{state === "busy" ? "Getting a question…" : "Give me a question now"}</p>
+        <p className="mt-0.5 text-xs text-ink-3">
+          {state === "none"
+            ? "You've had every question this week."
+            : state === "failed"
+              ? "That didn't work. Try again."
+              : "Testing only: answer a check-in question straight away."}
+        </p>
+      </div>
+      <span className="text-xl text-ink-4">›</span>
+    </button>
   );
 }

@@ -45,7 +45,8 @@ export function AnalysisView({
   const [tab, setTab] = useState<Tab>("strengths");
   const [selectedPillar, setSelectedPillar] = useState<PillarId | null>(null);
   /** Accordion: at most one question row is expanded at a time. */
-  const [openId, setOpenId] = useState<string | null>(null);
+  // undefined = nothing chosen yet → the first row starts open.
+  const [openId, setOpenId] = useState<string | null | undefined>(undefined);
   /** Strengths / Concerns show their top 3 until "See all" is tapped. */
   const [showAll, setShowAll] = useState(false);
 
@@ -213,27 +214,27 @@ export function AnalysisView({
                 value={activeTab}
                 onChange={(v) => {
                   setTab(v);
-                  setOpenId(null);
+                  setOpenId(undefined);
                   setShowAll(false);
                 }}
                 options={[
-                  { value: "strengths", label: "Strengths" },
-                  { value: "concerns", label: "Concerns" },
+                  { value: "strengths", label: "Wins" },
+                  { value: "concerns", label: "Worries" },
                 ]}
               />
             </div>
           ) : (
             <p className="mb-3 text-sm font-bold text-brand">
-              {activeTab === "strengths" ? "Strengths" : "Concerns"}
+              {activeTab === "strengths" ? "Wins" : "Worries"}
             </p>
           )}
-          {shownQs.map((q) => (
+          {shownQs.map((q, qi) => (
             <InsightBarRow
               key={q.id}
               q={q}
               isStrength={activeTab === "strengths"}
-              open={openId === q.id}
-              onToggle={() => setOpenId((cur) => (cur === q.id ? null : q.id))}
+              open={openId === undefined ? qi === 0 : openId === q.id}
+              onToggle={() => setOpenId((cur) => ((cur === undefined ? qi === 0 : cur === q.id) ? null : q.id))}
             />
           ))}
           {tabQs.length > 3 && (

@@ -116,7 +116,7 @@ export function ManagerDetailView({
                 value={highLow}
                 onChange={setHighLow}
                 options={[
-                  { value: "high", label: "Strengths" },
+                  { value: "high", label: "Wins" },
                   { value: "low", label: "Watch-outs" },
                 ]}
               />

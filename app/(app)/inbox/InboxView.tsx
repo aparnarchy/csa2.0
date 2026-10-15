@@ -95,13 +95,14 @@ export function InboxView({
         </div>
       )}
 
-      {/* Latest recommendation (from the most recent check-in) */}
-      {latest && <LatestCheckInCard latest={latest} />}
+      {/* Inbox order (owner, 2026-10-15): unanswered questions →
+          recommendations → actions taken on your feedback → latest check-in. */}
+      <UnansweredCard questions={unanswered} />
 
       {/* Un-actioned recommendations as a card stack (owner, 2026-10-14):
           lowest score first, one card in front at a time — tap for the next.
           Acting on the top card removes it; it then shows up in history. */}
-      {visibleOpenRecs.length > 0 && (
+      {visibleOpenRecs.length > 0 ? (
         <RecommendationStack
           userKey={session.id}
           items={visibleOpenRecs.map((r) => ({
@@ -121,11 +122,25 @@ export function InboxView({
             ) : null;
           }}
         />
+      ) : (
+        <section>
+          <p className="mb-2 px-1 text-[11px] font-bold uppercase tracking-wide text-brand">Your recommendations</p>
+          <div className="relative mb-3 mr-2.5">
+            <div aria-hidden className="absolute inset-0 translate-x-2.5 translate-y-3 rounded-[28px] bg-[#E3DCFF]" />
+            <div className="relative rounded-[28px] bg-white px-5 py-4">
+              <p className="font-display text-[15px] font-black text-brand">You&apos;re all caught up</p>
+              <p className="mt-1 text-[13px] leading-relaxed text-ink-3">
+                When an answer comes in low, a recommendation for it lands here as a card.
+              </p>
+            </div>
+          </div>
+        </section>
       )}
 
-      <UnansweredCard questions={unanswered} />
-
       <FeedbackActionsCard actions={actions} />
+
+      {/* Latest recommendation (from the most recent check-in) */}
+      {latest && <LatestCheckInCard latest={latest} />}
 
       {reflections.length > 0 && <ReflectionsCard reflections={reflections} />}
 
@@ -161,9 +176,9 @@ function LatestCheckInCard({ latest }: { latest: LatestCheckIn }) {
       </p>
 
       {latest.isLow && latest.recommendation ? (
-        // The recommendation itself lives in the card stack below — shown
+        // The recommendation itself lives in the card stack above — shown
         // once, never twice.
-        <p className="mt-3 text-[13px] font-semibold text-brand">Your recommendation for this is in the cards below.</p>
+        <p className="mt-3 text-[13px] font-semibold text-brand">Your recommendation for this is in the cards above.</p>
       ) : shared ? (
         <div className="mt-3 rounded-card bg-good/10 p-3 text-center">
           <p className="text-sm font-bold text-good">{COPY.inbox.sharedThanks}</p>
@@ -325,15 +340,22 @@ function FollowUpActions({
   const [note, setNote] = useState("");
   const [saving, setSaving] = useState(false);
   const [saveFailed, setSaveFailed] = useState(false);
+  const [keptForLater, setKeptForLater] = useState(false);
 
   // A failed save used to leave `saving` on, so the buttons stayed disabled
   // and the row never moved. Now: one retry, then say so and re-enable.
+  // "Yes" removes the card; "Not yet" keeps it in the stack until acted on.
   async function save(input: Parameters<typeof submitFollowUpAction>[0]) {
     setSaving(true);
     setSaveFailed(false);
     try {
       await withRetry(() => submitFollowUpAction(input));
-      onResolved();
+      if (input.status === "acted") onResolved();
+      else {
+        setKeptForLater(true);
+        setAnswer(null);
+        setSaving(false);
+      }
     } catch {
       setSaveFailed(true);
       setSaving(false);
@@ -403,6 +425,9 @@ function FollowUpActions({
         >
           Confirm
         </button>
+      )}
+      {keptForLater && (
+        <p className="mt-2 text-xs font-semibold text-brand">Saved. This one stays here until you&apos;ve tried it.</p>
       )}
       {saveFailed && <p className="mt-2 text-xs font-semibold text-bad">{COPY.checkin.saveFailed}</p>}
     </div>

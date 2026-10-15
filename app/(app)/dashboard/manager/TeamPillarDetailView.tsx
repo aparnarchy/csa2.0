@@ -41,7 +41,8 @@ export function TeamPillarDetailView({
   /** The load failed even after a retry: show "tap to try again", not a spinner. */
   const [failed, setFailed] = useState(false);
   const [attempt, setAttempt] = useState(0);
-  const [openId, setOpenId] = useState<string | null>(null);
+  // undefined = nothing chosen yet → the first row starts open.
+  const [openId, setOpenId] = useState<string | null | undefined>(undefined);
 
   useEffect(() => {
     setFailed(false);
@@ -73,21 +74,21 @@ export function TeamPillarDetailView({
             value={tab}
             onChange={(v) => {
               setTab(v);
-              setOpenId(null);
+              setOpenId(undefined);
             }}
             options={[
-              { value: "strengths", label: "💪 Strengths" },
-              { value: "concerns", label: "⚠️ Concerns" },
+              { value: "strengths", label: "Wins" },
+              { value: "concerns", label: "Worries" },
             ]}
           />
         </div>
-        {shown.map((q) => (
+        {shown.map((q, qi) => (
           <InsightBarRow
             key={q.id}
             q={q}
             isStrength={tab === "strengths"}
-            open={openId === q.id}
-            onToggle={() => setOpenId((cur) => (cur === q.id ? null : q.id))}
+            open={openId === undefined ? qi === 0 : openId === q.id}
+            onToggle={() => setOpenId((cur) => ((cur === undefined ? qi === 0 : cur === q.id) ? null : q.id))}
           />
         ))}
         {shown.length === 0 && (

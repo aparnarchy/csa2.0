@@ -46,17 +46,43 @@ interface InsightFacts {
  */
 export const AI_WORDING = false;
 
-/** Plain, factual one-liner for a team / department / organisation card. */
+/**
+ * The team / department / organisation insight, written in code from the
+ * numbers (no AI): the single most telling pattern, plus what it usually
+ * means. In priority order —
+ *   1. the pillar that moved most from last week to this week (≥ 0.8) —
+ *      PillarScore.delta is week-on-week, not a change in the average,
+ *   2. a wide gap between the strongest and weakest pillar (≥ 1.5),
+ *   3. otherwise, that the pillars are close together.
+ */
 function plainDashboardLine(facts: InsightFacts, scored: PillarScore[]): string {
+  const who = { team: "your team", dept: facts.label, org: "the organisation" }[facts.kind];
   const whose = { team: "your team's", dept: `${facts.label}'s`, org: "the organisation's" }[facts.kind];
-  const sorted = [...scored].sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
+  const name = (p: PillarScore) => PILLARS[p.pillarId].label;
+  const n = (x: number) => x.toFixed(1);
+
+  const movers = scored
+    .filter((p) => p.delta !== null && Math.abs(p.delta) >= 0.8)
+    .sort((a, b) => Math.abs(b.delta!) - Math.abs(a.delta!));
+  if (movers.length) {
+    const m = movers[0];
+    const pts = n(Math.abs(m.delta!));
+    return m.delta! < 0
+      ? `${name(m)} dropped ${pts} points from last week to this week, the biggest weekly move for ${who}. A sharp drop in a single week usually means something specific happened, not a gradual drift.`
+      : `${name(m)} rose ${pts} points from last week to this week, the biggest weekly move for ${who}. A jump this clear usually reflects something that actually changed, not just a good day.`;
+  }
+
+  const sorted = [...scored].sort((a, b) => b.score! - a.score!);
   const top = sorted[0];
   const low = sorted[sorted.length - 1];
-  const name = (p: PillarScore) => PILLARS[p.pillarId].label;
-  if (sorted.length === 1 || top.score === low.score) {
-    return `${name(top)} is ${whose} strongest pillar at ${top.score!.toFixed(1)}.`;
+  const gap = top.score! - low.score!;
+  if (sorted.length > 1 && gap >= 1.5) {
+    return `${name(top)} leads at ${n(top.score!)} while ${name(low)} trails at ${n(low.score!)}. A strong pillar is usually what keeps people engaged; a weak one is usually what makes them restless, so ${name(low)} is the one to watch.`;
   }
-  return `${name(top)} is ${whose} strongest pillar at ${top.score!.toFixed(1)}; ${name(low)} is the lowest at ${low.score!.toFixed(1)}.`;
+  if (sorted.length > 1) {
+    return `All of ${whose} pillars sit within ${n(gap)} of each other, from ${n(low.score!)} to ${n(top.score!)}. No single area is pulling things down, so changes over the next few weeks will be easy to spot.`;
+  }
+  return `${name(top)} is at ${n(top.score!)} so far. More answers will show which way it is heading.`;
 }
 
 export function signed(n: number): string {

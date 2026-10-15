@@ -45,7 +45,8 @@ export function ManagerDashboardView({
   const [aiText, setAiText] = useState<string | null>(initialInsight);
   const [selectedPillar, setSelectedPillar] = useState<PillarId | null>(null);
   const [scTab, setScTab] = useState<"strengths" | "concerns">("strengths");
-  const [scOpenId, setScOpenId] = useState<string | null>(null);
+  // undefined = nothing chosen yet → the first row starts open.
+  const [scOpenId, setScOpenId] = useState<string | null | undefined>(undefined);
 
   // Time filter recomputes the whole aggregate via a server action (real D1,
   // privacy-enforced). The team is resolved server-side to the signed-in manager.
@@ -263,21 +264,21 @@ export function ManagerDashboardView({
                 value={scTab}
                 onChange={(v) => {
                   setScTab(v);
-                  setScOpenId(null);
+                  setScOpenId(undefined);
                 }}
                 options={[
-                  { value: "strengths", label: "💪 Strengths" },
-                  { value: "concerns", label: "⚠️ Concerns" },
+                  { value: "strengths", label: "Wins" },
+                  { value: "concerns", label: "Worries" },
                 ]}
               />
             </div>
-            {scShown.map((q) => (
+            {scShown.map((q, qi) => (
               <InsightBarRow
                 key={q.id}
                 q={q}
                 isStrength={scTab === "strengths"}
-                open={scOpenId === q.id}
-                onToggle={() => setScOpenId((cur) => (cur === q.id ? null : q.id))}
+                open={scOpenId === undefined ? qi === 0 : scOpenId === q.id}
+                onToggle={() => setScOpenId((cur) => ((cur === undefined ? qi === 0 : cur === q.id) ? null : q.id))}
               />
             ))}
             {scShown.length === 0 && (

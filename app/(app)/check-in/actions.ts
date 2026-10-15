@@ -7,7 +7,7 @@
  */
 
 import { getSession } from "@/lib/auth-session";
-import { skipCheckIn, submitCheckIn, submitFollowUp } from "@/lib/checkins";
+import { giveQuestionNow, skipCheckIn, submitCheckIn, submitFollowUp } from "@/lib/checkins";
 import type { FollowUpStatus, PillarId } from "@/lib/types";
 
 /** Answer one delivered question. Whether it counts as retrospective (and so is
@@ -38,4 +38,11 @@ export async function submitFollowUpAction(input: {
   const session = await getSession();
   if (!session) throw new Error("Not signed in.");
   await submitFollowUp(session.user, session.user.id, input);
+}
+
+/** Demo helper: a question for the signed-in admin right now (testing mode). */
+export async function giveQuestionNowAction(): Promise<boolean> {
+  const session = await getSession();
+  if (!session) throw new Error("Not signed in.");
+  return giveQuestionNow(session.user);
 }

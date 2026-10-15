@@ -11,7 +11,8 @@
  */
 
 import { getDB } from "./db";
-import { assertOwner } from "./access-control";
+import { assertOwner, assertRole } from "./access-control";
+import { TESTING_MODE } from "./testing-mode";
 import { hasEmployeeRecSql, loadRecommendations, pickRecommendation } from "./recommendations";
 import { ensureUserAssignments, ensureActiveWeek } from "./scheduler";
 import type {
@@ -418,11 +419,13 @@ export async function getOpenRecommendations(
     .prepare(
       `SELECT c.questionId AS questionId, c.pillarId AS pillarId, c.weekId AS weekId, q.text AS questionText
          FROM checkIns c JOIN questions q ON q.id = c.questionId
-        WHERE c.userId = ? AND c.score < 7 AND c.followUpStatus IS NULL AND ${hasEmployeeRecSql("c.")}
+        WHERE c.userId = ? AND c.score < 7 AND ${hasEmployeeRecSql("c.")}
+          -- "Not yet" keeps a recommendation in the Inbox stack until acted on
+          AND (c.followUpStatus IS NULL OR c.followUpStatus = 'not_acted')
           AND c.id = (
             SELECT c2.id FROM checkIns c2
              WHERE c2.userId = c.userId AND c2.questionId = c.questionId
-               AND c2.score < 7 AND c2.followUpStatus IS NULL
+               AND c2.score < 7 AND (c2.followUpStatus IS NULL OR c2.followUpStatus = 'not_acted')
              ORDER BY c2.timestamp DESC, c2.weekId DESC LIMIT 1
           )
         ORDER BY c.score ASC, c.timestamp DESC, c.weekId DESC`,
@@ -549,7 +552,8 @@ export async function submitFollowUp(
   const target = await db
     .prepare(
       `SELECT id, weekId FROM checkIns
-        WHERE userId = ? AND questionId = ? AND score < 7 AND followUpStatus IS NULL
+        WHERE userId = ? AND questionId = ? AND score < 7
+          AND (followUpStatus IS NULL OR followUpStatus = 'not_acted')
         ORDER BY timestamp DESC, weekId DESC LIMIT 1`,
     )
     .bind(userId, input.questionId)
@@ -569,4 +573,52 @@ export async function submitFollowUp(
       .bind(`je-${crypto.randomUUID().slice(0, 8)}`, userId, target.weekId, input.questionId, input.journalText.trim())
       .run();
   }
+}
+
+/**
+ * Demo helper (owner, 2026-10-15): put a fresh question in front of the
+ * signed-in admin right now, so a demo can run the check-in on demand.
+ * Testing mode and admins only; their own account only. Releases their next
+ * not-yet-released question this week, or — if none is left — assigns one
+ * more active question they haven't had this week. Returns false when every
+ * active question has already been used this week.
+ */
+export async function giveQuestionNow(session: SessionUser): Promise<boolean> {
+  if (!TESTING_MODE) throw new Error("Only available in testing mode.");
+  assertRole(session, "admin");
+  const userId = session.id;
+  const db = getDB();
+  await ensureUserAssignments(db, userId);
+  const week = await getActiveWeekId(db);
+  if (!week) return false;
+
+  const released = await db
+    .prepare(
+      `UPDATE checkInAssignments SET releaseAt = datetime('now')
+        WHERE id = (SELECT id FROM checkInAssignments
+                     WHERE userId = ? AND weekId = ? AND status = 'pending' AND releaseAt > datetime('now')
+                     ORDER BY releaseAt ASC LIMIT 1)`,
+    )
+    .bind(userId, week)
+    .run();
+  if ((released.meta?.changes ?? 0) > 0) return true;
+
+  const q = await db
+    .prepare(
+      `SELECT id FROM questions
+        WHERE isActive = 1
+          AND id NOT IN (SELECT questionId FROM checkInAssignments WHERE userId = ? AND weekId = ?)
+        ORDER BY RANDOM() LIMIT 1`,
+    )
+    .bind(userId, week)
+    .first<{ id: string }>();
+  if (!q) return false;
+  await db
+    .prepare(
+      `INSERT OR IGNORE INTO checkInAssignments (id, userId, questionId, weekId, releaseAt, status)
+       VALUES (?, ?, ?, ?, datetime('now'), 'pending')`,
+    )
+    .bind(`asg-${week}-${userId}-${q.id}`, userId, q.id, week)
+    .run();
+  return true;
 }

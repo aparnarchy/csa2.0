@@ -50,7 +50,9 @@ export async function getProfileStats(
         .first<{ currentStreak: number; longestStreak: number }>(),
       db.prepare("SELECT COUNT(*) AS n FROM checkIns WHERE userId = ?").bind(userId).first<{ n: number }>(),
       db.prepare("SELECT badge FROM user_badges WHERE userId = ?").bind(userId).all<{ badge: string }>(),
-      db.prepare("SELECT weekId FROM weeklyWindows ORDER BY startDate DESC LIMIT 10").all<{ weekId: string }>(),
+      // Last 10 weeks that have started — not future weeks already in the
+      // calendar, which pushed recent activity to the left of the row.
+      db.prepare("SELECT weekId FROM weeklyWindows WHERE startDate <= date('now') ORDER BY startDate DESC LIMIT 10").all<{ weekId: string }>(),
       db.prepare("SELECT DISTINCT weekId FROM checkIns WHERE userId = ?").bind(userId).all<{ weekId: string }>(),
       db
         .prepare("SELECT weekId, startDate, endDate FROM weeklyWindows")

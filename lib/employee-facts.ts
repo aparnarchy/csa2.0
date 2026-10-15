@@ -238,8 +238,10 @@ export async function getEmployeeInsight(
     }
     // No pattern strong enough for the AI: the plain "what's happening" line.
     if (angles.length === 0) return card(plan.facts.join(" "));
-    // AI wording off (lib/ai.ts AI_WORDING): the plain, code-written fact only.
-    if (!AI_WORDING) return card(angles[0].fact);
+    // AI wording off (lib/ai.ts AI_WORDING): the insight is the most
+    // interesting pattern in their real answers plus what it usually means —
+    // both written in code, so nothing is ever invented.
+    if (!AI_WORDING) return card(`${angles[0].fact} ${angles[0].meaning}`);
     const sheet = angleSheet(sheetInput, angles);
 
 
