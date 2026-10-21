@@ -386,6 +386,8 @@ export interface Angle {
   weight: number;
   fact: string;
   meaning: string;
+  /** "gap" = strongest vs weakest pillar (the summary line already says it). */
+  kind?: "gap";
 }
 
 const SENIOR = /\b(senior|sr\.?|lead|principal|staff|head|manager|director|architect|vp)\b/i;
@@ -468,6 +470,7 @@ export function findAngles(input: SheetInput): Angle[] {
     const low = scored.reduce((a, b) => (pillars[b]! < pillars[a]! ? b : a));
     if (pillars[top]! - pillars[low]! >= 3 && pillars[top]! > STRENGTH_CUTOFF && pillars[low]! <= STRENGTH_CUTOFF) {
       angles.push({
+        kind: "gap",
         weight: 60 + (pillars[top]! - pillars[low]!),
         fact: `${label(top)} is your strongest pillar at ${r1(pillars[top]!)}, and ${label(low)} your weakest at ${r1(pillars[low]!)}.`,
         meaning: `A strong pillar is usually what keeps someone engaged; a weak one is usually what makes them restless. Here that's ${label(top)} against ${label(low)}.`,

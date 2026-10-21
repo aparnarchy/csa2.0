@@ -11,16 +11,22 @@
  * lib/employee-facts.ts); when it's missing (below the anonymity floor, no key,
  * or the AI call failed) the fallback line renders instead — a dashboard is
  * never blocked on the AI.
+ *
+ * The text leads with what changed recently; an overall summary, when the
+ * server sends one after SUMMARY_SEPARATOR, sits at the bottom of the card
+ * (owner, 2026-10-21). `action` adds one call-to-action button.
  */
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { COPY } from "@/lib/copy";
+import { SUMMARY_SEPARATOR } from "@/lib/recent-insight";
 
 export function AIInsight({
   text,
   eyebrow,
   foot,
   footHref,
+  action,
   loading = false,
 }: {
   text?: string;
@@ -32,7 +38,10 @@ export function AIInsight({
   foot?: string;
   /** Makes the context line a link (e.g. the career-history nudge). */
   footHref?: string;
+  /** One call-to-action under the insight (e.g. "Take an action"). */
+  action?: { label: string; onClick: () => void };
 }) {
+  const [lead, summary] = splitSummary(text);
   const footClass = "mt-2 block text-[11px] italic leading-snug text-white/85";
   // At most 3 lines; a "more" tap shows the rest (only when it's cut off).
   const textRef = useRef<HTMLParagraphElement>(null);
@@ -41,7 +50,7 @@ export function AIInsight({
   useEffect(() => {
     const el = textRef.current;
     if (el && !expanded) setClipped(el.scrollHeight > el.clientHeight + 1);
-  }, [text, expanded]);
+  }, [lead, expanded]);
   return (
     <div className="relative mb-3 mr-2.5">
       <div className="absolute inset-0 translate-x-2.5 translate-y-2.5 rounded-[32px] bg-[#E3DCFF]" aria-hidden />
@@ -58,7 +67,7 @@ export function AIInsight({
           ) : (
             <>
               <p ref={textRef} className={`mt-1.5 text-[14px] font-normal leading-[1.4] ${expanded ? "" : "line-clamp-3"}`}>
-                {text ?? COPY.shared.aiInsightFallback}
+                {lead ?? COPY.shared.aiInsightFallback}
               </p>
               {(clipped || expanded) && (
                 <button
@@ -71,6 +80,9 @@ export function AIInsight({
               )}
             </>
           )}
+          {!loading && summary && (
+            <p className="mt-2.5 border-t border-white/20 pt-2 text-[12.5px] leading-snug text-white/90">{summary}</p>
+          )}
           {!loading && foot &&
             (footHref ? (
               <Link href={footHref} className={`${footClass} underline decoration-white/50 underline-offset-2`}>
@@ -79,10 +91,26 @@ export function AIInsight({
             ) : (
               <p className={footClass}>{foot}</p>
             ))}
+          {!loading && action && (
+            <button
+              type="button"
+              onClick={action.onClick}
+              className="mt-3 rounded-full bg-white px-4 py-1.5 font-display text-[12px] font-black text-brand transition active:scale-[0.97]"
+            >
+              {action.label}
+            </button>
+          )}
         </div>
       </div>
     </div>
   );
+}
+
+/** The recent line and the optional overall summary after it. */
+function splitSummary(text?: string): [string | undefined, string | undefined] {
+  if (!text) return [undefined, undefined];
+  const i = text.indexOf(SUMMARY_SEPARATOR);
+  return i < 0 ? [text, undefined] : [text.slice(0, i), text.slice(i + SUMMARY_SEPARATOR.length)];
 }
 
 /** The decorative rings (styles and motion in globals.css, `.ai-orb`). */

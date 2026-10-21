@@ -33,6 +33,7 @@ import {
   type EmployeeInsightCard,
   type SignalInput,
 } from "./insight-signals";
+import { overallSummary, recentDashboardLine, withSummary } from "./recent-insight";
 import type { QuestionOptionCols } from "./responses";
 import type { EmployeeScores, Window } from "./data";
 import type { PillarId, SessionUser } from "./types";
@@ -236,12 +237,27 @@ export async function getEmployeeInsight(
         meaning: "A sharp move in a single week usually means something specific happened, not a gradual drift.",
       });
     }
+    // AI wording off (lib/ai.ts AI_WORDING): the insight leads with what
+    // changed recently and ends with the overall picture (owner, 2026-10-21) —
+    // all written in code, so nothing is ever invented. Lead, in order: this
+    // week's sharp move; the biggest move over the last 4 weeks of check-ins;
+    // the most interesting other pattern (the strongest-vs-weakest gap is
+    // left to the summary line); "steady recently"; the plain facts.
+    if (!AI_WORDING) {
+      const summary = overallSummary(scores.overall, scores.pillars);
+      const recent = recentDashboardLine(scores.trend, scores.pillars, "you");
+      const other = angles.find((a) => a.kind !== "gap");
+      const lead = plan.changed
+        ? `${angles[0].fact} ${angles[0].meaning}`
+        : recent?.moved
+          ? recent.text
+          : other
+            ? `${other.fact} ${other.meaning}`
+            : (recent?.text ?? plan.facts.join(" "));
+      return card(withSummary(lead, summary)!);
+    }
     // No pattern strong enough for the AI: the plain "what's happening" line.
     if (angles.length === 0) return card(plan.facts.join(" "));
-    // AI wording off (lib/ai.ts AI_WORDING): the insight is the most
-    // interesting pattern in their real answers plus what it usually means —
-    // both written in code, so nothing is ever invented.
-    if (!AI_WORDING) return card(`${angles[0].fact} ${angles[0].meaning}`);
     const sheet = angleSheet(sheetInput, angles);
 
 

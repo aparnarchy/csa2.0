@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
+  AIInsight,
   Card,
   emptyInsightLine,
   GradientHeader,
@@ -22,6 +24,7 @@ import { getTeamPillarDetailAction } from "./actions";
 import { HEADER_MASCOT_SIZE, mascotForScore } from "@/lib/mascot";
 import type { PillarId } from "@/lib/types";
 import { withRetry } from "@/lib/retry";
+import { pillarInsight } from "@/lib/recent-insight";
 
 type Detail = Awaited<ReturnType<typeof getTeamPillarDetailAction>>;
 
@@ -59,6 +62,12 @@ export function TeamPillarDetailView({
   const concerns = questions.filter((q) => q.score <= STRENGTH_CUTOFF).reverse();
   const shownAll = tab === "strengths" ? strengths : concerns;
   const shown = visibleRows(shownAll, showAll);
+  // This pillar's own insight: what changed recently, then the overall
+  // picture (owner, 2026-10-21) — written in code from the numbers above.
+  const insight = detail ? pillarInsight(pillarId, detail.score, detail.trend, detail.questions) : null;
+  // Call to action: act on this pillar from the Action Inbox.
+  const router = useRouter();
+  const action = concerns.length > 0 ? { label: "Take an action", onClick: () => router.push("/dashboard/manager/inbox") } : undefined;
 
   return (
     <div className="screen-enter space-y-3.5">
@@ -72,6 +81,8 @@ export function TeamPillarDetailView({
       </GradientHeader>
 
       {failed && !detail && <LoadFailed onRetry={() => setAttempt((a) => a + 1)} />}
+
+      {detail && insight && <AIInsight eyebrow={`${meta.label} insight`} text={insight} action={action} />}
 
       <Card>
         <p className="mb-3 text-sm font-bold text-brand">Insights</p>

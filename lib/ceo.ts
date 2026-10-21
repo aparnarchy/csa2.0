@@ -162,9 +162,12 @@ export async function getCeoDashboard(
   const trend: TrendPoint[] = rangeWeeks.map((wk) => {
     const wkRows = rows.filter((r) => r.weekId === wk);
     const overall = round1(avg(wkRows.map((r) => r.score)));
+    // A week's pillar point only when enough different people answered that
+    // pillar that week — otherwise it's a gap, never one person's answer.
     const pillarAvg = (pid: PillarId) => {
-      const ps = wkRows.filter((r) => r.pillarId === pid).map((r) => r.score);
-      return ps.length ? round1(avg(ps)) : null;
+      const pr = wkRows.filter((r) => r.pillarId === pid);
+      if (new Set(pr.map((r) => r.userId)).size < ANONYMISATION_FLOOR) return null;
+      return round1(avg(pr.map((r) => r.score)));
     };
     return {
       weekId: wk,

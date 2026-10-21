@@ -17,7 +17,8 @@
 import { getRequestContext } from "@cloudflare/next-on-pages";
 import { getDB } from "./db";
 import { PILLARS, PILLAR_ORDER } from "./pillars";
-import type { CeoDashboard, ManagerDetail, PillarScore, TeamAggregate, Window } from "./data";
+import type { CeoDashboard, ManagerDetail, PillarScore, TeamAggregate, TrendPoint, Window } from "./data";
+import { overallSummary, recentDashboardLine, withSummary } from "./recent-insight";
 import type { PillarId } from "./types";
 
 const GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
@@ -35,6 +36,8 @@ interface InsightFacts {
   delta: number | null;
   participation: number | null;
   pillars: PillarScore[];
+  /** Weekly points for the window — used to lead with the recent change. */
+  trend: TrendPoint[];
 }
 
 /**
@@ -48,14 +51,26 @@ export const AI_WORDING = false;
 
 /**
  * The team / department / organisation insight, written in code from the
- * numbers (no AI): the single most telling pattern, plus what it usually
- * means. In priority order —
- *   1. the pillar that moved most from last week to this week (≥ 0.8) —
+ * numbers (no AI): the single most telling RECENT pattern, plus what it
+ * usually means, then an overall summary line (owner, 2026-10-21: recent
+ * changes first, the overall picture at the bottom). Lead, in priority order —
+ *   1. the pillar that moved most over the last 4 weeks of check-ins (≥ 0.8),
+ *   2. the pillar that moved most from last week to this week (≥ 0.8) —
  *      PillarScore.delta is week-on-week, not a change in the average,
- *   2. a wide gap between the strongest and weakest pillar (≥ 1.5),
- *   3. otherwise, that the pillars are close together.
+ *   3. that every pillar has held steady recently,
+ *   4. with no trend to compare: the strongest/weakest gap, or the spread.
  */
 function plainDashboardLine(facts: InsightFacts, scored: PillarScore[]): string {
+  const scope = ({ team: "team", dept: "dept", org: "org" } as const)[facts.kind];
+  const recent = recentDashboardLine(facts.trend, facts.pillars, scope);
+  const summary = overallSummary(facts.score, facts.pillars);
+  if (recent?.moved) return withSummary(recent.text, summary)!;
+  const weekly = weeklyOrSpreadLine(facts, scored);
+  if (weekly.moved) return withSummary(weekly.text, summary)!;
+  return withSummary(recent?.text ?? weekly.text, recent ? summary : null)!;
+}
+
+function weeklyOrSpreadLine(facts: InsightFacts, scored: PillarScore[]): { text: string; moved: boolean } {
   const who = { team: "your team", dept: facts.label, org: "the organisation" }[facts.kind];
   const whose = { team: "your team's", dept: `${facts.label}'s`, org: "the organisation's" }[facts.kind];
   const name = (p: PillarScore) => PILLARS[p.pillarId].label;
@@ -67,9 +82,10 @@ function plainDashboardLine(facts: InsightFacts, scored: PillarScore[]): string 
   if (movers.length) {
     const m = movers[0];
     const pts = n(Math.abs(m.delta!));
-    return m.delta! < 0
+    const text = m.delta! < 0
       ? `${name(m)} dropped ${pts} points from last week to this week, the biggest weekly move for ${who}. A sharp drop in a single week usually means something specific happened, not a gradual drift.`
       : `${name(m)} rose ${pts} points from last week to this week, the biggest weekly move for ${who}. A jump this clear usually reflects something that actually changed, not just a good day.`;
+    return { text, moved: true };
   }
 
   const sorted = [...scored].sort((a, b) => b.score! - a.score!);
@@ -77,12 +93,12 @@ function plainDashboardLine(facts: InsightFacts, scored: PillarScore[]): string 
   const low = sorted[sorted.length - 1];
   const gap = top.score! - low.score!;
   if (sorted.length > 1 && gap >= 1.5) {
-    return `${name(top)} leads at ${n(top.score!)} while ${name(low)} trails at ${n(low.score!)}. A strong pillar is usually what keeps people engaged; a weak one is usually what makes them restless, so ${name(low)} is the one to watch.`;
+    return { moved: false, text: `${name(top)} leads at ${n(top.score!)} while ${name(low)} trails at ${n(low.score!)}. A strong pillar is usually what keeps people engaged; a weak one is usually what makes them restless, so ${name(low)} is the one to watch.` };
   }
   if (sorted.length > 1) {
-    return `All of ${whose} pillars sit within ${n(gap)} of each other, from ${n(low.score!)} to ${n(top.score!)}. No single area is pulling things down, so changes over the next few weeks will be easy to spot.`;
+    return { moved: false, text: `All of ${whose} pillars sit within ${n(gap)} of each other, from ${n(low.score!)} to ${n(top.score!)}. No single area is pulling things down, so changes over the next few weeks will be easy to spot.` };
   }
-  return `${name(top)} is at ${n(top.score!)} so far. More answers will show which way it is heading.`;
+  return { moved: false, text: `${name(top)} is at ${n(top.score!)} so far. More answers will show which way it is heading.` };
 }
 
 export function signed(n: number): string {
@@ -212,6 +228,7 @@ export function getTeamInsight(
     delta: agg.delta,
     participation: agg.participation,
     pillars: agg.pillars,
+    trend: agg.trend,
   });
 }
 
@@ -229,6 +246,7 @@ export function getManagerDetailInsight(
     delta: detail.delta,
     participation: null,
     pillars: detail.pillars,
+    trend: detail.trend,
   });
 }
 
@@ -297,6 +315,7 @@ export async function getCareerInsight(
     c: companies.map((c) => [c.id, c.overall, c.pillars.map((p) => [p.pillarId, p.score])]),
   });
   const id = `career:${userId}|${focusId}`;
+  if (!AI_WORDING) return plainCareerLine(focus, companies);
 
   try {
     const db = getDB();
@@ -363,5 +382,32 @@ export function getCeoInsight(window: Window, d: CeoDashboard): Promise<string |
     delta: d.delta,
     participation: null,
     pillars: d.pillars,
+    trend: d.trend,
   });
+}
+
+/**
+ * The career insight written in code (AI wording off — owner, 2026-10-21: the
+ * AI's career line read as random). Where this job ranks overall against
+ * their career average, plus the pillar this job is best or worst at across
+ * every job they've told us about. Only their own entered scores are used.
+ */
+function plainCareerLine(focus: CareerCompanyFacts, companies: CareerCompanyFacts[]): string {
+  const n = (x: number) => x.toFixed(1);
+  const byOverall = [...companies].sort((a, b) => b.overall - a.overall);
+  const rank = byOverall.findIndex((c) => c.id === focus.id) + 1;
+  const average = companies.reduce((s, c) => s + c.overall, 0) / companies.length;
+  const where = focus.current ? "this job" : focus.name;
+  const ordinal = rank === 1 ? "the highest" : rank === companies.length ? "the lowest" : `number ${rank}`;
+  const lead = `${focus.name} scores ${n(focus.overall)} overall, ${ordinal} of the ${companies.length} jobs you've told us about (your average is ${n(average)}).`;
+
+  // The widest-spread pillar where this job is the best or the worst.
+  const standout = PILLAR_ORDER.map((pid) => ({ pid, ex: pillarExtremes(companies, pid) }))
+    .filter((c): c is { pid: PillarId; ex: NonNullable<ReturnType<typeof pillarExtremes>> } => c.ex !== null)
+    .filter((c) => c.ex.best.name === focus.name || c.ex.worst.name === focus.name)
+    .sort((a, b) => b.ex.spread - a.ex.spread)[0];
+  if (!standout) return lead;
+  const best = standout.ex.best.name === focus.name;
+  const score = best ? standout.ex.best.score : standout.ex.worst.score;
+  return `${lead} ${PILLARS[standout.pid].label} is ${best ? "higher" : "lower"} at ${where} (${n(score)}) than at any other job you've had.`;
 }

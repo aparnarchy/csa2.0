@@ -68,6 +68,7 @@ export function AnalysisView({
         <PillarDetailView
           pillarId={selectedPillar}
           onBack={() => setSelectedPillar(null)}
+          onGoToInbox={() => router.push("/inbox")}
         />
       </ScreenShell>
     );

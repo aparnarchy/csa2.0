@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import {
+  AIInsight,
   Card,
   emptyInsightLine,
   GradientHeader,
@@ -22,6 +23,7 @@ import { getPillarDetailAction } from "./actions";
 import { HEADER_MASCOT_SIZE, mascotForScore } from "@/lib/mascot";
 import type { PillarId } from "@/lib/types";
 import { withRetry } from "@/lib/retry";
+import { pillarInsight } from "@/lib/recent-insight";
 
 type Detail = Awaited<ReturnType<typeof getPillarDetailAction>>;
 
@@ -56,6 +58,13 @@ export function PillarDetailView({
   const concerns = questions.filter((q) => q.score <= STRENGTH_CUTOFF).reverse();
   const shownAll = tab === "strengths" ? strengths : concerns;
   const shown = visibleRows(shownAll, showAll);
+  // This pillar's own insight: what changed recently, then the overall
+  // picture (owner, 2026-10-21) — written in code from the numbers above.
+  const insight = detail ? pillarInsight(pillarId, detail.score, detail.trend, detail.questions) : null;
+  // Call to action: the recommendation for this pillar's weakest low answer
+  // lives in the Inbox card stack.
+  const hasRec = concerns.some((q) => q.recommendation);
+  const action = hasRec && onGoToInbox ? { label: "See what you can do", onClick: onGoToInbox } : undefined;
 
   return (
     <div className="screen-enter space-y-3.5">
@@ -69,6 +78,8 @@ export function PillarDetailView({
       </GradientHeader>
 
       {failed && !detail && <LoadFailed onRetry={() => setAttempt((a) => a + 1)} />}
+
+      {detail && insight && <AIInsight eyebrow={`${meta.label} insight`} text={insight} action={action} />}
 
       <Card>
         <p className="mb-3 text-sm font-bold text-brand">Insights</p>
