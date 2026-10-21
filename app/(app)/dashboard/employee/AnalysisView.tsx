@@ -16,6 +16,8 @@ import {
   ViewSwitcher,
   WINS_LABEL,
   WORRIES_LABEL,
+  ShowMoreButton,
+  visibleRows,
 } from "@/components/kit";
 import { type EmployeeScores, type Window } from "@/lib/data";
 import { getEmployeeInsightAction, getEmployeeScoresAction } from "./actions";
@@ -89,7 +91,7 @@ export function AnalysisView({
   const bothTabs = allStrengths.length > 0 && allConcerns.length > 0;
   const activeTab: Tab = bothTabs ? tab : allStrengths.length > 0 ? "strengths" : "concerns";
   const tabQs = activeTab === "strengths" ? allStrengths : allConcerns;
-  const shownQs = showAll ? tabQs : tabQs.slice(0, 3);
+  const shownQs = visibleRows(tabQs, showAll);
   const up = (data.delta ?? 0) >= 0;
   // Mode = design only. Play shows the fun look (mascot, blob circles, persona
   // voice); Professional is a plain, serious dashboard with neutral copy.
@@ -239,15 +241,7 @@ export function AnalysisView({
               onToggle={() => setOpenId((cur) => ((cur === undefined ? qi === 0 : cur === q.id) ? null : q.id))}
             />
           ))}
-          {tabQs.length > 3 && (
-            <button
-              type="button"
-              onClick={() => setShowAll((v) => !v)}
-              className="mt-1 text-xs font-bold text-brand active:opacity-70"
-            >
-              {showAll ? COPY.mood.showFewer : fill(COPY.mood.seeAll, { count: tabQs.length })}
-            </button>
-          )}
+          <ShowMoreButton total={tabQs.length} expanded={showAll} onToggle={() => setShowAll((v) => !v)} />
         </Card>
       )}
 

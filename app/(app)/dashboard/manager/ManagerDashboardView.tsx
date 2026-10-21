@@ -20,6 +20,8 @@ import {
   ViewSwitcher,
   WINS_LABEL,
   WORRIES_LABEL,
+  ShowMoreButton,
+  visibleRows,
 } from "@/components/kit";
 import type { TeamAggregate, Window } from "@/lib/data";
 import { COPY, fill } from "@/lib/copy";
@@ -47,6 +49,7 @@ export function ManagerDashboardView({
   const [aiText, setAiText] = useState<string | null>(initialInsight);
   const [selectedPillar, setSelectedPillar] = useState<PillarId | null>(null);
   const [scTab, setScTab] = useState<"strengths" | "concerns">("strengths");
+  const [scShowAll, setScShowAll] = useState(false);
   // undefined = nothing chosen yet → the first row starts open.
   const [scOpenId, setScOpenId] = useState<string | null | undefined>(undefined);
 
@@ -98,9 +101,10 @@ export function ManagerDashboardView({
   // a question only appears once >= the anonymisation floor of distinct
   // teammates answered it).
   const scSorted = [...data.questions].sort((a, b) => b.score - a.score);
-  const scStrengths = scSorted.filter((q) => q.score > STRENGTH_CUTOFF).slice(0, 3);
-  const scConcerns = scSorted.filter((q) => q.score <= STRENGTH_CUTOFF).reverse().slice(0, 3);
-  const scShown = scTab === "strengths" ? scStrengths : scConcerns;
+  const scStrengths = scSorted.filter((q) => q.score > STRENGTH_CUTOFF);
+  const scConcerns = scSorted.filter((q) => q.score <= STRENGTH_CUTOFF).reverse();
+  const scShownAll = scTab === "strengths" ? scStrengths : scConcerns;
+  const scShown = visibleRows(scShownAll, scShowAll);
 
   if (selectedPillar) {
     return (
@@ -267,6 +271,7 @@ export function ManagerDashboardView({
                 onChange={(v) => {
                   setScTab(v);
                   setScOpenId(undefined);
+                  setScShowAll(false);
                 }}
                 options={[
                   { value: "strengths", label: WINS_LABEL },
@@ -283,6 +288,7 @@ export function ManagerDashboardView({
                 onToggle={() => setScOpenId((cur) => ((cur === undefined ? qi === 0 : cur === q.id) ? null : q.id))}
               />
             ))}
+            <ShowMoreButton total={scShownAll.length} expanded={scShowAll} onToggle={() => setScShowAll((v) => !v)} />
             {scShown.length === 0 && (
               <p className="text-xs text-ink-4">
                 {scTab === "strengths" ? COPY.mood.noStrengths : COPY.mood.noConcerns}

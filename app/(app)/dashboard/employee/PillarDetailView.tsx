@@ -13,6 +13,8 @@ import {
   TrendChart,
   WINS_LABEL,
   WORRIES_LABEL,
+  ShowMoreButton,
+  visibleRows,
 } from "@/components/kit";
 import { PILLARS, STRENGTH_CUTOFF } from "@/lib/pillars";
 import { type Window } from "@/lib/data";
@@ -40,6 +42,7 @@ export function PillarDetailView({
   const [failed, setFailed] = useState(false);
   const [attempt, setAttempt] = useState(0);
   /** Accordion: at most one question row is expanded at a time. */
+  const [showAll, setShowAll] = useState(false);
   // undefined = nothing chosen yet → the first row starts open.
   const [openId, setOpenId] = useState<string | null | undefined>(undefined);
 
@@ -49,9 +52,10 @@ export function PillarDetailView({
   }, [pillarId, window, attempt]);
 
   const questions = [...(detail?.questions ?? [])].sort((a, b) => b.score - a.score);
-  const strengths = questions.filter((q) => q.score > STRENGTH_CUTOFF).slice(0, 3);
-  const concerns = questions.filter((q) => q.score <= STRENGTH_CUTOFF).reverse().slice(0, 3);
-  const shown = tab === "strengths" ? strengths : concerns;
+  const strengths = questions.filter((q) => q.score > STRENGTH_CUTOFF);
+  const concerns = questions.filter((q) => q.score <= STRENGTH_CUTOFF).reverse();
+  const shownAll = tab === "strengths" ? strengths : concerns;
+  const shown = visibleRows(shownAll, showAll);
 
   return (
     <div className="screen-enter space-y-3.5">
@@ -74,6 +78,7 @@ export function PillarDetailView({
             onChange={(v) => {
               setTab(v);
               setOpenId(undefined);
+              setShowAll(false);
             }}
             options={[
               { value: "strengths", label: WINS_LABEL },
@@ -91,6 +96,7 @@ export function PillarDetailView({
             onGoToInbox={onGoToInbox}
           />
         ))}
+        <ShowMoreButton total={shownAll.length} expanded={showAll} onToggle={() => setShowAll((v) => !v)} />
         {shown.length === 0 && (
           <p className="text-xs text-ink-4">
             {emptyInsightLine(questions.length > 0, tab)}

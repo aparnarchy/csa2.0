@@ -13,6 +13,8 @@ import {
   TrendChart,
   WINS_LABEL,
   WORRIES_LABEL,
+  ShowMoreButton,
+  visibleRows,
 } from "@/components/kit";
 import { PILLARS, STRENGTH_CUTOFF } from "@/lib/pillars";
 import { type Window } from "@/lib/data";
@@ -44,6 +46,7 @@ export function CeoPillarDetailView({
   /** The load failed even after a retry: show "tap to try again", not a spinner. */
   const [failed, setFailed] = useState(false);
   const [attempt, setAttempt] = useState(0);
+  const [showAll, setShowAll] = useState(false);
   // undefined = nothing chosen yet → the first row starts open.
   const [openId, setOpenId] = useState<string | null | undefined>(undefined);
 
@@ -69,9 +72,10 @@ export function CeoPillarDetailView({
   }, [onBack]);
 
   const questions = [...(detail?.questions ?? [])].sort((a, b) => b.score - a.score);
-  const strengths = questions.filter((q) => q.score > STRENGTH_CUTOFF).slice(0, 3);
-  const concerns = questions.filter((q) => q.score <= STRENGTH_CUTOFF).reverse().slice(0, 3);
-  const shown = tab === "strengths" ? strengths : concerns;
+  const strengths = questions.filter((q) => q.score > STRENGTH_CUTOFF);
+  const concerns = questions.filter((q) => q.score <= STRENGTH_CUTOFF).reverse();
+  const shownAll = tab === "strengths" ? strengths : concerns;
+  const shown = visibleRows(shownAll, showAll);
 
   return (
     <div className="screen-enter space-y-3.5">
@@ -94,6 +98,7 @@ export function CeoPillarDetailView({
             onChange={(v) => {
               setTab(v);
               setOpenId(undefined);
+              setShowAll(false);
             }}
             options={[
               { value: "strengths", label: WINS_LABEL },
@@ -110,6 +115,7 @@ export function CeoPillarDetailView({
             onToggle={() => setOpenId((cur) => ((cur === undefined ? qi === 0 : cur === q.id) ? null : q.id))}
           />
         ))}
+        <ShowMoreButton total={shownAll.length} expanded={showAll} onToggle={() => setShowAll((v) => !v)} />
         {shown.length === 0 && (
           <p className="text-xs text-ink-4">
             {emptyInsightLine(questions.length > 0, tab)}
