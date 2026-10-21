@@ -124,6 +124,7 @@ export function ManagerDashboardView({
       {isPlay ? (
         <GradientHeader
           switcher={<ViewSwitcher session={session} current="manager" />}
+          compact
           eyebrow={COPY.managerDashboard.eyebrow}
           title={fill(COPY.managerDashboard.teamTitle, { name: firstName })}
           avatar={

@@ -15,6 +15,7 @@ export function GradientHeader({
   switcher,
   children,
   below,
+  compact = false,
   className = "",
 }: {
   eyebrow?: string;
@@ -29,6 +30,8 @@ export function GradientHeader({
   /** Full-width content rendered BELOW the title+mascot row (e.g. a stats row
       that would be squished if placed in the narrow left column). */
   below?: ReactNode;
+  /** Smaller title, for headers that shouldn't dominate the screen. */
+  compact?: boolean;
   className?: string;
 }) {
   return (
@@ -44,7 +47,7 @@ export function GradientHeader({
           {switcher}
 
           {eyebrow && <p className="mb-1.5 text-xs text-ink-3">{eyebrow}</p>}
-          <h1 className="font-display text-[28px] font-black leading-tight text-brand">{title}</h1>
+          <h1 className={`font-display font-black leading-tight text-brand ${compact ? "text-[22px]" : "text-[28px]"}`}>{title}</h1>
           {subtitle && <p className="mt-1.5 text-[11px] text-ink-3">{subtitle}</p>}
           {children}
         </div>
