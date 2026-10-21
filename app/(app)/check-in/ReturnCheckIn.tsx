@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Mascot } from "@/components/kit";
+import { ClampedText, Mascot } from "@/components/kit";
+import { questionTitle } from "@/lib/question-titles";
 import { HEADER_MASCOT_SIZE } from "@/lib/mascot";
 import { COPY } from "@/lib/copy";
 import { type OpenRecommendation } from "@/lib/data";
@@ -96,12 +97,19 @@ export function ReturnCheckIn({
         </div>
 
         {/* recall the recommendation */}
-        <div className="mt-5 rounded-card bg-lav-soft p-4">
-          <span className="text-[11px] font-semibold text-ink-3">{rec.weekLabel}</span>
-          <p className="mt-2 text-xs leading-relaxed text-ink-3">{t.recallIntro}</p>
-          <p className="whitespace-pre-line mt-2 text-sm font-semibold italic leading-relaxed text-ink">
-            &ldquo;{rec.recommendation}&rdquo;
+        {/* Same look as the Inbox recommendation cards; only the first lines
+            show, "Read all" opens the rest (owner, 2026-10-21: no wall of text). */}
+        <div className="mt-5 rounded-[28px] bg-[#E8E2FF] px-5 py-4 shadow-[0_10px_24px_-14px_rgba(80,60,200,0.55)]">
+          <span className="text-[11px] font-semibold text-brand/70">{rec.weekLabel}</span>
+          <p className="mt-1 font-display text-[17px] font-black leading-snug text-brand">
+            Low Score on {questionTitle(rec.questionId, rec.questionText)}
           </p>
+          <ClampedText
+            text={rec.recommendation}
+            lines={4}
+            className="mt-2 text-[14px] leading-relaxed text-[#5b4fd6]"
+            linkClassName="text-brand decoration-brand/40"
+          />
         </div>
 
         {/* the prompt */}
