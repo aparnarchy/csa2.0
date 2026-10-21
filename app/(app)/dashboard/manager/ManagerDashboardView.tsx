@@ -127,22 +127,22 @@ export function ManagerDashboardView({
               sparkle={false}
             />
           }
-          className="flex min-h-[132px] flex-col justify-center"
         >
-          <p className="mt-2 text-sm font-bold text-brand">
+          {/* Kept small so the privacy note doesn't dominate (owner, 2026-10-21). */}
+          <p className="mt-1 text-[11px] font-semibold text-ink-3">
             {COPY.managerDashboard.anonNote}
           </p>
         </GradientHeader>
       ) : (
         <div
-          className="rounded-card px-5 py-6"
+          className="rounded-card px-5 py-4"
           style={{ background: "linear-gradient(135deg, #EDE7FF 0%, #C9B4FF 100%)" }}
         >
           <p className="text-xs font-semibold text-brand/70">{COPY.managerDashboard.eyebrow}</p>
-          <h1 className="mt-1 font-display text-[30px] font-black leading-tight text-brand">
+          <h1 className="mt-1 font-display text-[24px] font-black leading-tight text-brand">
             {fill(COPY.managerDashboard.teamTitle, { name: firstName })}
           </h1>
-          <p className="mt-2 font-display text-base font-black leading-snug text-brand-light">
+          <p className="mt-1 text-[11px] font-semibold text-ink-3">
             {COPY.managerDashboard.anonNote}
           </p>
         </div>
