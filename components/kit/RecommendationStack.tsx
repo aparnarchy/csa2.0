@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
 
 export interface StackItem {
   /** Stable id for "seen" tracking (e.g. the questionId). */
@@ -28,6 +28,8 @@ const PEEK_Y = 14;
 const PEEK_SCALE = 0.05;
 const VISIBLE_BEHIND = 2;
 const FLICK_MS = 380;
+/** A sideways drag this far (px) counts as a swipe to the next card. */
+const SWIPE_PX = 50;
 
 /**
  * Recommendations as a real deck of cards (owner's reference, 2026-10-14):
@@ -42,17 +44,24 @@ const FLICK_MS = 380;
  * Only one recommendation is ever readable at a time — never a bundle. A
  * "N new" badge counts cards not yet seen on top (remembered on this
  * device). `below` renders under the deck (e.g. "Were you able to act on it?").
+ *
+ * Swiping the top card sideways does the same as a tap (owner, 2026-10-21):
+ * it follows the finger, then lifts and fades in the swipe's direction.
+ * `countsForInbox` = false keeps a stack elsewhere (e.g. the manager
+ * dashboard) from changing the Inbox tab's dot.
  */
 export function RecommendationStack({
   items,
   userKey,
   heading,
   below,
+  countsForInbox = true,
 }: {
   items: StackItem[];
   userKey: string;
   heading?: string;
   below?: (item: StackItem) => ReactNode;
+  countsForInbox?: boolean;
 }) {
   const n = items.length;
   // Deck order as item indexes; order[0] is the card on top.
@@ -63,6 +72,12 @@ export function RecommendationStack({
   const [seen, setSeen] = useState<Set<string>>(new Set());
   const [topHeight, setTopHeight] = useState<number | null>(null);
   const topRef = useRef<HTMLDivElement>(null);
+  // Swipe: where the finger went down, how far it's dragged, and whether the
+  // gesture was a swipe (so the click that follows isn't a second flick).
+  const dragStart = useRef<{ x: number; y: number } | null>(null);
+  const [dragX, setDragX] = useState(0);
+  const [flickX, setFlickX] = useState(0);
+  const swiped = useRef(false);
 
   // Items can change (e.g. one is acted on): rebuild the order, keeping the
   // current top where possible.
@@ -108,17 +123,19 @@ export function RecommendationStack({
 
   const unread = items.filter((it) => !seen.has(it.id)).length;
   useEffect(() => {
+    if (!countsForInbox) return;
     try {
       localStorage.setItem(UNREAD_KEY, String(unread));
       window.dispatchEvent(new Event("csa-recs-unread"));
     } catch {}
-  }, [unread]);
+  }, [unread, countsForInbox]);
 
   if (!top) return null;
 
-  function flick() {
+  function flick(dx = 0) {
     if (n < 2 || flicking !== null) return;
     const leaving = order[0];
+    setFlickX(dx);
     setFlicking(leaving);
     window.setTimeout(() => {
       setOrder((o) => [...o.slice(1), o[0]]);
@@ -127,6 +144,36 @@ export function RecommendationStack({
       window.setTimeout(() => setArriving(null), 40);
     }, FLICK_MS);
   }
+
+  const onPointerDown = (e: ReactPointerEvent) => {
+    if (n < 2) return;
+    dragStart.current = { x: e.clientX, y: e.clientY };
+    swiped.current = false;
+  };
+  const onPointerMove = (e: ReactPointerEvent) => {
+    const start = dragStart.current;
+    if (!start) return;
+    const dx = e.clientX - start.x;
+    // Mostly-vertical movement is a page scroll, not a swipe.
+    if (Math.abs(e.clientY - start.y) > Math.abs(dx) && Math.abs(dx) < 10) return;
+    setDragX(dx);
+  };
+  const onPointerEnd = () => {
+    if (!dragStart.current) return;
+    dragStart.current = null;
+    if (Math.abs(dragX) >= SWIPE_PX) {
+      swiped.current = true;
+      flick(dragX);
+    }
+    setDragX(0);
+  };
+  const onClick = () => {
+    if (swiped.current) {
+      swiped.current = false;
+      return;
+    }
+    flick();
+  };
 
   // Position of each card in the deck, ignoring the one being flicked away.
   const settled = order.filter((k) => k !== flicking && k < n);
@@ -155,16 +202,23 @@ export function RecommendationStack({
           const hidden = !isFlicking && depth > VISIBLE_BEHIND;
           const dark = k % 2 === 1;
           const isArriving = k === arriving;
+          const dragging = isTop && dragX !== 0;
           const transform = isFlicking
-            ? "translateY(-10px) scale(1.01)"
-            : `translateY(${depth * PEEK_Y}px) scale(${1 - depth * PEEK_SCALE})`;
+            ? `translateX(${flickX ? Math.sign(flickX) * 60 + flickX : 0}px) translateY(-10px) scale(1.01)`
+            : dragging
+              ? `translateX(${dragX}px) rotate(${dragX / 40}deg)`
+              : `translateY(${depth * PEEK_Y}px) scale(${1 - depth * PEEK_SCALE})`;
           return (
             <div
               key={it.id}
               ref={isTop ? topRef : undefined}
-              onClick={isTop ? flick : undefined}
+              onClick={isTop ? onClick : undefined}
+              onPointerDown={isTop ? onPointerDown : undefined}
+              onPointerMove={isTop ? onPointerMove : undefined}
+              onPointerUp={isTop ? onPointerEnd : undefined}
+              onPointerCancel={isTop ? onPointerEnd : undefined}
               role={isTop && n > 1 ? "button" : undefined}
-              aria-label={isTop && n > 1 ? "Show the next recommendation" : undefined}
+              aria-label={isTop && n > 1 ? "Show the next recommendation (tap or swipe)" : undefined}
               aria-hidden={!isTop}
               className={`${isArriving ? "rec-deck-card-arrive" : "rec-deck-card"} absolute inset-x-0 top-0 rounded-[28px] px-5 py-4 text-left shadow-[0_10px_24px_-14px_rgba(80,60,200,0.55)] ${
                 dark ? "bg-brand text-white" : "bg-[#E8E2FF] text-brand"
@@ -178,6 +232,9 @@ export function RecommendationStack({
                 height: isTop || topHeight === null ? undefined : topHeight,
                 overflow: isTop ? undefined : "hidden",
                 pointerEvents: isTop ? "auto" : "none",
+                // follow the finger exactly while dragging; vertical scroll still works
+                transition: dragging ? "none" : undefined,
+                touchAction: isTop && n > 1 ? "pan-y" : undefined,
               }}
             >
               <div
@@ -191,7 +248,7 @@ export function RecommendationStack({
                 </p>
                 {n > 1 && (
                   <p className={`mt-3 text-[11px] font-semibold ${dark ? "text-white/70" : "text-brand/60"}`}>
-                    {k + 1} of {n} · tap for the next one
+                    {k + 1} of {n} · tap or swipe for the next one
                   </p>
                 )}
               </div>

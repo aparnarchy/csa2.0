@@ -12,7 +12,7 @@ import {
   LeaverNote,
   Mascot,
   PillarCard,
-  RecommendationCard,
+  RecommendationStack,
   ScoreCircles,
   ScreenShell,
   SegmentedToggle,
@@ -87,6 +87,9 @@ export function ManagerDashboardView({
     const weakest = qs.length ? [...qs].sort((a, b) => a.score - b.score)[0] : null;
     return weakest?.recommendation ?? "";
   };
+
+  const focusRecs = lowPillars.filter((p) => recommendationFor(p.pillarId));
+  const focusNoRec = lowPillars.filter((p) => !recommendationFor(p.pillarId));
 
   // Team-level highest / lowest pillar — same rules as the employee dashboard
   // (lib/insight.ts), so a low team pillar is never labelled a bright spot.
@@ -229,18 +232,25 @@ export function ManagerDashboardView({
               <p className="mb-3 text-xs text-ink-3">
                 {COPY.managerDashboard.whereToFocusSub}
               </p>
-              <div className="space-y-3">
-                {lowPillars.map((p) =>
-                  recommendationFor(p.pillarId) ? (
-                    <RecommendationCard
-                      key={p.pillarId}
-                      pillarId={p.pillarId}
-                      text={`${fill(COPY.managerDashboard.teamPillarAt, { pillar: PILLARS[p.pillarId].label, score: p.score!.toFixed(1) })} ${recommendationFor(p.pillarId)}`}
-                    />
-                  ) : (
-                    // No manager recommendation written for it yet: just the
-                    // pillar and its score — a "tip" heading with no tip read
-                    // as broken.
+              {/* Pillars with a written recommendation: one card at a time,
+                  tap or swipe for the next (owner, 2026-10-21 — no wall of
+                  text). Pillars without one yet: just the name and score. */}
+              {focusRecs.length > 0 && (
+                <RecommendationStack
+                  userKey={`${session.id}:team`}
+                  heading="Recommendations"
+                  countsForInbox={false}
+                  items={focusRecs.map((p) => ({
+                    id: p.pillarId,
+                    title: PILLARS[p.pillarId].label,
+                    score: p.score,
+                    text: recommendationFor(p.pillarId),
+                  }))}
+                />
+              )}
+              {focusNoRec.length > 0 && (
+                <div className={`space-y-2 ${focusRecs.length > 0 ? "mt-4" : ""}`}>
+                  {focusNoRec.map((p) => (
                     <div
                       key={p.pillarId}
                       className="flex items-center justify-between rounded-card bg-lav-soft px-4 py-3"
@@ -248,9 +258,9 @@ export function ManagerDashboardView({
                       <span className="text-sm font-bold text-ink">{PILLARS[p.pillarId].label}</span>
                       <span className="font-display text-base font-black text-brand">{p.score!.toFixed(1)}</span>
                     </div>
-                  ),
-                )}
-              </div>
+                  ))}
+                </div>
+              )}
               <button
                 type="button"
                 onClick={() => router.push("/inbox")}

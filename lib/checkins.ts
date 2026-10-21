@@ -405,8 +405,8 @@ export async function getReturnCheckIn(
  * check-in), this is the full list for the Inbox so every pending recommendation
  * can be acted on there, not just one at a time. Deduped to the most recent open
  * check-in per question (the same row submitFollowUp would resolve to for that
- * question), most important first: the lowest answer, then the newest. The
- * Inbox opens the first in full and folds the rest into one-line rows.
+ * question), newest first (owner, 2026-10-21: the newest recommendation is the
+ * card on top of the Inbox stack; older ones sit behind it).
  * Own data only.
  */
 export async function getOpenRecommendations(
@@ -428,7 +428,7 @@ export async function getOpenRecommendations(
                AND c2.score < 7 AND (c2.followUpStatus IS NULL OR c2.followUpStatus = 'not_acted')
              ORDER BY c2.timestamp DESC, c2.weekId DESC LIMIT 1
           )
-        ORDER BY c.score ASC, c.timestamp DESC, c.weekId DESC`,
+        ORDER BY c.timestamp DESC, c.weekId DESC, c.score ASC`,
     )
     .bind(userId)
     .all<{ questionId: string; pillarId: PillarId; weekId: string; questionText: string }>();

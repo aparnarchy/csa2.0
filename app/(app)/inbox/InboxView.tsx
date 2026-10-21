@@ -100,7 +100,7 @@ export function InboxView({
       <UnansweredCard questions={unanswered} />
 
       {/* Un-actioned recommendations as a card stack (owner, 2026-10-14):
-          lowest score first, one card in front at a time — tap for the next.
+          newest first (2026-10-21), one card in front at a time — tap or swipe.
           Acting on the top card removes it; it then shows up in history. */}
       {visibleOpenRecs.length > 0 ? (
         <RecommendationStack
