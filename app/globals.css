@@ -192,7 +192,8 @@ body {
   background: #fff;
 }
 .opening[data-mode="wait"] .opening-logo { visibility: hidden; }
-.opening-logo { position: relative; width: min(88vw, 380px); aspect-ratio: 480 / 222; }
+/* Sits a little above centre (owner, 2026-10-23: dead centre read too low). */
+.opening-logo { position: relative; width: min(88vw, 380px); aspect-ratio: 480 / 222; margin-bottom: 18vh; }
 .opening-logo > * { position: absolute; display: block; height: auto; }
 .opening-the     { left: 17.3%; top: 1.3%;  width: 29.4%; }
 .opening-culture { left: 0;     top: 22.1%; width: 64.6%; }
