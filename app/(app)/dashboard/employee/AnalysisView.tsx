@@ -94,12 +94,12 @@ export function AnalysisView({
   const tabQs = activeTab === "strengths" ? allStrengths : allConcerns;
   const shownQs = visibleRows(tabQs, showAll);
   const up = (data.delta ?? 0) >= 0;
-  // Mode = design only. Play shows the fun look (mascot, blob circles, persona
-  // voice); Professional is a plain, serious dashboard with neutral copy.
+  // Mode = design only. Play shows the fun look (mascot, blob circles);
+  // Professional is a plain, serious dashboard. Both use the neutral copy
+  // (owner, 2026-10-23: the Spiderman/Batman voices are gone).
   const isPlay = session.themeMode === "play";
-  const persona = isPlay ? session.persona : undefined;
-  const insight = buildEmployeeInsight(data, persona);
-  const chrome = chromeFor(persona);
+  const insight = buildEmployeeInsight(data);
+  const chrome = chromeFor();
   const firstName = (session.name || "there").trim().split(/\s+/)[0];
   // The pillars not shown as a big circle — the small pills under them.
   const otherPillars = data.pillars
@@ -108,7 +108,7 @@ export function AnalysisView({
 
   return (
     <ScreenShell active="insights">
-      {/* Header — Play: lavender card + mascot + persona voice. Professional:
+      {/* Header — Play: lavender card + mascot. Professional:
           a smaller card with a richer purple gradient and bigger, mascot-free
           welcome text (all in lilac to match the theme). */}
       {isPlay ? (

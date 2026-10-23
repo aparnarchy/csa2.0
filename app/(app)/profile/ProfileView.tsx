@@ -10,13 +10,8 @@ import { COPY, fill } from "@/lib/copy";
 import { giveQuestionNowAction } from "../check-in/actions";
 import { TESTING_MODE } from "@/lib/testing-mode";
 import type { CeoDashboard, ProfileStats } from "@/lib/data";
-import type { Persona, Role, SessionUser, ThemeMode } from "@/lib/types";
+import type { Role, SessionUser, ThemeMode } from "@/lib/types";
 import { withRetry } from "@/lib/retry";
-
-const PERSONAS: { key: Persona; name: string; tagline: string; emoji: string }[] = [
-  { key: "spiderman", name: COPY.profile.personaSpiderman, tagline: COPY.profile.personaSpidermanTagline, emoji: "🕷️" },
-  { key: "batman", name: COPY.profile.personaBatman, tagline: COPY.profile.personaBatmanTagline, emoji: "🦇" },
-];
 
 export function ProfileView({
   session,
@@ -182,7 +177,7 @@ export function ProfileView({
         </button>
       ) : null}
 
-      {/* Appearance (mode + persona) */}
+      {/* Appearance (Professional / Play) */}
       <AppearanceCard session={session} />
 
       {/* Preferences — same reasoning as Activity above: notification prefs are
@@ -285,22 +280,22 @@ function HeaderStats({ stats, hasEmployment }: { stats: ProfileStats; hasEmploym
   );
 }
 
-// ── Appearance switcher (mode = design, persona = voice) ─────────────────────
+// ── Appearance switcher (Professional / Play = design) ───────────────────────
 function AppearanceCard({ session }: { session: SessionUser }) {
   const router = useRouter();
   const [mode, setMode] = useState<ThemeMode>(session.themeMode);
-  const [persona, setPersona] = useState<Persona>(session.persona);
   const [saving, setSaving] = useState(false);
 
-  async function save(next: { themeMode: ThemeMode; persona: Persona }) {
+  // The saved persona is passed back unchanged: the preferences route still
+  // takes both, and nothing reads the persona any more.
+  async function save(next: { themeMode: ThemeMode }) {
     setMode(next.themeMode);
-    setPersona(next.persona);
     setSaving(true);
     try {
       await fetch("/api/preferences", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(next),
+        body: JSON.stringify({ ...next, persona: session.persona }),
       });
       router.refresh();
     } catch {
@@ -327,7 +322,7 @@ function AppearanceCard({ session }: { session: SessionUser }) {
               key={m.key}
               type="button"
               disabled={saving}
-              onClick={() => save({ themeMode: m.key, persona })}
+              onClick={() => save({ themeMode: m.key })}
               className={`rounded-2xl border p-3 text-left transition active:scale-[0.98] ${
                 sel ? "border-brand bg-lav-soft" : "border-gray-200 bg-white"
               }`}
@@ -338,35 +333,6 @@ function AppearanceCard({ session }: { session: SessionUser }) {
           );
         })}
       </div>
-
-      {mode === "play" && (
-        <div className="screen-enter mt-5">
-          <p className="text-[11px] font-bold uppercase tracking-wide text-ink-3">{COPY.profile.characterVoice}</p>
-          <div className="mt-2 space-y-2">
-            {PERSONAS.map((p) => {
-              const sel = persona === p.key;
-              return (
-                <button
-                  key={p.key}
-                  type="button"
-                  disabled={saving}
-                  onClick={() => save({ themeMode: "play", persona: p.key })}
-                  className={`flex w-full items-center gap-3 rounded-2xl border p-3 text-left transition active:scale-[0.98] ${
-                    sel ? "border-brand bg-lav-soft" : "border-gray-200 bg-white"
-                  }`}
-                >
-                  <span className="text-2xl leading-none" aria-hidden>{p.emoji}</span>
-                  <span className="min-w-0 flex-1">
-                    <span className={`block font-display text-sm font-black ${sel ? "text-brand" : "text-ink"}`}>{p.name}</span>
-                    <span className="mt-0.5 block text-[11px] text-ink-3">{p.tagline}</span>
-                  </span>
-                  {sel && <span className="text-brand" aria-hidden>✓</span>}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      )}
     </Card>
   );
 }
@@ -446,7 +412,7 @@ function PreferencesCard({ session }: { session: SessionUser }) {
       await fetch("/api/preferences/notifications", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(next),
+        body: JSON.stringify({ ...next, persona: session.persona }),
       });
       router.refresh();
     } catch {
