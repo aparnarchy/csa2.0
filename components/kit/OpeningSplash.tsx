@@ -24,27 +24,38 @@ import Image from "next/image";
 const SCRIPT = `(function(){
   var el=document.getElementById("opening");
   if(!el)return;
-  var mode="full";
   try{
     if(sessionStorage.getItem("csa:opened")){return;}
     sessionStorage.setItem("csa:opened","1");
-    var d=new Date(),today=d.getFullYear()+"-"+(d.getMonth()+1)+"-"+d.getDate();
-    if(localStorage.getItem("csa:opening-day")===today){mode="quick";}
-    else{localStorage.setItem("csa:opening-day",today);}
   }catch(e){}
-  var finished=false,started=false;
+  var finished=false,started=false,shown=false,loaded=false;
   var done=function(){finished=true;el.setAttribute("data-mode","done");};
-  var start=function(){
-    if(started||finished)return;started=true;
-    el.setAttribute("data-mode",mode);
-    setTimeout(done,mode==="full"?3200:2000);
-  };
   el.setAttribute("data-mode","wait");
   el.addEventListener("click",done);
   el.addEventListener("animationend",function(e){if(e.target===el)done();});
+  // Plays once it is on screen with its images in: not while Chrome loads
+  // the page ahead of time (prerendering) or it sits in a background tab.
+  var start=function(){
+    if(started||finished||!shown)return;started=true;
+    var mode="full";
+    try{
+      var d=new Date(),today=d.getFullYear()+"-"+(d.getMonth()+1)+"-"+d.getDate();
+      if(localStorage.getItem("csa:opening-day")===today){mode="quick";}
+      else{localStorage.setItem("csa:opening-day",today);}
+    }catch(e){}
+    el.setAttribute("data-mode",mode);
+    setTimeout(done,mode==="full"?3200:2000);
+  };
+  var onScreen=function(){
+    if(shown||document.prerendering||document.visibilityState!=="visible")return;
+    shown=true;
+    if(loaded)start();else setTimeout(start,1500);
+  };
+  document.addEventListener("prerenderingchange",onScreen);
+  document.addEventListener("visibilitychange",onScreen);
   var imgs=[].slice.call(el.querySelectorAll("img"));
-  Promise.all(imgs.map(function(i){return i.decode?i.decode().catch(function(){}):null;})).then(start);
-  setTimeout(start,1500);
+  Promise.all(imgs.map(function(i){return i.decode?i.decode().catch(function(){}):null;})).then(function(){loaded=true;start();});
+  onScreen();
 })();`;
 
 export function OpeningSplash() {
