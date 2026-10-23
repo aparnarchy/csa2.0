@@ -179,14 +179,13 @@ body {
    from their 3000px Canva export). Full: a
    purple block sweeps in over the gap and slides away leaving "Culture", the
    logo holds for over a second, then the white screen fades into the app
-   (~2.6s). Quick: the finished logo with one mascot hop (~1.5s). Hidden
+   (~2.6s). Hidden
    unless the script sets data-mode; "wait" is a blank white screen while the
    images load. Transform/opacity only, so it isn't held up by the page
    loading underneath. */
 .opening { display: none; }
 .opening[data-mode="wait"],
-.opening[data-mode="full"],
-.opening[data-mode="quick"] {
+.opening[data-mode="full"] {
   position: fixed; inset: 0; z-index: 100;
   display: flex; align-items: center; justify-content: center;
   background: #fff;
@@ -211,16 +210,9 @@ body {
 }
 @keyframes openingReveal { 0%, 49.9% { opacity: 0; } 50%, 100% { opacity: 1; } }
 @keyframes openingOut    { to { opacity: 0; visibility: hidden; } }
-@keyframes openingHop {
-  0%, 100% { transform: none; }
-  40% { transform: translateY(-14%) scale(.97, 1.04); }
-  70% { transform: translateY(0) scale(1.04, .95); }
-}
 .opening[data-mode="full"]    { animation: openingOut .35s 2.25s ease-in both; }
 .opening[data-mode="full"] .opening-bar > span { animation: openingWipe .9s .25s both; }
 .opening[data-mode="full"] .opening-culture    { animation: openingReveal .9s .25s both; }
-.opening[data-mode="quick"]   { animation: openingOut .35s 1.15s ease-in both; }
-.opening[data-mode="quick"] .opening-mascot    { animation: openingHop .5s .15s both; }
 @media (prefers-reduced-motion: reduce) {
   .opening[data-mode] .opening-bar > span,
   .opening[data-mode] .opening-culture,

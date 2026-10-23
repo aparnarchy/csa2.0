@@ -3,58 +3,51 @@ import Image from "next/image";
 /**
  * The opening animation (owner, 2026-10-23, option A from their logo GIF):
  * "THE", "Super" and the mascot sit on white, a purple block sweeps across
- * and leaves "Culture" behind, then it fades into the app. Pure CSS
- * (globals.css, .opening-*), no library.
+ * and leaves "Culture" behind, the logo holds for over a second, then it
+ * fades into the app (~2.6s). Pure CSS (globals.css, .opening-*), no library.
  *
- * - First open of the day: the full sweep, the logo held for over a second
- *   (~2.6s in all). Later opens that day: a quick hello (the finished logo,
- *   one mascot hop, ~1.5s). Owner, 2026-10-23: hold it at least a second.
- * - Only when the app is opened fresh: a reload in the same session (e.g.
- *   moving to a new deploy) and moving between screens don't replay it.
+ * - Plays every time the app is opened (owner, 2026-10-23: "each time I open
+ *   it"): on every fresh load, and on coming back to the app after more than
+ *   5 minutes away (a phone keeps the app alive in the background, so that
+ *   return is not a fresh load). A quick switch away and back doesn't replay.
  * - A tap skips it. "Reduce motion" shows the still logo instead.
  *
  * The markup is server-rendered so it covers the screen from the first
- * paint; the inline script picks the mode before anything is drawn. It is
- * hidden unless the script sets data-mode, so with no script there is no
- * splash at all. It shows a blank white screen ("wait") until its images
- * are in, so nothing pops in late, then plays. The sweep moves by transform
- * only, so it stays smooth while the app loads underneath. Nothing here
- * leaves the device.
+ * paint. It is hidden unless the script sets data-mode, so with no script
+ * there is no splash at all. It shows a blank white screen ("wait") until
+ * the page is on screen (not while Chrome loads it ahead of time, or in a
+ * background tab) and its images are in, so nothing plays unseen or pops in
+ * late. The sweep moves by transform only, so it stays smooth while the app
+ * loads underneath. Nothing here leaves the device.
  */
 const SCRIPT = `(function(){
   var el=document.getElementById("opening");
   if(!el)return;
-  try{
-    if(sessionStorage.getItem("csa:opened")){return;}
-    sessionStorage.setItem("csa:opened","1");
-  }catch(e){}
-  var finished=false,started=false,shown=false,loaded=false;
-  var done=function(){finished=true;el.setAttribute("data-mode","done");};
+  var AWAY_MS=5*60*1000;
+  var playing=false,shown=false,loaded=false,timer=0,hiddenAt=0;
+  var done=function(){playing=false;clearTimeout(timer);el.setAttribute("data-mode","done");};
+  var play=function(){
+    if(playing||!shown||!loaded)return;playing=true;
+    el.setAttribute("data-mode","full");
+    timer=setTimeout(done,3200);
+  };
   el.setAttribute("data-mode","wait");
+  playing=true;
   el.addEventListener("click",done);
   el.addEventListener("animationend",function(e){if(e.target===el)done();});
-  // Plays once it is on screen with its images in: not while Chrome loads
-  // the page ahead of time (prerendering) or it sits in a background tab.
-  var start=function(){
-    if(started||finished||!shown)return;started=true;
-    var mode="full";
-    try{
-      var d=new Date(),today=d.getFullYear()+"-"+(d.getMonth()+1)+"-"+d.getDate();
-      if(localStorage.getItem("csa:opening-day")===today){mode="quick";}
-      else{localStorage.setItem("csa:opening-day",today);}
-    }catch(e){}
-    el.setAttribute("data-mode",mode);
-    setTimeout(done,mode==="full"?3200:2000);
-  };
   var onScreen=function(){
-    if(shown||document.prerendering||document.visibilityState!=="visible")return;
-    shown=true;
-    if(loaded)start();else setTimeout(start,1500);
+    if(document.prerendering||document.visibilityState!=="visible")return;
+    if(!shown){shown=true;playing=false;setTimeout(function(){loaded=true;play();},1500);play();return;}
+    if(hiddenAt&&Date.now()-hiddenAt>AWAY_MS&&!playing){
+      el.setAttribute("data-mode","done");void el.offsetWidth;play();
+    }
   };
   document.addEventListener("prerenderingchange",onScreen);
-  document.addEventListener("visibilitychange",onScreen);
+  document.addEventListener("visibilitychange",function(){
+    if(document.visibilityState==="hidden")hiddenAt=Date.now();else onScreen();
+  });
   var imgs=[].slice.call(el.querySelectorAll("img"));
-  Promise.all(imgs.map(function(i){return i.decode?i.decode().catch(function(){}):null;})).then(function(){loaded=true;start();});
+  Promise.all(imgs.map(function(i){return i.decode?i.decode().catch(function(){}):null;})).then(function(){loaded=true;play();});
   onScreen();
 })();`;
 
