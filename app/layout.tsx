@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import localFont from "next/font/local";
 import "./globals.css";
 import { VersionWatcher } from "@/components/kit/VersionWatcher";
+import { OpeningSplash } from "@/components/kit/OpeningSplash";
 
 // Title/display font = Satoshi (bundled variable woff2), body font = Inter.
 // Both are exposed as CSS vars and wired to --font-display / --font-body in
@@ -49,6 +50,7 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${satoshi.variable} ${inter.variable} h-full`}>
       <body className="min-h-full bg-white text-ink antialiased">
+        <OpeningSplash />
         {children}
         <VersionWatcher />
       </body>
