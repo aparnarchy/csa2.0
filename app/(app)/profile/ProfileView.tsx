@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
 import { ADMIN_NAV, BigScore, Card, CEO_NAV, GradientHeader, Mascot, ScreenShell } from "@/components/kit";
@@ -255,6 +256,8 @@ export function ProfileView({
           Anyone with a job record, since that's who has a work inbox to lose. */}
       {session.hasEmployment && <PersonalEmailCard initial={personalEmail} />}
 
+      <BrandLine />
+
       <div className="flex justify-center pt-1">
         <button
           type="button"
@@ -270,6 +273,35 @@ export function ProfileView({
 
       <p className="pb-2 text-center text-[11px] text-ink-4">{fill(COPY.profile.signedInAs, { name: firstName, email: session.email })}</p>
     </ScreenShell>
+  );
+}
+
+/** "THE Culture Super" on one line in the owner's Loubag lettering (images
+    cut from their Canva file, same colours as the opening animation — the
+    font itself is paid, so it isn't bundled), with the tagline beneath.
+    All three images share one scale, so their sizes keep Canva's ratios
+    (THE 49 / Culture 100 / Super 90); "Super"'s "p" hangs below the line. */
+function BrandLine() {
+  const S = 0.1; // image px → screen px
+  const SUPER_DESCENDER = 48; // rows below the baseline in wordmark-super.png
+  return (
+    <div className="flex flex-col items-center gap-3 pt-4">
+      <div className="flex items-end gap-2" role="img" aria-label="The Culture Super">
+        <Image src="/brand/wordmark-the.png" alt="" width={456 * S} height={116 * S} unoptimized className="mb-[3px]" />
+        <Image src="/brand/wordmark-culture.png" alt="" width={1000 * S} height={259 * S} unoptimized />
+        <Image
+          src="/brand/wordmark-super.png"
+          alt=""
+          width={891 * S}
+          height={266 * S}
+          unoptimized
+          style={{ marginBottom: -SUPER_DESCENDER * S }}
+        />
+      </div>
+      <p className="text-center font-display text-[12px] font-semibold tracking-wide text-[#9c92ff]">
+        {COPY.profile.tagline}
+      </p>
+    </div>
   );
 }
 

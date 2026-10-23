@@ -284,6 +284,7 @@ export const COPY = {
     "switchEmployeeSub": "See your own check-ins & progress",
     "viewPickerTitle": "Switch view",
     "viewPickerSub": "Pick which side of the app you want to see",
+    "tagline": "Making Happiness and High performance, possible",
     "signOut": "Sign out",
     "signedInAs": "Signed in as {name} · {email}"
   },
