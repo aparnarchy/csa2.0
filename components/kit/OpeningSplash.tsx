@@ -52,9 +52,9 @@ export function OpeningSplash() {
     <>
       <div id="opening" className="opening" aria-hidden suppressHydrationWarning>
         <div className="opening-logo">
-          <Image className="opening-the" src="/brand/wordmark-the.png" alt="" width={284} height={74} priority unoptimized />
-          <Image className="opening-culture" src="/brand/wordmark-culture.png" alt="" width={620} height={156} priority unoptimized />
-          <Image className="opening-super" src="/brand/wordmark-super.png" alt="" width={554} height={170} priority unoptimized />
+          <Image className="opening-the" src="/brand/wordmark-the.png" alt="" width={456} height={116} priority unoptimized />
+          <Image className="opening-culture" src="/brand/wordmark-culture.png" alt="" width={1000} height={259} priority unoptimized />
+          <Image className="opening-super" src="/brand/wordmark-super.png" alt="" width={891} height={266} priority unoptimized />
           <Image className="opening-mascot" src="/brand/mascot.png" alt="" width={360} height={360} priority unoptimized />
           <span className="opening-bar">
             <span />

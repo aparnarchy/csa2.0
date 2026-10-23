@@ -175,7 +175,8 @@ body {
 @media (prefers-reduced-motion: reduce) { .rec-deck-card { transition: none; } }
 
 /* ── Opening animation (components/kit/OpeningSplash.tsx) ────────────────────
-   Positions are measured from the owner's logo GIF (a 480×222 box). Full: a
+   Positions are measured from the owner's logo (a 480×222 box; lettering
+   from their 3000px Canva export). Full: a
    purple block sweeps in over the gap and slides away leaving "Culture", the
    logo holds for over a second, then the white screen fades into the app
    (~2.6s). Quick: the finished logo with one mascot hop (~1.5s). Hidden
@@ -193,9 +194,9 @@ body {
 .opening[data-mode="wait"] .opening-logo { visibility: hidden; }
 .opening-logo { position: relative; width: min(88vw, 380px); aspect-ratio: 480 / 222; }
 .opening-logo > * { position: absolute; display: block; height: auto; }
-.opening-the     { left: 17.5%; top: 0;     width: 29.6%; }
+.opening-the     { left: 17.3%; top: 1.3%;  width: 29.4%; }
 .opening-culture { left: 0;     top: 22.1%; width: 64.6%; }
-.opening-super   { left: 3.75%; top: 61.7%; width: 57.7%; }
+.opening-super   { left: 3.5%;  top: 63.4%; width: 57.5%; }
 .opening-mascot  { left: 65%;   top: 16%;   width: 34.8%; transform-origin: 50% 90%; }
 /* The block: a full-size bar sliding through a window, so it grows from the
    left edge and then leaves through the right one. */
