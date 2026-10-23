@@ -53,6 +53,9 @@ export function ProfileView({
       // employee context they just switched into, which reads as broken.
       navItems={view === "admin" ? ADMIN_NAV : view === "ceo_hr" ? CEO_NAV : undefined}
     >
+      {/* Brand line first, above the header (owner, 2026-10-23). */}
+      <BrandLine />
+
       {/* Header — matches the dashboard look (mascot only in Play). CEO/HR
           gets no personal stat row here — their numbers are org-wide and
           live in the dashboard-style card below, not blended into the
@@ -189,8 +192,6 @@ export function ProfileView({
           Anyone with a job record, since that's who has a work inbox to lose. */}
       {session.hasEmployment && <PersonalEmailCard initial={personalEmail} />}
 
-      <BrandLine />
-
       <div className="flex justify-center pt-1">
         <button
           type="button"
@@ -218,7 +219,7 @@ function BrandLine() {
   const S = 0.1; // image px → screen px
   const SUPER_DESCENDER = 48; // rows below the baseline in wordmark-super.png
   return (
-    <div className="flex flex-col items-center gap-3 pt-4">
+    <div className="flex flex-col items-center gap-3 pb-1 pt-2">
       <div className="flex items-end gap-2" role="img" aria-label="The Culture Super">
         <Image src="/brand/wordmark-the.png" alt="" width={456 * S} height={116 * S} unoptimized className="mb-[3px]" />
         <Image src="/brand/wordmark-culture.png" alt="" width={1000 * S} height={259 * S} unoptimized />
