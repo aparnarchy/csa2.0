@@ -7,13 +7,11 @@ import { authClient } from "@/lib/auth-client";
 import { ADMIN_NAV, BigScore, Card, CEO_NAV, GradientHeader, Mascot, ScreenShell } from "@/components/kit";
 import { HEADER_MASCOT_SIZE, mascotForScore } from "@/lib/mascot";
 import { COPY, fill } from "@/lib/copy";
-import { setViewModeAction } from "@/lib/view-mode";
 import { giveQuestionNowAction } from "../check-in/actions";
 import { TESTING_MODE } from "@/lib/testing-mode";
 import type { CeoDashboard, ProfileStats } from "@/lib/data";
 import type { Persona, Role, SessionUser, ThemeMode } from "@/lib/types";
-import { availableViews, VIEW_LABELS } from "@/lib/views";
-import { keepCurrent, withRetry } from "@/lib/retry";
+import { withRetry } from "@/lib/retry";
 
 const PERSONAS: { key: Persona; name: string; tagline: string; emoji: string }[] = [
   { key: "spiderman", name: COPY.profile.personaSpiderman, tagline: COPY.profile.personaSpidermanTagline, emoji: "🕷️" },
@@ -43,20 +41,10 @@ export function ProfileView({
   const firstName = (session.name || "there").trim().split(/\s+/)[0];
   const isManager = session.roles.includes("manager");
   const hasCeoRole = session.roles.includes("ceo_hr");
-  const viewingAsEmployee = view === "employee";
   // CEO/HR's org-scoped profile goes with the CEO/HR VIEW: someone who also
   // manages a team and switches to Manager view gets the manager profile.
   const isCeoHr = view === "ceo_hr";
-  // Every view this person can switch between (Admin / CEO/HR / Manager /
-  // Employee). Two → one simple switch row; three or more → a picker.
-  const views = availableViews(session);
-
-  async function switchTo(next: Role) {
-    if (next === view) return;
-    // Even if saving the preference fails, still go — /dashboard works either way.
-    await withRetry(() => setViewModeAction(next)).catch(keepCurrent);
-    router.push("/dashboard");
-  }
+  const viewingAsEmployee = view === "employee";
   // Compose "role · company" from whatever is set; empty for a fresh account.
   const roleCompany = [stats.role, stats.company].filter(Boolean).join(" · ");
   const hasTenure = Boolean(stats.careerTenure) && stats.careerTenure !== "—";
@@ -101,57 +89,6 @@ export function ProfileView({
             </div>
           )}
         </div>
-      )}
-
-      {/* Switch view — first thing under the header so people can find it
-          (owner, 2026-10-14). For anyone holding more than one role. Two views (e.g.
-          a manager who also does their own check-ins) keep the one-tap row;
-          three or more (e.g. admin + CEO/HR + manager) get a picker so every
-          view is reachable, not just the top role and Employee. */}
-      {views.length === 2 && (
-        <button
-          type="button"
-          onClick={() => switchTo(views.find((v) => v !== view)!)}
-          className="flex w-full items-center justify-between rounded-card bg-white p-4 text-left shadow-card transition active:scale-[0.99]"
-        >
-          <div>
-            <p className="text-sm font-bold text-ink">
-              {viewingAsEmployee
-                ? fill(COPY.profile.switchElevatedTitle, { role: VIEW_LABELS[views[0]] })
-                : COPY.profile.switchEmployeeTitle}
-            </p>
-            <p className="mt-0.5 text-xs text-ink-3">
-              {viewingAsEmployee
-                ? fill(COPY.profile.switchElevatedSub, { role: VIEW_LABELS[views[0]] })
-                : COPY.profile.switchEmployeeSub}
-            </p>
-          </div>
-          <span className="text-xl text-ink-4">›</span>
-        </button>
-      )}
-      {views.length > 2 && (
-        <Card>
-          <p className="text-sm font-bold text-brand">{COPY.profile.viewPickerTitle}</p>
-          <p className="mt-0.5 text-xs text-ink-3">{COPY.profile.viewPickerSub}</p>
-          <div className="mt-3 grid grid-cols-2 gap-2">
-            {views.map((v) => {
-              const on = v === view;
-              return (
-                <button
-                  key={v}
-                  type="button"
-                  onClick={() => switchTo(v)}
-                  aria-pressed={on}
-                  className={`rounded-2xl px-3 py-3 text-sm font-bold transition active:scale-[0.98] ${
-                    on ? "bg-brand text-white shadow-card" : "bg-lav-soft text-brand"
-                  }`}
-                >
-                  {VIEW_LABELS[v]}
-                </button>
-              );
-            })}
-          </div>
-        </Card>
       )}
 
       {/* Demo helper — admins, testing mode only: a question right now. */}
@@ -225,7 +162,8 @@ export function ProfileView({
       {/* Career history link → 2.8. Employee-only: a manager's own work history
           isn't part of the manager surface, so it's hidden once they hold that
           role, and CEO/HR never sees it either — org-scoped, not personal.
-          Exception: currently viewing as an employee (Switch view) — that IS
+          Exception: currently viewing as an employee (the dashboard's view
+          switcher) — that IS
           the personal surface right now, same reasoning as hasEmployment
           gating Career's own page guard. */}
       {(!isManager && !hasCeoRole) || viewingAsEmployee ? (
