@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ClampedText, Mascot } from "@/components/kit";
+import { Mascot } from "@/components/kit";
 import { questionTitle } from "@/lib/question-titles";
 import { HEADER_MASCOT_SIZE } from "@/lib/mascot";
 import { COPY } from "@/lib/copy";
@@ -97,19 +97,16 @@ export function ReturnCheckIn({
         </div>
 
         {/* recall the recommendation */}
-        {/* Same look as the Inbox recommendation cards; only the first lines
-            show, "Read all" opens the rest (owner, 2026-10-21: no wall of text). */}
+        {/* Same look as the Inbox recommendation cards. The whole tip shows, no
+            "Read all" (owner, 2026-10-26: the tips are short enough now). */}
         <div className="mt-5 rounded-[28px] bg-[#E8E2FF] px-5 py-4 shadow-[0_10px_24px_-14px_rgba(80,60,200,0.55)]">
           <span className="text-[11px] font-semibold text-brand/70">{rec.weekLabel}</span>
           <p className="mt-1 font-display text-[17px] font-black leading-snug text-brand">
             Low Score on {questionTitle(rec.questionId, rec.questionText)}
           </p>
-          <ClampedText
-            text={rec.recommendation}
-            lines={4}
-            className="mt-2 text-[14px] leading-relaxed text-[#5b4fd6]"
-            linkClassName="text-brand decoration-brand/40"
-          />
+          <p className="mt-2 whitespace-pre-line text-[14px] leading-relaxed text-[#5b4fd6]">
+            {rec.recommendation}
+          </p>
         </div>
 
         {/* the prompt */}
