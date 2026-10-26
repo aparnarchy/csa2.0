@@ -5,7 +5,7 @@ A record of every tip in the app, so there's a copy in git. The app itself reads
 - **Current**: the shortened text live in the app (2026-10-26).
 - **Original**: the full text the owner wrote, before shortening.
 
-Still missing: manager tip for q19.
+Every active question has an employee and a manager tip.
 
 ## q11 · Compensation
 
@@ -323,9 +323,20 @@ Still missing: manager tip for q19.
 
 </details>
 
-### Manager
+### Manager: current
 
-_None yet._
+> Have an open conversation with your manager about your career goals.
+> • Ask what the next level looks like, and what skills or impact are expected.
+> • Build a focused plan, rather than waiting for the appraisal.
+> • Meanwhile, build visibility: own high-impact work, document your achievements, and seek feedback regularly.
+>
+> Growth often starts showing long before a title change happens.
+
+<details><summary>Manager: original</summary>
+
+> Start by having an open conversation with your manager about your career goals, and understanding what growth looks like for your role. Ask what the next level looks like, what skills or impact are expected, and what specific areas you can work on. This helps you create a focused plan rather than waiting passively or raising questions during the appraisal process. In the meantime, focus on building visibility: take ownership of high-impact work, document your achievements, and seek feedback regularly. Growth often starts showing long before a title change happens.
+
+</details>
 
 ## q20 · Growth
 
