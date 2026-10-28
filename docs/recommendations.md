@@ -325,16 +325,15 @@ Every active question has an employee and a manager tip.
 
 ### Manager: current
 
-> Have an open conversation with your manager about your career goals.
-> • Ask what the next level looks like, and what skills or impact are expected.
-> • Build a focused plan, rather than waiting for the appraisal.
-> • Meanwhile, build visibility: own high-impact work, document your achievements, and seek feedback regularly.
+> Review whether they’ve had access to the right projects and visibility to demonstrate readiness.
+> • Do not wait for them to reach out and express unhappiness.
+> • If the individual isn’t ready, give concrete feedback and help them build a plan with measurable milestones.
 >
-> Growth often starts showing long before a title change happens.
+> Silence or vague feedback can demotivate more than a delay itself.
 
 <details><summary>Manager: original</summary>
 
-> Start by having an open conversation with your manager about your career goals, and understanding what growth looks like for your role. Ask what the next level looks like, what skills or impact are expected, and what specific areas you can work on. This helps you create a focused plan rather than waiting passively or raising questions during the appraisal process. In the meantime, focus on building visibility: take ownership of high-impact work, document your achievements, and seek feedback regularly. Growth often starts showing long before a title change happens.
+> Start by reviewing whether they’ve had access to the right projects and visibility to demonstrate readiness. Do not wait for them to reach out and express unhappiness. If the individual isn’t yet ready, give concrete feedback and help them build a plan with measurable milestones. Silence or vague feedback can demotivate more than a delay itself.
 
 </details>
 
