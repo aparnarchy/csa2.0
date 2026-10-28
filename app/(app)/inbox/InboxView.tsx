@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { BackButton, Card, GradientHeader, Mascot, RecommendationStack, ScreenShell } from "@/components/kit";
+import { BackButton, CalmWaves, Card, GradientHeader, Mascot, RecommendationStack, ScreenShell } from "@/components/kit";
 import { HEADER_MASCOT_SIZE } from "@/lib/mascot";
 import {
   type ActionHistoryItem,
@@ -161,7 +161,8 @@ function UnansweredCard({ questions }: { questions: CheckInQuestion[] }) {
     return (
       <Card>
         <p className="text-[11px] font-bold uppercase tracking-wide text-brand">{COPY.inbox.unansweredLabel}</p>
-        <p className="mt-2 text-sm text-ink-3">{COPY.inbox.allCaughtUpEmpty}</p>
+        <CalmWaves className="mt-3" />
+        <p className="mt-3 text-center text-sm text-ink-3">{COPY.inbox.allCaughtUpEmpty}</p>
       </Card>
     );
   }

@@ -10,6 +10,7 @@
 
 import { useEffect, useState } from "react";
 import {
+  CalmWaves,
   AIInsight,
   NotEnoughData,
   PillarCard,
@@ -99,6 +100,10 @@ export default function KitPreviewPage() {
         {emp && (
           <TrendChart data={emp.trend} window={window} onWindowChange={setWindow} />
         )}
+      </Section>
+
+      <Section title="CalmWaves (Inbox: nothing waiting)">
+        <CalmWaves />
       </Section>
 
       <Section title="AIInsight">

@@ -224,3 +224,16 @@ body {
   .opening[data-mode] .opening-bar { display: none; }
   .opening[data-mode="full"] { animation: openingOut .35s 1.2s ease-in both; }
 }
+
+/* CalmWaves (components/kit/CalmWaves.tsx) — the Inbox "nothing waiting"
+   animation. Each wave is twice as wide as the box and repeats every half,
+   so sliding it left by 50% loops seamlessly. */
+@keyframes calmRoll { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+@keyframes calmBob { 0%, 100% { transform: translateY(0) rotate(-4deg); } 50% { transform: translateY(5px) rotate(4deg); } }
+.calm-wave-1 { animation: calmRoll 9s linear infinite; }
+.calm-wave-2 { animation: calmRoll 6.5s linear infinite reverse; }
+.calm-wave-3 { animation: calmRoll 4.5s linear infinite; }
+.calm-boat   { animation: calmBob 3s ease-in-out infinite; transform-origin: 50% 90%; }
+@media (prefers-reduced-motion: reduce) {
+  .calm-wave-1, .calm-wave-2, .calm-wave-3, .calm-boat { animation: none; }
+}
