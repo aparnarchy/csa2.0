@@ -22,7 +22,7 @@ export interface ResponseOption {
 }
 
 export type Breakdown =
-  | { kind: "mine"; pickedKey: OptionKey | null; timesAnswered: number }
+  | { kind: "mine"; pickedKey: OptionKey | null; timesAnswered: number; latestAt: string | null }
   | { kind: "split"; people: number }
   | { kind: "average"; closestKey: OptionKey; people: number };
 
@@ -51,10 +51,12 @@ function closestKey(q: QuestionOptionCols, score: number): OptionKey {
   )[0].key;
 }
 
-/** One person's own answers to a question, oldest first. */
+/** One person's own answers to a question, oldest first. `latestAt` is when
+    the newest one was answered. */
 export function myBreakdown(
   q: QuestionOptionCols,
   answersOldestFirst: number[],
+  latestAt: string | null = null,
 ): { responses: ResponseOption[]; breakdown: Breakdown } {
   const latest = answersOldestFirst[answersOldestFirst.length - 1];
   return {
@@ -65,6 +67,7 @@ export function myBreakdown(
       // re-scored the options still highlights something sensible.
       pickedKey: latest === undefined ? null : closestKey(q, latest),
       timesAnswered: answersOldestFirst.length,
+      latestAt,
     },
   };
 }

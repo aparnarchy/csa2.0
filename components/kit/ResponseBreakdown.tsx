@@ -21,10 +21,15 @@ export function ResponseBreakdown({
   const t = COPY.shared;
 
   if (breakdown?.kind === "mine") {
+    const latestDate = breakdown.latestAt ? shortDate(breakdown.latestAt) : "";
     return (
       <>
         <Heading>{t.breakdownMineTitle}</Heading>
-        <OptionList responses={responses} highlight={breakdown.pickedKey} tag={t.breakdownLatestTag} />
+        <OptionList
+          responses={responses}
+          highlight={breakdown.pickedKey}
+          tag={latestDate ? fill(t.breakdownLatestTagDated, { date: latestDate }) : t.breakdownLatestTag}
+        />
         {breakdown.timesAnswered > 1 && (
           <p className="mt-2 text-[11px] text-ink-3">
             {fill(t.breakdownAnsweredTimes, { count: breakdown.timesAnswered, avg: score.toFixed(1) })}
@@ -68,6 +73,15 @@ export function ResponseBreakdown({
       ))}
     </>
   );
+}
+
+/** "26 Oct" (plus the year if it isn't this year). Read as UTC so the server
+    and the phone print the same day. */
+function shortDate(sqliteUtc: string): string {
+  const d = new Date(sqliteUtc.includes("T") ? sqliteUtc : `${sqliteUtc.replace(" ", "T")}Z`);
+  if (Number.isNaN(d.getTime())) return "";
+  const sameYear = d.getUTCFullYear() === new Date().getUTCFullYear();
+  return d.toLocaleDateString("en-GB", { day: "numeric", month: "short", ...(sameYear ? {} : { year: "numeric" }), timeZone: "UTC" });
 }
 
 function Heading({ children }: { children: React.ReactNode }) {

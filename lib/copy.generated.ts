@@ -206,6 +206,7 @@ export const COPY = {
     "aiInsightCareerNudge": "Add your career history for even more accurate insights.",
     "breakdownMineTitle": "Your answer",
     "breakdownLatestTag": "Your latest",
+    "breakdownLatestTagDated": "Your latest · {date}",
     "breakdownAnsweredTimes": "You've answered this {count} times · your average is {avg}",
     "breakdownSplitTitle": "How people answered",
     "breakdownAverageTitle": "Typical answer",

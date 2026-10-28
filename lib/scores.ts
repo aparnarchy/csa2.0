@@ -43,6 +43,8 @@ interface CheckInRow {
   questionId: string;
   pillarId: PillarId;
   score: number;
+  /** When it was answered (SQLite UTC "YYYY-MM-DD HH:MM:SS"). */
+  timestamp: string;
 }
 
 /** Shared aggregation used by both the dashboard and a single pillar's detail. */
@@ -51,7 +53,7 @@ async function computeAggregate(userId: string, window: Window): Promise<Employe
   const [ciRes, qRes, sRes, wRes, recMap] = await Promise.all([
     db
       // Oldest first, so a question's last answer is its most recent pick.
-      .prepare("SELECT weekId, questionId, pillarId, score FROM checkIns WHERE userId = ? ORDER BY timestamp, weekId")
+      .prepare("SELECT weekId, questionId, pillarId, score, timestamp FROM checkIns WHERE userId = ? ORDER BY timestamp, weekId")
       .bind(userId)
       .all<CheckInRow>(),
     // Not filtered to isActive: a deactivated question's past answers still
@@ -162,10 +164,12 @@ async function computeAggregate(userId: string, window: Window): Promise<Employe
   // Per-question insight: the user's average answer for each active question.
   const qMeta = new Map(qRes.results.map((q) => [q.id, q]));
   const byQ = new Map<string, number[]>();
+  const latestAt = new Map<string, string>(); // rows are oldest first
   for (const r of rows) {
     const a = byQ.get(r.questionId) ?? [];
     a.push(r.score);
     byQ.set(r.questionId, a);
+    latestAt.set(r.questionId, r.timestamp);
   }
   const questions: QuestionInsight[] = [...byQ.entries()]
     .filter(([qid]) => qMeta.has(qid))
@@ -178,7 +182,7 @@ async function computeAggregate(userId: string, window: Window): Promise<Employe
         pillarId: meta.pillarId,
         score,
         // Their real options, latest pick highlighted (oldest-first rows).
-        ...myBreakdown(meta, scores),
+        ...myBreakdown(meta, scores, latestAt.get(qid) ?? null),
         recommendation: pickRecommendation(recMap, qid, meta.pillarId),
       };
     });
