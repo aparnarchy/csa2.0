@@ -9,7 +9,6 @@ import {
   GradientHeader,
   InsightBarRow,
   Mascot,
-  PillarCard,
   PillarInfo,
   ScoreCircles,
   ScreenShell,
@@ -23,7 +22,7 @@ import {
 import { type EmployeeScores, type Window } from "@/lib/data";
 import { getEmployeeInsightAction, getEmployeeScoresAction } from "./actions";
 import { HEADER_MASCOT_SIZE, mascotForScore } from "@/lib/mascot";
-import { STRENGTH_CUTOFF } from "@/lib/pillars";
+import { PILLARS, STRENGTH_CUTOFF } from "@/lib/pillars";
 import { COPY, fill } from "@/lib/copy";
 import { buildEmployeeInsight, type InsightSpot } from "@/lib/insight";
 import { earlyReadNote } from "@/lib/mood";
@@ -102,6 +101,10 @@ export function AnalysisView({
   const insight = buildEmployeeInsight(data);
   const chrome = chromeFor();
   const firstName = (session.name || "there").trim().split(/\s+/)[0];
+  // The pillars not shown as a big circle — the small pills under them.
+  const otherPillars = data.pillars
+    .filter((p) => p.pillarId !== insight.brightSpot?.pillarId && p.pillarId !== insight.watchOut?.pillarId)
+    .map((p) => ({ pillarId: p.pillarId, pillar: PILLARS[p.pillarId].label, score: p.score }));
 
   return (
     <ScreenShell active="insights">
@@ -173,16 +176,20 @@ export function AnalysisView({
       {/* 3. Your pillars — all four together, apart from the score so nobody
           reads the score as an average of some of them. The earned circles
           (Bright spot above 7, Watch out at 7 or below; lib/insight.ts) are
-          the big ones. Under them, all four pillars as the same card row as
-          every other dashboard (owner, 2026-10-28: the small stacked pills
-          looked dismissible). Play: wavy blobs. Professional: stat cards. */}
+          the big ones; the rest are small pills beneath them. Play:
+          wavy blobs. Professional: plain stat cards, pills beneath. */}
       <section>
         <p className="mb-2 text-center font-display text-sm font-black uppercase tracking-wide text-brand">
           {COPY.mood.pillarsTitle}
         </p>
         {isPlay ? (
           <div className="mb-2 pt-1">
-            <ScoreCircles bright={insight.brightSpot} watch={insight.watchOut} onSelect={setSelectedPillar} />
+            <ScoreCircles
+              bright={insight.brightSpot}
+              watch={insight.watchOut}
+              others={otherPillars}
+              onSelect={setSelectedPillar}
+            />
           </div>
         ) : (
           <>
@@ -196,20 +203,10 @@ export function AnalysisView({
                 )}
               </div>
             )}
+            <ScoreCircles bright={null} watch={null} others={otherPillars} onSelect={setSelectedPillar} />
           </>
         )}
-        <Card>
-          <div className="-mx-1.5 grid grid-cols-4 gap-2">
-            {data.pillars.map((p) => (
-              <PillarCard
-                key={p.pillarId}
-                data={p}
-                onClick={p.score !== null ? () => setSelectedPillar(p.pillarId) : undefined}
-              />
-            ))}
-          </div>
-          <PillarInfo className="mt-3" />
-        </Card>
+        <PillarInfo className="mt-3" />
       </section>
 
       {/* 5. Strengths / Concerns — top 3, "See all" for the rest. */}
