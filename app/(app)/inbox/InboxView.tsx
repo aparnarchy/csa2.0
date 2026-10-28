@@ -8,7 +8,6 @@ import {
   type ActionResponseValue,
   type CheckInQuestion,
   type FeedbackAction,
-  type LatestCheckIn,
   type OpenRecommendationItem,
   type Reflection,
   type RecommendationHistoryItem,
@@ -28,7 +27,6 @@ const RESPONSE_META: Record<ActionResponseValue, { label: string; prompt: string
 
 export function InboxView({
   session,
-  latest,
   unanswered,
   actions,
   history,
@@ -38,7 +36,6 @@ export function InboxView({
   recommendationHistory,
 }: {
   session: SessionUser;
-  latest: LatestCheckIn | null;
   unanswered: CheckInQuestion[];
   actions: FeedbackAction[];
   history: ActionHistoryItem[];
@@ -96,7 +93,8 @@ export function InboxView({
       )}
 
       {/* Inbox order (owner, 2026-10-15): unanswered questions →
-          recommendations → actions taken on your feedback → latest check-in. */}
+          recommendations → actions taken on your feedback. The "Latest
+          check-in" box was removed (owner, 2026-10-28). */}
       <UnansweredCard questions={unanswered} />
 
       {/* Un-actioned recommendations as a card stack (owner, 2026-10-14):
@@ -139,9 +137,6 @@ export function InboxView({
 
       <FeedbackActionsCard actions={actions} />
 
-      {/* Latest recommendation (from the most recent check-in) */}
-      {latest && <LatestCheckInCard latest={latest} />}
-
       {reflections.length > 0 && <ReflectionsCard reflections={reflections} />}
 
       {(history.length > 0 || recommendationHistory.length > 0) && (
@@ -154,55 +149,6 @@ export function InboxView({
         </button>
       )}
     </ScreenShell>
-  );
-}
-
-// ── Latest check-in ──────────────────────────────────────────────────────────
-function LatestCheckInCard({ latest }: { latest: LatestCheckIn }) {
-  const [shared, setShared] = useState(false);
-  const [note, setNote] = useState("");
-
-  return (
-    <Card>
-      <p className="text-[11px] font-bold uppercase tracking-wide text-brand">
-        {fill(COPY.inbox.latestCheckInLabel, { date: latest.dateLabel })}
-      </p>
-      <p className="mt-2 text-sm font-semibold leading-snug text-ink">&ldquo;{latest.questionText}&rdquo;</p>
-      <p className="mt-2 flex items-baseline gap-1">
-        <span className={`font-display text-3xl font-black text-brand`}>
-          {latest.score}
-        </span>
-        <span className="text-sm text-ink-4">/10</span>
-      </p>
-
-      {latest.isLow && latest.recommendation ? (
-        // The recommendation itself lives in the card stack above — shown
-        // once, never twice.
-        <p className="mt-3 text-[13px] font-semibold text-brand">Your recommendation for this is in the cards above.</p>
-      ) : shared ? (
-        <div className="mt-3 rounded-card bg-lav-soft p-3 text-center">
-          <p className="text-sm font-bold text-brand">{COPY.inbox.sharedThanks}</p>
-        </div>
-      ) : (
-        <div className="mt-3">
-          <p className="mb-2 text-[13px] text-ink-3">{COPY.inbox.doingGreatPrompt}</p>
-          <textarea
-            value={note}
-            onChange={(e) => setNote(e.target.value)}
-            placeholder={COPY.inbox.shareNotePlaceholder}
-            className="h-16 w-full resize-none rounded-xl border border-gray-300 bg-white p-3 text-sm text-ink placeholder-ink-4 focus:outline-none focus:ring-2 focus:ring-brand"
-          />
-          <button
-            type="button"
-            disabled={!note.trim()}
-            onClick={() => setShared(true)}
-            className="mt-2 w-full rounded-xl bg-brand py-2.5 text-sm font-bold text-white transition active:scale-[0.98] disabled:opacity-40"
-          >
-            {COPY.inbox.shareButton}
-          </button>
-        </div>
-      )}
-    </Card>
   );
 }
 

@@ -6,7 +6,6 @@ import { getViewMode } from "@/lib/view-mode";
 import { resolveView } from "@/lib/views";
 import { getActionHistory, getFeedbackActions, getManagerInbox } from "@/lib/feedback";
 import {
-  getLatestCheckIn,
   getOpenRecommendations,
   getRecommendationHistory,
   getReflections,
@@ -17,7 +16,7 @@ import { InboxView } from "./InboxView";
 import { ManagerInboxView } from "../dashboard/manager/inbox/ManagerInboxView";
 
 /**
- * Inbox (Phase 2.6): latest check-in, unanswered questions, feedback actions.
+ * Inbox (Phase 2.6): unanswered questions, recommendations, feedback actions.
  *
  * A manager's "Inbox" bottom-nav tab means their Action Inbox (the 4-week
  * feedback-action loop) — it was previously only reachable via a button on the
@@ -36,8 +35,7 @@ export default async function InboxPage() {
     return <ManagerInboxView session={session.user} initial={inbox} />;
   }
 
-  const [latest, unanswered, actions, history, reflections, openRecs, recHistory] = await Promise.all([
-    getLatestCheckIn(session.user, session.user.id),
+  const [unanswered, actions, history, reflections, openRecs, recHistory] = await Promise.all([
     getUnansweredCheckIns(session.user, session.user.id),
     getFeedbackActions(session.user, session.user.id),
     getActionHistory(session.user, session.user.id),
@@ -54,7 +52,6 @@ export default async function InboxPage() {
   return (
     <InboxView
       session={session.user}
-      latest={latest}
       unanswered={unanswered}
       actions={actions}
       history={history}
