@@ -142,6 +142,43 @@ How to use this with Claude Code: when building a feature, paste the relevant se
 | iOS push notifications | Limited for PWAs — rely on in-app + email for the pilot. Native push is a post-pilot (Capacitor) concern. |
 | Polling while the app is backgrounded | Pause or slow polling when the app isn't visible, to save battery/requests. |
 
+## 14. Gestures and back navigation (mobile)
+
+The standard (Apple HIG + Android/Material): **back retraces the user's path through content, never through finished one-time flows.** Login, signup, onboarding, the splash, and a submitted check-in are removed from history once done. Back closes whatever is on top first (pop-up, sheet, detail panel), then the screen, and on a top-level tab it leaves the app rather than going somewhere unrelated.
+
+Today the app has a left-edge swipe → back and pull-to-refresh (`components/kit/MobileGestures.tsx`), swipe-to-delete on rows (`SwipeToDelete`), and swipeable tip cards (`RecommendationStack`). Status as of 2026-10-28 is in brackets.
+
+| Scenario | Expected behaviour |
+| --- | --- |
+| Signed in, swipe/back from the first screen | Never returns to Login/Signup. Login/signup/onboarding move on with `router.replace`, not `push`. [**GAP**: login and signup use `push`, so back lands on Login, which then bounces to the dashboard — a visible flash.] |
+| Finished onboarding, swipe back | Never returns to the onboarding form. [**GAP**: onboarding uses `push`.] |
+| Signed out, swipe/back | Never shows an app screen again (not even a cached copy). Sign-out uses `replace` and clears the client page cache. [**GAP**: sign-out uses `push("/login")`; a cached dashboard may flash.] |
+| Check-in submitted, swipe back | Does not reopen the check-in; it's a one-time flow (see the check-in memory: transient, not navigable). [**PARTIAL**: one exit uses `replace`, three use `push`.] |
+| Pop-up (Modal) open, swipe back / Android back | Closes the pop-up only; the screen stays. [**GAP**: `Modal` ignores the back gesture, so the whole screen goes back.] |
+| Detail panel with no URL (career company, CEO pillar detail) | Back closes the panel first. [**DONE** via the `app:back-intent` event.] |
+| Back from a top-level tab (Profile / Insights / Inbox / Admin) | Tabs don't build history: switching tabs replaces, so back doesn't cycle through every tab you tapped. Android: back on a non-home tab goes to the home tab, then exits. [**GAP**: tabs are plain links, so history stacks.] |
+| On-screen "‹ Back" button | Behaves the same as the swipe (goes to the parent, without adding a new history entry). [**GAP**: admin/manager/career back buttons `push` the parent, so a swipe afterwards goes forward into the child again.] |
+| Swipe back on the very first screen of a fresh open | Nothing happens (or the app closes on Android). Never a blank page or the login screen. |
+| Edge swipe inside a horizontal carousel (tip cards) | Edge-zone (first 20px) = back; anywhere else = the carousel. They must not both fire. [**DONE** by the 20px edge zone; re-check on cards that reach the screen edge.] |
+| iPhone Safari *tab* (not installed) | Safari already has its own edge-swipe back; ours must not cause a double back. Installed PWA has no native back, so ours is needed there. |
+| Android Chrome *tab* | Chrome has native pull-to-refresh; ours must not refresh twice. Set `overscroll-behavior-y: contain` on the page. [**GAP**: not set.] |
+| Pull-down while a pop-up is open | Scrolls the pop-up, never refreshes the page behind it. [**GAP**: page scroll is locked at the top, so pulling down in a pop-up can trigger refresh.] |
+| Pull-to-refresh mid check-in or with an unsaved form | Must not wipe what the user typed or picked. Disable pull-to-refresh on forms and the check-in. |
+| Swipe-to-delete | Reveals the action; a deliberate tap (or confirm) deletes. A fast fling never deletes silently. Undo where possible. |
+| Desktop / mouse | No gestures; the on-screen back buttons and hover still work. |
+
+Other standard gestures and whether CSA needs them: long-press for a context menu or preview (not needed for the pilot); swipe down to dismiss a bottom sheet (only if we add bottom sheets); pinch-zoom (keep browser default for accessibility, don't block it).
+
+## 15. Explanations on touch screens (pillar definitions)
+
+| Scenario | Expected behaviour |
+| --- | --- |
+| Laptop: hover a pillar card | Show a short definition (tooltip). Hover is a bonus, never the only way to see it. |
+| Phone: no hover exists | A small "i" next to the Pillars heading opens one pop-up with all four definitions. Tapping a card still opens pillar detail (no change to what tap does). The pillar detail screen also shows that pillar's one-line definition under its title. |
+| Long-press a card | Optional shortcut to the same definition; never the only path (nobody discovers long-press). |
+| Definition wording | Owner writes the 4 definitions (max ~2 short lines each); stored once in copy so every dashboard (employee, manager, CEO/HR) uses the same text. **DECIDE**: wording pending from owner. |
+| Screen readers | The "i" button has a label ("What do the pillars mean?"); the pop-up closes with back/Escape like every other pop-up. |
+
 ---
 
 ## Quick "must-not-happen" list (privacy-critical — never ship if any of these are possible)
