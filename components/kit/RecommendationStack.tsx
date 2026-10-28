@@ -1,6 +1,5 @@
 "use client";
 
-import { ClampedText } from "./ClampedText";
 import { useEffect, useLayoutEffect, useRef, useState, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
 
 export interface StackItem {
@@ -244,14 +243,11 @@ export function RecommendationStack({
                 <p className={`font-display text-[17px] font-black leading-snug ${dark ? "text-white" : "text-brand"}`}>
                   {it.score !== null ? `${it.score.toFixed(1)} | ` : ""}Low Score on {it.title}
                 </p>
-                {/* First few lines only; "Read all" opens the rest (owner, 2026-10-21). */}
-                <ClampedText
-                  key={isTop ? "top" : "behind"}
-                  text={it.text}
-                  lines={5}
-                  className={`mt-2 text-[14px] leading-relaxed ${dark ? "text-white/90" : "text-[#5b4fd6]"}`}
-                  linkClassName={dark ? "text-white decoration-white/50" : "text-brand decoration-brand/40"}
-                />
+                {/* The whole tip, no "Read all" (owner, 2026-10-28: the tips are
+                    short now). Line breaks and bullets kept. */}
+                <p className={`mt-2 whitespace-pre-line text-[14px] leading-relaxed ${dark ? "text-white/90" : "text-[#5b4fd6]"}`}>
+                  {it.text}
+                </p>
                 {n > 1 && (
                   <p className={`mt-3 text-[11px] font-semibold ${dark ? "text-white/70" : "text-brand/60"}`}>
                     {k + 1} of {n} · tap or swipe for the next one
