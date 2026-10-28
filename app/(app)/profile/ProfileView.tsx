@@ -226,29 +226,18 @@ export function ProfileView({
   );
 }
 
-/** The app logo then "THE Culture Super" on one line in the owner's Loubag lettering (images
-    cut from their Canva file, same colours as the opening animation — the
-    font itself is paid, so it isn't bundled), with the tagline beneath.
-    All three images share one scale, so their sizes keep Canva's ratios
-    (THE 49 / Culture 100 / Super 90); "Super"'s "p" hangs below the line. */
+/** The app logo beside "THE Culture Super" on one line, with the tagline
+    beneath. The title is the owner's Loubag lettering rebuilt as one image
+    (public/brand/title.png: one colour, one letter height, even spacing;
+    the font itself is paid, so it isn't bundled), centred on the logo's
+    middle (owner approved, 2026-10-28). */
 function BrandLine() {
   const [about, setAbout] = useState(false);
-  const S = 0.1; // image px → screen px
-  const SUPER_DESCENDER = 48; // rows below the baseline in wordmark-super.png
   return (
     <div className="flex flex-col items-center gap-3 pb-1 pt-2">
-      <div className="flex items-end gap-2" role="img" aria-label="The Culture Super">
-        <Image src="/brand/logo.png" alt="" width={40} height={40} unoptimized className="mr-1" />
-        <Image src="/brand/wordmark-the.png" alt="" width={456 * S} height={116 * S} unoptimized className="mb-[3px]" />
-        <Image src="/brand/wordmark-culture.png" alt="" width={1000 * S} height={259 * S} unoptimized />
-        <Image
-          src="/brand/wordmark-super.png"
-          alt=""
-          width={891 * S}
-          height={266 * S}
-          unoptimized
-          style={{ marginBottom: -SUPER_DESCENDER * S }}
-        />
+      <div className="flex items-center gap-2.5" role="img" aria-label="The Culture Super">
+        <Image src="/brand/logo.png" alt="" width={44} height={44} unoptimized />
+        <Image src="/brand/title.png" alt="" width={232} height={29} unoptimized />
       </div>
       <div className="flex items-center justify-center gap-1.5">
         <p className="text-center font-display text-[12px] font-semibold tracking-wide text-[#9c92ff]">

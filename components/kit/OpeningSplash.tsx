@@ -2,9 +2,9 @@ import Image from "next/image";
 
 /**
  * The opening animation (owner, 2026-10-23, option A from their logo GIF):
- * "THE" and "Super" sit centred on white with the app logo small at the bottom
- * (the mascot until 2026-10-28)
- * (owner: the side-by-side logo sat off-centre), a purple block sweeps across
+ * the app logo sits on top (owner, 2026-10-28; the mascot used to sit at the
+ * bottom), with "THE" and "Super" centred under it on white (owner: the
+ * side-by-side logo sat off-centre). A purple block sweeps across
  * and leaves "Culture" behind, the logo holds for over a second, then it
  * fades into the app (~2.6s). Pure CSS (globals.css, .opening-*), no library.
  *
@@ -57,6 +57,7 @@ export function OpeningSplash() {
   return (
     <>
       <div id="opening" className="opening" aria-hidden suppressHydrationWarning>
+        <Image className="opening-mark" src="/brand/logo.png" alt="" width={512} height={512} priority unoptimized />
         <div className="opening-logo">
           <Image className="opening-the" src="/brand/wordmark-the.png" alt="" width={456} height={116} priority unoptimized />
           <Image className="opening-culture" src="/brand/wordmark-culture.png" alt="" width={1000} height={259} priority unoptimized />
@@ -65,7 +66,6 @@ export function OpeningSplash() {
             <span />
           </span>
         </div>
-        <Image className="opening-mascot" src="/brand/logo.png" alt="" width={512} height={512} priority unoptimized />
       </div>
       <script dangerouslySetInnerHTML={{ __html: SCRIPT }} />
     </>

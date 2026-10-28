@@ -185,23 +185,21 @@ body {
 .opening[data-mode="wait"],
 .opening[data-mode="full"] {
   position: fixed; inset: 0; z-index: 100;
-  display: flex; align-items: center; justify-content: center;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
   background: #fff;
 }
 .opening[data-mode="wait"] .opening-logo,
-.opening[data-mode="wait"] .opening-mascot { visibility: hidden; }
-/* The lettering, centred and a little above the middle (owner, 2026-10-23).
-   Box = the three lines (Culture full width); positions from their Canva
-   file. The mascot sits small, centred near the bottom. */
-.opening-logo { position: relative; width: min(84vw, 420px); aspect-ratio: 310 / 220.5; margin-bottom: 12vh; }
+.opening[data-mode="wait"] .opening-mark { visibility: hidden; }
+/* The app logo on top, then the owner's stacked lettering under it, as one
+   group a little above the middle (owner, 2026-10-28; was the mascot at the
+   bottom). Lettering box = the three lines (Culture full width); positions
+   from their Canva file. */
+.opening-mark { display: block; width: min(24vw, 96px); height: auto; margin-bottom: 4.5vh; }
+.opening-logo { position: relative; width: min(84vw, 420px); aspect-ratio: 310 / 220.5; margin-bottom: 10vh; }
 .opening-logo > * { position: absolute; display: block; height: auto; }
 .opening-the     { left: 26.8%; top: 0;     width: 45.6%; }
 .opening-culture { left: 0;     top: 21%;   width: 100%; }
 .opening-super   { left: 5.35%; top: 62.6%; width: 89.1%; }
-.opening-mascot  {
-  position: absolute; left: 50%; bottom: calc(env(safe-area-inset-bottom, 0px) + 9vh);
-  width: min(26vw, 112px); height: auto; transform: translateX(-50%);
-}
 /* The block: a full-size bar sliding through a window, so it grows from the
    left edge and then leaves through the right one. */
 .opening-bar     { left: -0.8%; top: 19.6%; width: 101.6%; height: 39.9%; overflow: hidden; }
@@ -220,7 +218,7 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .opening[data-mode] .opening-bar > span,
   .opening[data-mode] .opening-culture,
-  .opening[data-mode] .opening-mascot { animation: none !important; }
+  .opening[data-mode] .opening-mark { animation: none !important; }
   .opening[data-mode] .opening-bar { display: none; }
   .opening[data-mode="full"] { animation: openingOut .35s 1.2s ease-in both; }
 }
