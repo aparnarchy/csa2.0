@@ -18,7 +18,6 @@ import {
   ScreenShell,
   SegmentedToggle,
   TrendChart,
-  ViewSwitcher,
   WINS_LABEL,
   WORRIES_LABEL,
   ShowMoreButton,
@@ -124,7 +123,6 @@ export function ManagerDashboardView({
           mascot. Same palette and fonts as every other screen. */}
       {isPlay ? (
         <GradientHeader
-          switcher={<ViewSwitcher session={session} current="manager" />}
           compact
           eyebrow={COPY.managerDashboard.eyebrow}
           title={fill(COPY.managerDashboard.teamTitle, { name: firstName })}

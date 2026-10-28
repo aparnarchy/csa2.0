@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { BigScore, Card, CEO_NAV, CustomDropdown, GradientHeader, LeaverNote, Mascot, NotEnoughData, PillarCard, PillarInfo, ScreenShell, ViewSwitcher } from "@/components/kit";
+import { BigScore, Card, CEO_NAV, CustomDropdown, GradientHeader, LeaverNote, Mascot, NotEnoughData, PillarCard, PillarInfo, ScreenShell } from "@/components/kit";
 import { type CeoDashboard, type Window } from "@/lib/data";
 import { COPY, fill } from "@/lib/copy";
 import { ANONYMISATION_FLOOR } from "@/lib/scoring";
@@ -63,7 +63,6 @@ export function OrgDashboardView({
     <ScreenShell active="dashboard" navItems={CEO_NAV}>
       {isPlay ? (
         <GradientHeader
-          switcher={<ViewSwitcher session={session} current="ceo_hr" />}
           eyebrow="🏢 Org dashboard"
           title={`Hi ${firstName}`}
           avatar={

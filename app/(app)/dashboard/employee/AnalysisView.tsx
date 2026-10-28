@@ -14,7 +14,6 @@ import {
   ScreenShell,
   SegmentedToggle,
   TrendChart,
-  ViewSwitcher,
   WINS_LABEL,
   WORRIES_LABEL,
   ShowMoreButton,
@@ -114,7 +113,6 @@ export function AnalysisView({
           welcome text (all in lilac to match the theme). */}
       {isPlay ? (
         <GradientHeader
-          switcher={<ViewSwitcher session={session} current="employee" />}
           eyebrow={chrome.eyebrow}
           title={chrome.greeting(firstName)}
           avatar={
@@ -136,7 +134,6 @@ export function AnalysisView({
           className="rounded-card px-5 py-5"
           style={{ background: "linear-gradient(135deg, #EDE7FF 0%, #C9B4FF 100%)" }}
         >
-          <ViewSwitcher session={session} current="employee" />
           <p className="text-xs font-semibold text-brand/70">{chrome.eyebrow}</p>
           <h1 className="mt-1 font-display text-[30px] font-black leading-tight text-brand">
             {chrome.greeting(firstName)}
