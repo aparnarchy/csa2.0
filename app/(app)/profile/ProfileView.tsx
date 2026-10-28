@@ -228,16 +228,18 @@ export function ProfileView({
 
 /** The app logo beside "THE Culture Super" on one line, with the tagline
     beneath. The title is the owner's Loubag lettering rebuilt as one image
-    (public/brand/title.png: one colour, one letter height, even spacing;
+    in sentence case, "The" not "THE" (public/brand/title.png: one colour,
+    one letter height, even spacing; the "h" is built from the lettering's
+    l and an upside-down u;
     the font itself is paid, so it isn't bundled), centred on the logo's
     middle (owner approved, 2026-10-28). */
 function BrandLine() {
   const [about, setAbout] = useState(false);
   return (
     <div className="flex flex-col items-center gap-3 pb-1 pt-2">
-      <div className="flex items-center gap-2.5" role="img" aria-label="The Culture Super">
-        <Image src="/brand/logo.png" alt="" width={44} height={44} unoptimized />
-        <Image src="/brand/title.png" alt="" width={232} height={29} unoptimized />
+      <div className="flex items-center gap-2" role="img" aria-label="The Culture Super">
+        <Image src="/brand/logo.png" alt="" width={32} height={32} unoptimized />
+        <Image src="/brand/title.png" alt="" width={236} height={29} unoptimized />
       </div>
       <div className="flex items-center justify-center gap-1.5">
         <p className="text-center font-display text-[12px] font-semibold tracking-wide text-[#9c92ff]">
