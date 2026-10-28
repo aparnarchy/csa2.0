@@ -284,7 +284,6 @@ function FollowUpActions({
   onResolved: () => void;
 }) {
   const [answer, setAnswer] = useState<"yes" | "not_yet" | null>(null);
-  const [note, setNote] = useState("");
   const [saving, setSaving] = useState(false);
   const [saveFailed, setSaveFailed] = useState(false);
   const [keptForLater, setKeptForLater] = useState(false);
@@ -292,6 +291,8 @@ function FollowUpActions({
   // A failed save used to leave `saving` on, so the buttons stayed disabled
   // and the row never moved. Now: one retry, then say so and re-enable.
   // "Yes" removes the card; "Not yet" keeps it in the stack until acted on.
+  // Tapping either saves straight away, no extra Save/Confirm step (owner,
+  // 2026-10-28).
   async function save(input: Parameters<typeof submitFollowUpAction>[0]) {
     setSaving(true);
     setSaveFailed(false);
@@ -309,16 +310,10 @@ function FollowUpActions({
     }
   }
 
-  const saveActed = () =>
-    save({
-      questionId: item.questionId,
-      pillarId: item.pillarId,
-      status: "acted",
-      journalText: note.trim() || undefined,
-    });
-
-  const saveNotActed = () =>
-    save({ questionId: item.questionId, pillarId: item.pillarId, status: "not_acted" });
+  const pick = (key: "yes" | "not_yet") => {
+    setAnswer(key);
+    save({ questionId: item.questionId, pillarId: item.pillarId, status: key === "yes" ? "acted" : "not_acted" });
+  };
 
   return (
     <div className="rounded-2xl bg-white p-3.5 shadow-card">
@@ -335,7 +330,7 @@ function FollowUpActions({
             key={o.key}
             type="button"
             disabled={saving}
-            onClick={() => setAnswer(o.key)}
+            onClick={() => pick(o.key)}
             className={`flex-1 rounded-xl py-2 text-xs font-bold transition disabled:opacity-40 ${
               answer === o.key ? "bg-brand text-white" : "bg-lav-soft text-brand"
             }`}
@@ -345,34 +340,6 @@ function FollowUpActions({
         ))}
       </div>
 
-      {answer === "yes" && (
-        <div className="screen-enter mt-3">
-          <textarea
-            value={note}
-            onChange={(e) => setNote(e.target.value)}
-            placeholder="What did you do? (optional)"
-            className="h-16 w-full resize-none rounded-xl border border-gray-300 bg-white p-3 text-sm text-ink placeholder-ink-4 focus:outline-none focus:ring-2 focus:ring-brand"
-          />
-          <button
-            type="button"
-            disabled={saving}
-            onClick={saveActed}
-            className="mt-2 w-full rounded-xl bg-brand py-2.5 text-sm font-bold text-white transition active:scale-[0.98] disabled:opacity-40"
-          >
-            Save
-          </button>
-        </div>
-      )}
-      {answer === "not_yet" && (
-        <button
-          type="button"
-          disabled={saving}
-          onClick={saveNotActed}
-          className="mt-3 w-full rounded-xl bg-lav-soft py-2.5 text-sm font-bold text-brand transition active:scale-[0.98] disabled:opacity-40"
-        >
-          Confirm
-        </button>
-      )}
       {keptForLater && (
         <p className="mt-2 text-xs font-semibold text-brand">Saved. This one stays here until you&apos;ve tried it.</p>
       )}
