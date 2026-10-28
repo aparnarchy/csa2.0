@@ -9,6 +9,7 @@
  */
 
 import type { Breakdown } from "./responses";
+import type { Activity } from "./streak";
 import type { FollowUpStatus, PillarId, SessionUser, WisdomLevel } from "./types";
 import { PILLAR_ORDER, PILLARS } from "./pillars";
 import {
@@ -573,7 +574,8 @@ export interface ProfileStats {
   longestStreak: number;
   totalCheckIns: number;
   participationPct: number;
-  recentWeeks: boolean[]; // most recent ~10 weeks; true = checked in (dot row, not a heatmap)
+  /** Streak unit + the 10-dot activity row (lib/streak.ts). */
+  activity: Activity;
   badges: string[]; // earned badge labels
   careerTenure: string; // total across companies, e.g. "5 yrs 1 mo"
 }
@@ -596,7 +598,7 @@ export async function getProfileStats(
     longestStreak: 12,
     totalCheckIns: 34,
     participationPct: 82,
-    recentWeeks: [true, true, false, true, true, true, false, true, true, true],
+    activity: { unit: "week", current: 4, longest: 4, dots: ["done", "done", "missed", "done", "done", "done", "missed", "done", "done", "upcoming"], todayIndex: 9 },
     badges: ["Growth Explorer", "Culture Champion", "Reflective Thinker"],
     careerTenure: "5 yrs 1 mo",
   };

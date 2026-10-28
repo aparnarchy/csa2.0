@@ -8,6 +8,8 @@ import { assertOwner } from "./access-control";
 import { getEmployeeScores } from "./scores";
 import type { ProfileStats } from "./data";
 import type { SessionUser } from "./types";
+import { buildActivity, daysSince } from "./streak";
+import { TESTING_MODE } from "./testing-mode";
 
 /** "5 yrs 1 mo" from a whole number of months. */
 function formatTenure(totalMonths: number): string {
@@ -36,7 +38,7 @@ export async function getProfileStats(
   assertOwner(session, userId);
   const db = getDB();
 
-  const [emp, streak, totalRow, badgeRes, winRes, answeredRes, totalWin, career] =
+  const [emp, onTimeRes, totalRow, badgeRes, answeredRes, totalWin, career] =
     await Promise.all([
       db
         .prepare(
@@ -44,15 +46,13 @@ export async function getProfileStats(
         )
         .bind(userId)
         .first<{ companyName: string | null; designation: string | null; startedAt: string | null }>(),
+      // On-time answers drive the streak and the activity dots (lib/streak.ts).
       db
-        .prepare("SELECT currentStreak, longestStreak FROM streaks WHERE userId = ?")
+        .prepare("SELECT weekId, timestamp FROM checkIns WHERE userId = ? AND isRetrospective = 0")
         .bind(userId)
-        .first<{ currentStreak: number; longestStreak: number }>(),
+        .all<{ weekId: string; timestamp: string }>(),
       db.prepare("SELECT COUNT(*) AS n FROM checkIns WHERE userId = ?").bind(userId).first<{ n: number }>(),
       db.prepare("SELECT badge FROM user_badges WHERE userId = ?").bind(userId).all<{ badge: string }>(),
-      // Last 10 weeks that have started — not future weeks already in the
-      // calendar, which pushed recent activity to the left of the row.
-      db.prepare("SELECT weekId FROM weeklyWindows WHERE startDate <= date('now') ORDER BY startDate DESC LIMIT 10").all<{ weekId: string }>(),
       db.prepare("SELECT DISTINCT weekId FROM checkIns WHERE userId = ?").bind(userId).all<{ weekId: string }>(),
       db
         .prepare("SELECT weekId, startDate, endDate FROM weeklyWindows")
@@ -66,7 +66,6 @@ export async function getProfileStats(
   const scores = await getEmployeeScores(session, userId, "3M");
 
   const answered = new Set(answeredRes.results.map((r) => r.weekId));
-  const recentWeeks = winRes.results.map((w) => answered.has(w.weekId)).reverse(); // oldest → newest
   // Participation counts only the weeks since this person was around — from
   // their job's start or their first check-in, whichever is earlier — up to
   // today. Counting every week the app has ever had made a new joiner who
@@ -82,6 +81,20 @@ export async function getProfileStats(
     ? Math.min(100, Math.round((answered.size / eligibleWeeks) * 100))
     : 0;
 
+  // Days while testing hands out a question a day, otherwise weeks.
+  const onTime = onTimeRes.results;
+  const activity = TESTING_MODE
+    ? buildActivity(
+        "day",
+        new Set(onTime.map((r) => r.timestamp.slice(0, 10))),
+        onTime.length ? daysSince(onTime.map((r) => r.timestamp).sort()[0]) : [],
+      )
+    : buildActivity(
+        "week",
+        new Set(onTime.map((r) => r.weekId)),
+        [...totalWin.results].filter((w) => w.startDate <= today).sort((a, b) => a.startDate.localeCompare(b.startDate)).map((w) => w.weekId),
+      );
+
   const tenureMonths =
     monthsBetween(emp?.startedAt ?? null, null) +
     career.results.reduce((sum, c) => sum + monthsBetween(c.startDate, c.endDate), 0);
@@ -92,11 +105,11 @@ export async function getProfileStats(
     overallScore: scores.overall ?? 0,
     hasScore: scores.enoughData && scores.overall !== null,
     delta: scores.delta ?? 0,
-    streak: streak?.currentStreak ?? 0,
-    longestStreak: streak?.longestStreak ?? 0,
+    streak: activity.current,
+    longestStreak: activity.longest,
     totalCheckIns: totalRow?.n ?? 0,
     participationPct,
-    recentWeeks,
+    activity,
     badges: badgeRes.results.map((b) => b.badge),
     careerTenure: formatTenure(tenureMonths),
   };

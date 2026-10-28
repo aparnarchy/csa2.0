@@ -123,7 +123,7 @@ export function ProfileView({
       {/* Their own sign-up details, editable after sign-up (owner, 2026-10-28). */}
       <DetailsCard details={details} />
 
-      {/* Activity — streak + best + recent-week dots (no heatmap). Only for
+      {/* Activity — streak + best + activity dots (no heatmap). Only for
           people who actually do check-ins; a manager with no employment of
           their own has no activity to show here. CEO/HR never sees this —
           their profile stays org-scoped even if they also have employment
@@ -136,16 +136,38 @@ export function ProfileView({
               {COPY.profile.bestStreak} <span className="font-bold text-brand">🔥 {stats.longestStreak}</span>
             </span>
           </div>
+          {/* Oldest on the left, starting at their first check-in; the current
+              day/week is labelled. Filled = checked in, faint = missed,
+              outline = still to come (owner, 2026-10-28). */}
           <div className="mt-3 flex items-center gap-1.5">
-            {stats.recentWeeks.map((on, i) => (
+            {stats.activity.dots.map((d, i) => (
               <span
                 key={i}
-                className={`h-3 flex-1 rounded-full ${on ? "bg-brand" : "bg-lav-mid"}`}
-                title={on ? "Checked in" : "Missed"}
+                className={`h-3 flex-1 rounded-full ${
+                  d === "done" ? "bg-brand" : d === "missed" ? "bg-lav-mid" : "border border-dashed border-lav-mid"
+                }`}
+                title={d === "done" ? "Checked in" : d === "missed" ? "Missed" : "Still to come"}
               />
             ))}
           </div>
-          <p className="mt-2 text-[11px] text-ink-4">{fill(COPY.profile.activitySummary, { weeks: stats.recentWeeks.length, total: stats.totalCheckIns })}</p>
+          {stats.activity.todayIndex >= 0 && (
+            <div className="mt-1 flex gap-1.5">
+              {stats.activity.dots.map((_, i) => (
+                <span key={i} className="flex-1 text-center text-[9px] font-semibold text-brand/70">
+                  {i === stats.activity.todayIndex
+                    ? stats.activity.unit === "day"
+                      ? COPY.profile.activityToday
+                      : COPY.profile.activityThisWeek
+                    : ""}
+                </span>
+              ))}
+            </div>
+          )}
+          <p className="mt-2 text-[11px] text-ink-4">
+            {fill(stats.activity.unit === "day" ? COPY.profile.activitySummaryDays : COPY.profile.activitySummary, {
+              total: stats.totalCheckIns,
+            })}
+          </p>
         </Card>
       )}
 
@@ -281,7 +303,9 @@ function HeaderStats({ stats, hasEmployment }: { stats: ProfileStats; hasEmploym
       {hasEmployment && (
         <div className="flex-1 rounded-2xl bg-white/60 px-3 py-2 text-center">
           <p className="font-display text-xl font-black leading-none text-brand">🔥 {stats.streak}</p>
-          <p className="mt-1 text-[10px] font-semibold text-ink-3">{COPY.profile.statStreak}</p>
+          <p className="mt-1 text-[10px] font-semibold text-ink-3">
+            {stats.activity.unit === "day" ? COPY.profile.statStreak : COPY.profile.statStreakWeek}
+          </p>
         </div>
       )}
       <div className={`flex-1 rounded-2xl bg-white/60 text-center ${hasEmployment ? "px-3 py-2" : "px-4 py-3"}`}>
