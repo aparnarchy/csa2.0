@@ -154,7 +154,7 @@ Today the app has a left-edge swipe → back and pull-to-refresh (`components/ki
 | Finished onboarding, swipe back | Never returns to the onboarding form. [**GAP**: onboarding uses `push`.] |
 | Signed out, swipe/back | Never shows an app screen again (not even a cached copy). Sign-out uses `replace` and clears the client page cache. [**GAP**: sign-out uses `push("/login")`; a cached dashboard may flash.] |
 | Check-in submitted, swipe back | Does not reopen the check-in; it's a one-time flow (see the check-in memory: transient, not navigable). [**PARTIAL**: one exit uses `replace`, three use `push`.] |
-| Pop-up (Modal) open, swipe back / Android back | Closes the pop-up only; the screen stays. [**GAP**: `Modal` ignores the back gesture, so the whole screen goes back.] |
+| Pop-up (Modal) open, swipe back / Android back | Closes the pop-up only; the screen stays. [**DONE** for the app's swipe-back (2026-10-28). Android's system back button still leaves the screen.] |
 | Detail panel with no URL (career company, CEO pillar detail) | Back closes the panel first. [**DONE** via the `app:back-intent` event.] |
 | Back from a top-level tab (Profile / Insights / Inbox / Admin) | Tabs don't build history: switching tabs replaces, so back doesn't cycle through every tab you tapped. Android: back on a non-home tab goes to the home tab, then exits. [**GAP**: tabs are plain links, so history stacks.] |
 | On-screen "‹ Back" button | Behaves the same as the swipe (goes to the parent, without adding a new history entry). [**GAP**: admin/manager/career back buttons `push` the parent, so a swipe afterwards goes forward into the child again.] |
@@ -162,7 +162,7 @@ Today the app has a left-edge swipe → back and pull-to-refresh (`components/ki
 | Edge swipe inside a horizontal carousel (tip cards) | Edge-zone (first 20px) = back; anywhere else = the carousel. They must not both fire. [**DONE** by the 20px edge zone; re-check on cards that reach the screen edge.] |
 | iPhone Safari *tab* (not installed) | Safari already has its own edge-swipe back; ours must not cause a double back. Installed PWA has no native back, so ours is needed there. |
 | Android Chrome *tab* | Chrome has native pull-to-refresh; ours must not refresh twice. Set `overscroll-behavior-y: contain` on the page. [**GAP**: not set.] |
-| Pull-down while a pop-up is open | Scrolls the pop-up, never refreshes the page behind it. [**GAP**: page scroll is locked at the top, so pulling down in a pop-up can trigger refresh.] |
+| Pull-down while a pop-up is open | Scrolls the pop-up, never refreshes the page behind it. [**DONE** 2026-10-28.] |
 | Pull-to-refresh mid check-in or with an unsaved form | Must not wipe what the user typed or picked. Disable pull-to-refresh on forms and the check-in. |
 | Swipe-to-delete | Reveals the action; a deliberate tap (or confirm) deletes. A fast fling never deletes silently. Undo where possible. |
 | Desktop / mouse | No gestures; the on-screen back buttons and hover still work. |
@@ -174,9 +174,9 @@ Other standard gestures and whether CSA needs them: long-press for a context men
 | Scenario | Expected behaviour |
 | --- | --- |
 | Laptop: hover a pillar card | Show a short definition (tooltip). Hover is a bonus, never the only way to see it. |
-| Phone: no hover exists | A small "i" next to the Pillars heading opens one pop-up with all four definitions. Tapping a card still opens pillar detail (no change to what tap does). The pillar detail screen also shows that pillar's one-line definition under its title. |
+| Phone: no hover exists | A small "i What do the pillars mean?" link under the pillar cards opens one pop-up with all four definitions [**DONE** 2026-10-28]. Tapping a card still opens pillar detail (no change to what tap does). The pillar detail screen also shows that pillar's one-line definition under its title. |
 | Long-press a card | Optional shortcut to the same definition; never the only path (nobody discovers long-press). |
-| Definition wording | Owner writes the 4 definitions (max ~2 short lines each); stored once in copy so every dashboard (employee, manager, CEO/HR) uses the same text. **DECIDE**: wording pending from owner. |
+| Definition wording | Owner's intro + 4 definitions, stored once in `copy/copy.html` (pillars) so every dashboard uses the same text. [**DONE** 2026-10-28.] |
 | Screen readers | The "i" button has a label ("What do the pillars mean?"); the pop-up closes with back/Escape like every other pop-up. |
 
 ---
