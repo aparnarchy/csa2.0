@@ -74,6 +74,7 @@ export function TeamPillarDetailView({
       <GradientHeader
         eyebrow="Team pillar"
         title={meta.label}
+        subtitle={meta.definition}
         back={{ label: "Dashboard", onClick: onBack }}
         avatar={detail ? <Mascot state={mascotForScore(detail.score, detail.score !== null)} size={HEADER_MASCOT_SIZE} /> : undefined}
       >

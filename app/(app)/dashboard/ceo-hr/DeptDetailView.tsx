@@ -13,6 +13,7 @@ import {
   LeaverNote,
   Mascot,
   PillarCard,
+  PillarInfo,
   ScreenShell,
   SegmentedToggle,
   TrendChart,
@@ -143,6 +144,7 @@ export function DeptDetailView({
                 />
               ))}
             </div>
+            <PillarInfo className="mt-3" />
           </Card>
 
           <AIInsight text={aiText ?? undefined} />

@@ -12,6 +12,7 @@ import {
   LeaverNote,
   Mascot,
   PillarCard,
+  PillarInfo,
   RecommendationStack,
   ScoreCircles,
   ScreenShell,
@@ -218,6 +219,7 @@ export function ManagerDashboardView({
                 />
               ))}
             </div>
+            <PillarInfo className="mt-3" />
           </Card>
 
           {/* AI insight (team) — LLM summary of the aggregates, cached in D1.

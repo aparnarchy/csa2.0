@@ -4,6 +4,8 @@
  */
 
 import type { PillarId } from "./types";
+import type { IconName } from "@/components/kit/Icons";
+import { COPY } from "./copy";
 
 export interface PillarMeta {
   id: PillarId;
@@ -12,13 +14,17 @@ export interface PillarMeta {
   accent: string;
   /** Hex colour for charts (recharts can't read Tailwind classes). */
   hex: string;
+  /** Line icon shown beside the pillar's definition. */
+  icon: IconName;
+  /** The owner's one-paragraph definition (copy/copy.html → pillars). */
+  definition: string;
 }
 
 export const PILLARS: Record<PillarId, PillarMeta> = {
-  meaningful_work: { id: "meaningful_work", label: "Meaningful Work", accent: "text-violet-600",  hex: "#7C6FFF" },
-  growth:          { id: "growth",          label: "Growth",          accent: "text-sky-600",     hex: "#0EA5E9" },
-  culture:         { id: "culture",         label: "Culture",         accent: "text-emerald-600", hex: "#10B981" },
-  compensation:    { id: "compensation",    label: "Compensation",    accent: "text-amber-600",   hex: "#F59E0B" },
+  meaningful_work: { id: "meaningful_work", label: "Meaningful Work", accent: "text-violet-600",  hex: "#7C6FFF", icon: "target",     definition: COPY.pillars.meaningfulWork },
+  growth:          { id: "growth",          label: "Growth",          accent: "text-sky-600",     hex: "#0EA5E9", icon: "trendingUp", definition: COPY.pillars.growth },
+  culture:         { id: "culture",         label: "Culture",         accent: "text-emerald-600", hex: "#10B981", icon: "users",      definition: COPY.pillars.culture },
+  compensation:    { id: "compensation",    label: "Compensation",    accent: "text-amber-600",   hex: "#F59E0B", icon: "wallet",     definition: COPY.pillars.compensation },
 };
 
 /** Fixed 2×2 display order used across every dashboard. */

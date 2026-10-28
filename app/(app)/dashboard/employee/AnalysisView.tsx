@@ -9,6 +9,7 @@ import {
   GradientHeader,
   InsightBarRow,
   Mascot,
+  PillarInfo,
   ScoreCircles,
   ScreenShell,
   SegmentedToggle,
@@ -208,6 +209,7 @@ export function AnalysisView({
             <ScoreCircles bright={null} watch={null} others={otherPillars} onSelect={setSelectedPillar} />
           </>
         )}
+        <PillarInfo className="mt-3" />
       </section>
 
       {/* 5. Strengths / Concerns — top 3, "See all" for the rest. */}

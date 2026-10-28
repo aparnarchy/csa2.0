@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { BigScore, Card, CEO_NAV, CustomDropdown, GradientHeader, LeaverNote, Mascot, NotEnoughData, PillarCard, ScreenShell, ViewSwitcher } from "@/components/kit";
+import { BigScore, Card, CEO_NAV, CustomDropdown, GradientHeader, LeaverNote, Mascot, NotEnoughData, PillarCard, PillarInfo, ScreenShell, ViewSwitcher } from "@/components/kit";
 import { type CeoDashboard, type Window } from "@/lib/data";
 import { COPY, fill } from "@/lib/copy";
 import { ANONYMISATION_FLOOR } from "@/lib/scoring";
@@ -134,6 +134,7 @@ export function OrgDashboardView({
                 />
               ))}
             </div>
+            <PillarInfo className="mt-3" />
           </>
         )}
       </Card>

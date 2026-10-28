@@ -11,6 +11,7 @@ import {
   GradientHeader,
   LeaverNote,
   PillarCard,
+  PillarInfo,
   ScreenShell,
   SegmentedToggle,
   TrendChart,
@@ -107,6 +108,7 @@ export function ManagerDetailView({
                 <PillarCard key={p.pillarId} data={p} />
               ))}
             </div>
+            <PillarInfo className="mt-3" />
           </Card>
 
           <AIInsight text={aiText ?? undefined} />

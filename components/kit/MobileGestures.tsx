@@ -33,7 +33,11 @@ export function MobileGestures({ children }: { children: React.ReactNode }) {
     function onStart(e: TouchEvent) {
       if (refreshing) return;
       const t = e.touches[0];
-      const mode: Mode = t.clientX <= EDGE_ZONE ? "back" : window.scrollY <= 0 ? "pull" : "none";
+      // A pop-up (Modal) locks page scroll; pulling down inside it scrolls the
+      // pop-up and must never refresh the page behind it.
+      const modalOpen = document.body.style.overflow === "hidden";
+      const mode: Mode =
+        t.clientX <= EDGE_ZONE ? "back" : window.scrollY <= 0 && !modalOpen ? "pull" : "none";
       start.current = { x: t.clientX, y: t.clientY, mode };
     }
 

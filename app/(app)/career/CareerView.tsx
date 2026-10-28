@@ -11,6 +11,7 @@ import {
   CEO_NAV,
   InsightBarRow,
   PillarCard,
+  PillarInfo,
   ScreenShell,
   SegmentedToggle,
   SwipeToDelete,
@@ -299,6 +300,7 @@ function CompanyDetailView({ detail, onBack, isCeoHr = false }: { detail: Compan
             <PillarCard key={p.pillarId} data={p} />
           ))}
         </div>
+        <PillarInfo className="mt-3" />
       </Card>
 
       {/* ✨ How this company compares with the rest of their career. */}

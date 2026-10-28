@@ -43,6 +43,7 @@ export function PillarCard({
       <button
         type="button"
         onClick={onClick}
+        title={meta.definition}
         className="flex w-full flex-col items-center rounded-2xl bg-lav-soft px-2 pb-2.5 pt-2.5"
       >
         <p className="font-display text-[21px] font-extrabold leading-none text-ink-4/50">0.0</p>
@@ -60,6 +61,7 @@ export function PillarCard({
     <button
       type="button"
       onClick={onClick}
+      title={meta.definition}
       className="flex w-full flex-col items-center rounded-2xl bg-lav-soft px-2 pb-2.5 pt-2.5 transition active:scale-[0.98]"
     >
       {/* The score is the centred element, not the score+delta pair — a centred

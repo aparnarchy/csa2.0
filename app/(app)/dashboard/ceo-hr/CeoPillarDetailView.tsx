@@ -91,6 +91,7 @@ export function CeoPillarDetailView({
       <GradientHeader
         eyebrow="Pillar"
         title={meta.label}
+        subtitle={meta.definition}
         back={{ label: "Back", onClick: onBack }}
         avatar={detail ? <Mascot state={mascotForScore(detail.score, detail.score !== null)} size={HEADER_MASCOT_SIZE} /> : undefined}
       >

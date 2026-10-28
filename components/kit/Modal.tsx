@@ -27,10 +27,20 @@ export function Modal({
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
     };
+    // A swipe-back (MobileGestures) closes the pop-up, not the screen behind it.
+    // Capture phase + stopImmediatePropagation so a screen's own back handler
+    // (e.g. a detail panel) doesn't also close underneath it.
+    const onBack = (e: Event) => {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      onClose();
+    };
     window.addEventListener("keydown", onKey);
+    window.addEventListener("app:back-intent", onBack, { capture: true });
     return () => {
       document.body.style.overflow = prev;
       window.removeEventListener("keydown", onKey);
+      window.removeEventListener("app:back-intent", onBack, { capture: true });
     };
   }, [onClose]);
 
