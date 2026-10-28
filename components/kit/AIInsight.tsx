@@ -16,7 +16,6 @@
  * server sends one after SUMMARY_SEPARATOR, sits at the bottom of the card
  * (owner, 2026-10-21). `action` adds one call-to-action button.
  */
-import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { COPY } from "@/lib/copy";
 import { SUMMARY_SEPARATOR } from "@/lib/recent-insight";
@@ -43,14 +42,6 @@ export function AIInsight({
 }) {
   const [lead, summary] = splitSummary(text);
   const footClass = "mt-2 block text-[11px] italic leading-snug text-white/85";
-  // At most 3 lines; a "more" tap shows the rest (only when it's cut off).
-  const textRef = useRef<HTMLParagraphElement>(null);
-  const [expanded, setExpanded] = useState(false);
-  const [clipped, setClipped] = useState(false);
-  useEffect(() => {
-    const el = textRef.current;
-    if (el && !expanded) setClipped(el.scrollHeight > el.clientHeight + 1);
-  }, [lead, expanded]);
   return (
     <div className="relative mb-3 mr-2.5">
       <div className="absolute inset-0 translate-x-2.5 translate-y-2.5 rounded-[32px] bg-[#E3DCFF]" aria-hidden />
@@ -66,18 +57,8 @@ export function AIInsight({
             </p>
           ) : (
             <>
-              <p ref={textRef} className={`mt-1.5 text-[14px] font-normal leading-[1.4] ${expanded ? "" : "line-clamp-3"}`}>
-                {lead ?? COPY.shared.aiInsightFallback}
-              </p>
-              {(clipped || expanded) && (
-                <button
-                  type="button"
-                  onClick={() => setExpanded((e) => !e)}
-                  className="mt-1 text-[12px] font-bold text-white/90 underline decoration-white/50 underline-offset-2"
-                >
-                  {expanded ? "Less" : "More"}
-                </button>
-              )}
+              {/* The whole insight, no "More" (owner, 2026-10-28). */}
+              <p className="mt-1.5 text-[14px] font-normal leading-[1.4]">{lead ?? COPY.shared.aiInsightFallback}</p>
             </>
           )}
           {!loading && summary && (

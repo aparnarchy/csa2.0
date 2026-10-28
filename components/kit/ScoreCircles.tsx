@@ -84,7 +84,8 @@ export function ScoreCircles({
         </div>
       )}
       {others.length > 0 && (
-        <div className={`flex flex-wrap justify-center gap-2 ${spots.length > 0 ? "mt-3" : ""}`}>
+        // One row, side by side — never wrapping into a stack (owner, 2026-10-28).
+        <div className={`flex justify-center gap-2 ${spots.length > 0 ? "mt-3" : ""}`}>
           {others.map((b, i) => (
             <Pill key={b.pillarId} b={b} delay={spots.length > 0 ? 0.55 + i * 0.08 : i * 0.08} onSelect={onSelect} />
           ))}
@@ -102,10 +103,10 @@ function Pill({ b, delay, onSelect }: { b: PillarBubble; delay: number; onSelect
       type="button"
       onClick={() => onSelect(b.pillarId)}
       aria-label={`${b.pillar} ${empty ? COPY.mood.pillarEmpty : b.score!.toFixed(1)}`}
-      className="bubble-pop inline-flex items-baseline gap-2 rounded-full bg-white px-3.5 py-2 shadow-[0_6px_16px_-8px_rgba(100,80,200,0.35)] ring-1 ring-[#E3DCFF] transition active:scale-95"
+      className="bubble-pop flex min-w-0 flex-1 flex-col items-center gap-1 rounded-2xl bg-white px-2 py-2 shadow-[0_6px_16px_-8px_rgba(100,80,200,0.35)] ring-1 ring-[#E3DCFF] transition active:scale-95"
       style={{ animationDelay: `${delay}s`, animationFillMode: "both" }}
     >
-      <span className="text-[10px] font-extrabold uppercase tracking-[0.04em] text-brand-light">{b.pillar}</span>
+      <span className="text-center text-[9px] font-extrabold uppercase leading-tight tracking-[0.04em] text-brand-light">{b.pillar}</span>
       <span className={`font-display text-[16px] font-black leading-none ${empty ? "text-ink-4/60" : "text-brand"}`}>
         {empty ? "–" : b.score!.toFixed(1)}
       </span>
