@@ -4,7 +4,7 @@ import { useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
-import { ADMIN_NAV, BigScore, Card, CEO_NAV, GradientHeader, Mascot, Modal, ScreenShell } from "@/components/kit";
+import { ADMIN_NAV, BigScore, Card, CEO_NAV, GradientHeader, Icon, Mascot, Modal, ScreenShell, ViewSwitcher } from "@/components/kit";
 import { HEADER_MASCOT_SIZE, mascotForScore } from "@/lib/mascot";
 import { COPY, fill } from "@/lib/copy";
 import { giveQuestionNowAction } from "../check-in/actions";
@@ -149,26 +149,11 @@ export function ProfileView({
         </Card>
       )}
 
-      {/* Badges — not shown to CEO/HR, whose profile stays org-scoped. */}
-      {!isCeoHr && (
-        <Card>
-          <p className="text-sm font-bold text-brand">{COPY.profile.badgesTitle}</p>
-          <div className="mt-3 flex flex-wrap gap-2">
-            {stats.badges.map((b) => (
-              <span key={b} className="rounded-full bg-lav-soft px-3 py-1.5 text-xs font-bold text-brand">
-                🏅 {b}
-              </span>
-            ))}
-            {stats.badges.length === 0 && <p className="text-sm text-ink-3">{COPY.profile.noBadges}</p>}
-          </div>
-        </Card>
-      )}
-
       {/* Career history link → 2.8. Employee-only: a manager's own work history
           isn't part of the manager surface, so it's hidden once they hold that
           role, and CEO/HR never sees it either — org-scoped, not personal.
-          Exception: currently viewing as an employee (the dashboard's view
-          switcher) — that IS
+          Exception: currently viewing as an employee (the Switch view
+          card) — that IS
           the personal surface right now, same reasoning as hasEmployment
           gating Career's own page guard. */}
       {(!isManager && !hasCeoRole) || viewingAsEmployee ? (
@@ -188,11 +173,13 @@ export function ProfileView({
       ) : null}
 
       {/* Appearance (Professional / Play) */}
+      <ViewSwitcher session={session} current={view} />
+
       <AppearanceCard session={session} />
 
       {/* Preferences — same reasoning as Activity above: notification prefs are
           about check-in reminders, meaningless without employment (and, same
-          as Activity/Badges/Career, never shown on the CEO/HR profile). */}
+          as Activity/Career, never shown on the CEO/HR profile). */}
       {session.hasEmployment && !isCeoHr && <PreferencesCard session={session} />}
 
       {/* Personal email — optional, one small note, no nudging (testing phase).
@@ -223,6 +210,7 @@ export function ProfileView({
     All three images share one scale, so their sizes keep Canva's ratios
     (THE 49 / Culture 100 / Super 90); "Super"'s "p" hangs below the line. */
 function BrandLine() {
+  const [about, setAbout] = useState(false);
   const S = 0.1; // image px → screen px
   const SUPER_DESCENDER = 48; // rows below the baseline in wordmark-super.png
   return (
@@ -240,9 +228,24 @@ function BrandLine() {
           style={{ marginBottom: -SUPER_DESCENDER * S }}
         />
       </div>
-      <p className="text-center font-display text-[12px] font-semibold tracking-wide text-[#9c92ff]">
-        {COPY.profile.tagline}
-      </p>
+      <div className="flex items-center justify-center gap-1.5">
+        <p className="text-center font-display text-[12px] font-semibold tracking-wide text-[#9c92ff]">
+          {COPY.profile.tagline}
+        </p>
+        <button
+          type="button"
+          onClick={() => setAbout(true)}
+          aria-label={COPY.profile.aboutTitle}
+          className="flex-shrink-0 text-[#9c92ff] active:scale-90"
+        >
+          <Icon name="info" size={14} />
+        </button>
+      </div>
+      {about && (
+        <Modal title={COPY.profile.aboutTitle} onClose={() => setAbout(false)}>
+          <p className="text-sm leading-relaxed text-ink-2">{COPY.profile.aboutBody}</p>
+        </Modal>
+      )}
     </div>
   );
 }

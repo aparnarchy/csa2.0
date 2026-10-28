@@ -166,7 +166,6 @@ export const COPY = {
   "pillars": {
     "infoButton": "What do the pillars mean?",
     "popupTitle": "The four pillars",
-    "intro": "When you feel good, you do good. At work, happiness hinges on four pillars: growth, culture, compensation and meaningful work. The Culture Super App tracks how they change over time.",
     "meaningfulWork": "Work that matches your aspirations and skills, is impactful, keeps things interesting, and feels just right: this is what I was meant to do.",
     "growth": "Scaling your skills and knowledge at an aggressive pace and expanding your scope, aligned to your aspirations, with solid guidance along the way.",
     "culture": "An environment that pushes you to be the best version of yourself, with people who inspire and support you. Freedom to experiment, fail, and strive together toward excellence, with genuine trust and belonging.",
@@ -296,7 +295,9 @@ export const COPY = {
     "switchEmployeeSub": "See your own check-ins & progress",
     "viewPickerTitle": "Switch view",
     "viewPickerSub": "Pick which side of the app you want to see",
-    "tagline": "Making Happiness and High performance, possible",
+    "tagline": "Making happiness and high performance possible",
+    "aboutTitle": "About the Culture Super App",
+    "aboutBody": "When you feel good, you do good. At work, happiness hinges on four pillars: growth, culture, compensation and meaningful work. The Culture Super App tracks how they change over time.",
     "signOut": "Sign out",
     "signedInAs": "Signed in as {name} · {email}"
   },

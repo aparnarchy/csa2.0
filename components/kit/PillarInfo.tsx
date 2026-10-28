@@ -8,8 +8,8 @@ import { Modal } from "./Modal";
 
 /**
  * "What do the pillars mean?" — a small link under a dashboard's pillar cards
- * that opens one pop-up with the owner's intro and all four definitions
- * (owner, 2026-10-28). Phones have no hover, so this tap is the main way in;
+ * that opens one pop-up with all four definitions (owner, 2026-10-28; the app
+ * description moved to Profile's (i) the same day). Phones have no hover, so this tap is the main way in;
  * the cards themselves still tap through to pillar detail, and on a laptop
  * hovering a card shows its definition too (PillarCard's title).
  */
@@ -29,8 +29,7 @@ export function PillarInfo({ className = "" }: { className?: string }) {
 
       {open && (
         <Modal title={COPY.pillars.popupTitle} onClose={() => setOpen(false)}>
-          <p className="text-sm leading-relaxed text-ink-2">{COPY.pillars.intro}</p>
-          <div className="mt-4 space-y-4">
+          <div className="space-y-4">
             {PILLAR_ORDER.map((id) => {
               const meta = PILLARS[id];
               return (
