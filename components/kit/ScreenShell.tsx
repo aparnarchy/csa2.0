@@ -1,29 +1,31 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { Icon, type IconName } from "./Icons";
 import { InboxDot } from "./InboxDot";
 
 export interface NavItem {
   key: string;
   label: string;
   href: string;
-  icon: string;
+  /** Line icon (owner: icons, not emojis). */
+  icon: IconName;
 }
 
 const NAV: NavItem[] = [
-  { key: "profile",  label: "Profile",  href: "/profile",            icon: "👤" },
+  { key: "profile",  label: "Profile",  href: "/profile",            icon: "user" },
   // Route through the role-router (same as login) so managers land on the
   // manager dashboard, CEO/HR on theirs, etc. — not always the employee one.
-  { key: "insights", label: "Insights", href: "/dashboard",          icon: "📊" },
+  { key: "insights", label: "Insights", href: "/dashboard",          icon: "barChart" },
   // Wisdom tab hidden for now (pages still exist at /wisdom); re-add this line to restore.
-  { key: "inbox",    label: "Inbox",    href: "/inbox",              icon: "📥" },
+  { key: "inbox",    label: "Inbox",    href: "/inbox",              icon: "inbox" },
 ];
 
 /** CEO/HR's nav — no Wisdom/Inbox; "Dashboard" and "Insights" are separate
     tabs (org overview vs. the analysis screen), not the shared role-router. */
 export const CEO_NAV: NavItem[] = [
-  { key: "profile",   label: "Profile",   href: "/profile",              icon: "👤" },
-  { key: "dashboard", label: "Dashboard", href: "/dashboard/ceo-hr",     icon: "🏢" },
-  { key: "insights",  label: "Insights",  href: "/dashboard/ceo-hr/insights", icon: "📊" },
+  { key: "profile",   label: "Profile",   href: "/profile",              icon: "user" },
+  { key: "dashboard", label: "Dashboard", href: "/dashboard/ceo-hr",     icon: "building" },
+  { key: "insights",  label: "Insights",  href: "/dashboard/ceo-hr/insights", icon: "barChart" },
 ];
 
 /** Admin's nav — just a way back to Profile and to the Admin hub itself.
@@ -32,8 +34,8 @@ export const CEO_NAV: NavItem[] = [
     the existing console pattern; this only puts the hub itself one tap from
     Profile instead of stranding admins in a nav-less area. */
 export const ADMIN_NAV: NavItem[] = [
-  { key: "profile", label: "Profile", href: "/profile",        icon: "👤" },
-  { key: "admin",   label: "Admin",   href: "/dashboard/admin", icon: "⚙️" },
+  { key: "profile", label: "Profile", href: "/profile",        icon: "user" },
+  { key: "admin",   label: "Admin",   href: "/dashboard/admin", icon: "settings" },
 ];
 
 /**
@@ -97,8 +99,8 @@ export function ScreenShell({
                   isActive ? "text-brand" : "text-ink-4"
                 }`}
               >
-                <span className="relative text-lg" aria-hidden>
-                  {item.icon}
+                <span className="relative" aria-hidden>
+                  <Icon name={item.icon} size={22} strokeWidth={isActive ? 2.2 : 1.8} />
                   {item.key === "inbox" && <InboxDot />}
                 </span>
                 {item.label}
