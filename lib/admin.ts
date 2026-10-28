@@ -7,7 +7,7 @@
  * enforced in server code, never in the UI.
  */
 
-import { sendEmail } from "@/lib/email";
+import { emailLogo, sendEmail } from "@/lib/email";
 import { getDB } from "@/lib/db";
 import { assertRole } from "@/lib/access-control";
 import type { RecommendationAudience } from "@/lib/recommendations";
@@ -1484,6 +1484,7 @@ async function sendInviteEmail(email: string): Promise<"sent" | "failed"> {
       to: email,
       subject: "You're invited to CSA",
       html: `
+        ${emailLogo()}
         <p>Hi,</p>
         <p>You've been invited to join CSA (Culture Super App). Sign up using this
         email address to get started:</p>

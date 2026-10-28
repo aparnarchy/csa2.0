@@ -22,9 +22,22 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
+  // Link previews (WhatsApp, Slack…) need absolute image URLs. The live
+  // address is fixed here because Cloudflare secrets aren't readable at build.
+  metadataBase: new URL("https://csa2.pages.dev"),
   title: "Culture Super App",
   description: "Employee happiness platform",
   manifest: "/manifest.json",
+  // App logo: browser tab, and the iPhone home-screen icon.
+  icons: {
+    icon: "/favicon.ico",
+    apple: "/apple-touch-icon.png",
+  },
+  openGraph: {
+    title: "Culture Super App",
+    description: "When you feel good, you do good.",
+    images: [{ url: "/brand/og.png", width: 1200, height: 630 }],
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",

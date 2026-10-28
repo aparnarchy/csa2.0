@@ -210,7 +210,7 @@ export function ProfileView({
   );
 }
 
-/** "THE Culture Super" on one line in the owner's Loubag lettering (images
+/** The app logo then "THE Culture Super" on one line in the owner's Loubag lettering (images
     cut from their Canva file, same colours as the opening animation — the
     font itself is paid, so it isn't bundled), with the tagline beneath.
     All three images share one scale, so their sizes keep Canva's ratios
@@ -221,6 +221,7 @@ function BrandLine() {
   return (
     <div className="flex flex-col items-center gap-3 pb-1 pt-2">
       <div className="flex items-end gap-2" role="img" aria-label="The Culture Super">
+        <Image src="/brand/logo.png" alt="" width={40} height={40} unoptimized className="mr-1" />
         <Image src="/brand/wordmark-the.png" alt="" width={456 * S} height={116 * S} unoptimized className="mb-[3px]" />
         <Image src="/brand/wordmark-culture.png" alt="" width={1000 * S} height={259 * S} unoptimized />
         <Image

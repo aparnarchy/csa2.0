@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { authClient } from "@/lib/auth-client";
 import { COPY } from "@/lib/copy";
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
@@ -42,6 +43,7 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col justify-center px-6 py-12">
       <div className="mx-auto w-full max-w-sm">
+        <Image src="/brand/logo.png" alt="CSA" width={72} height={72} priority unoptimized className="mx-auto mb-4" />
         <h1 className="text-3xl font-bold text-center text-gray-900 mb-8">
           {t.pageTitle}
         </h1>

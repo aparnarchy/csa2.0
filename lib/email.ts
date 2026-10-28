@@ -27,3 +27,10 @@ export async function sendEmail(msg: {
   if (res.ok) return { error: null };
   return { error: `${res.status} ${await res.text()}` };
 }
+
+/** The app logo at the top of every email, so people know it's really CSA.
+    Email needs an absolute image URL; some clients hide images until allowed. */
+export function emailLogo(): string {
+  const base = process.env.BETTER_AUTH_URL ?? "https://csa2.pages.dev";
+  return `<p><img src="${base}/brand/logo.png" alt="CSA" width="48" height="48" style="display:block" /></p>`;
+}

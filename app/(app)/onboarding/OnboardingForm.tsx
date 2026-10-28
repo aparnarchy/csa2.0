@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { Mascot } from "@/components/kit";
 import { COPY } from "@/lib/copy";
 
@@ -45,6 +46,7 @@ export function OnboardingForm({ defaultName }: { defaultName: string }) {
   return (
     <div className="mx-auto w-full max-w-md px-5 py-8">
       <div className="flex flex-col items-center text-center">
+        <Image src="/brand/logo.png" alt="CSA" width={40} height={40} unoptimized className="mb-2" />
         <Mascot state="welcome" size={132} sparkle={false} />
         <h1 className="mt-2 font-display text-[26px] font-black leading-tight text-brand">
           {t.title}

@@ -2,7 +2,7 @@ import { betterAuth } from "better-auth";
 import { Kysely } from "kysely";
 import { D1Dialect } from "kysely-d1";
 import { hashPassword, verifyPassword } from "./auth-password";
-import { sendEmail } from "./email";
+import { emailLogo, sendEmail } from "./email";
 
 /**
  * Which origins are allowed to sign in (better-auth's CSRF protection).
@@ -133,6 +133,7 @@ export function createAuth(db: D1Database) {
           to: user.email,
           subject: "Reset your CSA password",
           html: `
+            ${emailLogo()}
             <p>Hi ${user.name},</p>
             <p>Click the link below to reset your password. It expires in 1 hour.</p>
             <p><a href="${url}">Reset password</a></p>
