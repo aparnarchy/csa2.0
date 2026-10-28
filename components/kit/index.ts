@@ -28,6 +28,7 @@ export { AIInsight } from "./AIInsight";
 export { Modal } from "./Modal";
 export { PillarInfo } from "./PillarInfo";
 export { CalmWaves } from "./CalmWaves";
+export { SpotCard } from "./SpotCard";
 export { LeaverNote } from "./LeaverNote";
 export { PillarScoreBlock, emptyInsightLine } from "./PillarScoreBlock";
 export { EmptyScoreCard } from "./EmptyScoreCard";

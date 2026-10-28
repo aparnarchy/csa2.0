@@ -390,6 +390,7 @@ export const COPY = {
     "confidenceModerate": "Moderate data coverage",
     "confidenceLimited": "Limited data coverage",
     "vsLast": "vs last",
+    "pillarsTitle": "Team pillars",
     "whereToFocus": "Where to focus",
     "whereToFocusSub": "Pillars below 7 across your team. Act on these in your Action Inbox.",
     "teamPillarAt": "Team {pillar} is at {score}.",

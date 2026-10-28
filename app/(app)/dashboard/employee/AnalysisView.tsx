@@ -11,6 +11,7 @@ import {
   Mascot,
   PillarInfo,
   ScoreCircles,
+  SpotCard,
   ScreenShell,
   SegmentedToggle,
   TrendChart,
@@ -24,7 +25,7 @@ import { getEmployeeInsightAction, getEmployeeScoresAction } from "./actions";
 import { HEADER_MASCOT_SIZE, mascotForScore } from "@/lib/mascot";
 import { PILLARS, STRENGTH_CUTOFF } from "@/lib/pillars";
 import { COPY, fill } from "@/lib/copy";
-import { buildEmployeeInsight, type InsightSpot } from "@/lib/insight";
+import { buildEmployeeInsight } from "@/lib/insight";
 import { earlyReadNote } from "@/lib/mood";
 import { chromeFor } from "@/lib/voice";
 import type { EmployeeInsightCard } from "@/lib/insight-signals";
@@ -289,28 +290,5 @@ function WaitingScreen({ answers }: { answers: number }) {
       </h1>
       <p className="mt-2 text-sm text-ink-3">{answers === 0 ? COPY.mood.waitingSub : COPY.mood.unlockSub}</p>
     </div>
-  );
-}
-
-/** Professional-mode Bright spot / Watch out card (only ever an earned one). */
-function SpotCard({
-  title,
-  spot,
-  onSelect,
-}: {
-  title: string;
-  spot: InsightSpot;
-  onSelect: (pillarId: PillarId) => void;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={() => onSelect(spot.pillarId)}
-      className="rounded-card bg-lav-soft p-4 text-left shadow-card transition active:scale-[0.98]"
-    >
-      <p className="text-[11px] font-semibold uppercase tracking-wide text-brand">{title}</p>
-      <p className="mt-1 font-display text-3xl font-black leading-none text-brand">{spot.score.toFixed(1)}</p>
-      <p className="mt-1 text-xs text-brand/70">{spot.pillar}</p>
-    </button>
   );
 }

@@ -11,11 +11,11 @@ import {
   InsightBarRow,
   LeaverNote,
   Mascot,
-  PillarCard,
   PillarInfo,
   RecommendationStack,
   ScoreCircles,
   ScreenShell,
+  SpotCard,
   SegmentedToggle,
   TrendChart,
   WINS_LABEL,
@@ -99,6 +99,11 @@ export function ManagerDashboardView({
     data.pillars,
   );
 
+  // The pillars not shown as a circle / spot tile — the pills under them.
+  const otherPillars = data.pillars
+    .filter((p) => p.pillarId !== brightPillar?.pillarId && p.pillarId !== watchPillar?.pillarId)
+    .map((p) => ({ pillarId: p.pillarId, pillar: PILLARS[p.pillarId].label, score: p.score }));
+
   // Strengths & Concerns — same question-level shape as every other
   // dashboard (real per-question team scores, anonymised in getTeamAggregate:
   // a question only appears once >= the anonymisation floor of distinct
@@ -161,38 +166,27 @@ export function ManagerDashboardView({
         <EmptyScoreCard message={data.reason ?? fill(COPY.mood.noDataTeam, { floor: ANONYMISATION_FLOOR })} />
       ) : (
         <>
-          {/* Bright Spot / Watch Out — Play: the same animated wavy blobs as the
-              employee dashboard, at team level (top/bottom scoring pillar).
-              Professional: no equivalent here (matches employee, which also
-              only shows this in Play). */}
-          {isPlay && (
-            <div className="mb-7 pt-4">
-              <ScoreCircles bright={brightPillar} watch={watchPillar} onSelect={setSelectedPillar} />
-            </div>
-          )}
+          {/* Same layout as the employee dashboard (owner, 2026-10-28): AI
+              insight, the overall score, then the pillars — circles (Play) or
+              spot tiles (Professional) with the other pillars as pills in one
+              row. Team-level, aggregates only. */}
+          <AIInsight text={aiText ?? undefined} />
 
-          {/* Team score + delta, then participation as its own full-width row
-              so the confidence indicator always has room to lay out on one
-              line instead of cramming into the narrow column beside the
-              score and wrapping. */}
+          {/* Team score + delta, then data confidence + participation on its
+              own full-width row so it never squeezes beside the score. */}
           <Card>
-            <div className="flex items-start justify-between">
-              <BigScore score={data.teamScore} />
-              {data.delta !== null && (
-                <div
-                  className="mt-1.5 inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold"
-                  style={{ background: up ? "#E8FBF0" : "#FDECEC", color: up ? "#059669" : "#DC2626" }}
-                >
-                  {up ? "↑" : "↓"} {Math.abs(data.delta).toFixed(1)}
-                  <span className="text-[10px] font-medium text-ink-3">{COPY.managerDashboard.vsLast}</span>
-                </div>
-              )}
-            </div>
-
-            {/* Data-confidence + participation — its own row with full card
-                width, so it never has to squeeze into the column beside the
-                score. A dot instead of a pill avoids the label ever wrapping
-                mid-word. */}
+            <BigScore
+              inline
+              score={data.teamScore}
+              trailing={
+                data.delta !== null ? (
+                  <div className="inline-flex items-center gap-1 rounded-full bg-lav-soft px-2.5 py-1 text-xs font-bold text-brand">
+                    {up ? "↑" : "↓"} {Math.abs(data.delta).toFixed(1)}
+                    <span className="text-[10px] font-medium text-ink-3">{COPY.managerDashboard.vsLast}</span>
+                  </div>
+                ) : undefined
+              }
+            />
             <div className="mt-4 flex flex-wrap items-center gap-x-2 gap-y-1 border-t border-lav-mid pt-3">
               <span className="inline-flex items-center gap-1.5 whitespace-nowrap text-xs font-bold" style={{ color: confidence.color }}>
                 <span className="h-1.5 w-1.5 flex-shrink-0 rounded-full" style={{ background: confidence.color }} />
@@ -204,27 +198,30 @@ export function ManagerDashboardView({
               </span>
             </div>
             <LeaverNote count={data.leaverCount} />
-
-            {/* Pillar cards — aggregates only, no drill into individuals. Tap
-                through to the team-level pillar detail (same shape as the
-                employee dashboard's). Pillars with no data yet aren't clickable. */}
-            <div className="-mx-1.5 mt-4 grid grid-cols-4 gap-2">
-              {data.pillars.map((p) => (
-                <PillarCard
-                  key={p.pillarId}
-                  data={p}
-                  onClick={p.score !== null ? () => setSelectedPillar(p.pillarId) : undefined}
-                />
-              ))}
-            </div>
-            <PillarInfo className="mt-3" />
           </Card>
 
-          {/* AI insight (team) — LLM summary of the aggregates, cached in D1.
-              The mascot next to it was a mismatch (its mood is score-based
-              and often didn't match the insight's actual content) — dropped,
-              same shared box as every other dashboard now. */}
-          <AIInsight text={aiText ?? undefined} />
+          {/* Team pillars — tap through to the team-level pillar detail. */}
+          <section>
+            <p className="mb-2 text-center font-display text-sm font-black uppercase tracking-wide text-brand">
+              {COPY.managerDashboard.pillarsTitle}
+            </p>
+            {isPlay ? (
+              <div className="mb-2 pt-1">
+                <ScoreCircles bright={brightPillar} watch={watchPillar} others={otherPillars} onSelect={setSelectedPillar} />
+              </div>
+            ) : (
+              <>
+                {(brightPillar || watchPillar) && (
+                  <div className={`mb-3 grid gap-2 ${brightPillar && watchPillar ? "grid-cols-2" : "grid-cols-1"}`}>
+                    {brightPillar && <SpotCard title={COPY.mood.brightSpot} spot={brightPillar} onSelect={setSelectedPillar} />}
+                    {watchPillar && <SpotCard title={COPY.mood.watchOut} spot={watchPillar} onSelect={setSelectedPillar} />}
+                  </div>
+                )}
+                <ScoreCircles bright={null} watch={null} others={otherPillars} onSelect={setSelectedPillar} />
+              </>
+            )}
+            <PillarInfo className="mt-3" />
+          </section>
 
           {/* Recommendations — one per low pillar, weakest first */}
           {lowPillars.length > 0 && (
