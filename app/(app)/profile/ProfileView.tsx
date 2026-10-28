@@ -4,12 +4,13 @@ import { useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
-import { ADMIN_NAV, BigScore, Card, CEO_NAV, GradientHeader, Mascot, ScreenShell } from "@/components/kit";
+import { ADMIN_NAV, BigScore, Card, CEO_NAV, GradientHeader, Mascot, Modal, ScreenShell } from "@/components/kit";
 import { HEADER_MASCOT_SIZE, mascotForScore } from "@/lib/mascot";
 import { COPY, fill } from "@/lib/copy";
 import { giveQuestionNowAction } from "../check-in/actions";
 import { TESTING_MODE } from "@/lib/testing-mode";
 import type { CeoDashboard, ProfileStats } from "@/lib/data";
+import type { OwnDetails } from "@/lib/profile-details";
 import type { Role, SessionUser, ThemeMode } from "@/lib/types";
 import { withRetry } from "@/lib/retry";
 
@@ -20,6 +21,7 @@ export function ProfileView({
   orgScore,
   orgParticipation,
   personalEmail,
+  details,
 }: {
   session: SessionUser;
   stats: ProfileStats;
@@ -30,6 +32,8 @@ export function ProfileView({
   orgParticipation: { respondedCount: number; peopleCount: number; participation: number } | null;
   /** Optional personal email the person has saved (never shown to anyone else). */
   personalEmail: string | null;
+  /** Their own sign-up details, editable here. */
+  details: OwnDetails;
 }) {
   const router = useRouter();
   const isPlay = session.themeMode === "play";
@@ -115,6 +119,9 @@ export function ProfileView({
           )}
         </Card>
       )}
+
+      {/* Their own sign-up details, editable after sign-up (owner, 2026-10-28). */}
+      <DetailsCard details={details} />
 
       {/* Activity — streak + best + recent-week dots (no heatmap). Only for
           people who actually do check-ins; a manager with no employment of
@@ -395,6 +402,128 @@ function PersonalEmailCard({ initial }: { initial: string | null }) {
         </button>
       </div>
       {error && <p className="mt-2 text-[11px] font-semibold text-red-600">{error}</p>}
+    </Card>
+  );
+}
+
+/** Name, company, role and years of experience, with an Edit pop-up. The
+    company is read-only when their organisation set it (the server enforces
+    that too, in /api/profile). */
+function DetailsCard({ details }: { details: OwnDetails }) {
+  const router = useRouter();
+  const t = COPY.profile;
+  const o = COPY.onboarding;
+  const [editing, setEditing] = useState(false);
+  const [form, setForm] = useState({
+    name: details.name,
+    currentCompany: details.company ?? "",
+    currentRole: details.role ?? "",
+    yearsOfExperience: details.yearsOfExperience == null ? "" : String(details.yearsOfExperience),
+  });
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const set = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement>) =>
+    setForm((f) => ({ ...f, [k]: e.target.value }));
+
+  async function save(e: React.FormEvent) {
+    e.preventDefault();
+    setSaving(true);
+    setError(null);
+    const res = await fetch("/api/profile", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(form),
+    }).catch(() => null);
+    const body = res ? ((await res.json().catch(() => ({}))) as { error?: string }) : {};
+    setSaving(false);
+    if (!res || !res.ok) {
+      setError(body.error ?? COPY.shared.loadFailed);
+      return;
+    }
+    setEditing(false);
+    router.refresh(); // header name / role · company pick up the change
+  }
+
+  const rows: [string, string | null][] = [
+    [o.nameLabel, details.name || null],
+    [o.companyLabel, details.company],
+    [o.roleLabel, details.role],
+    [o.experienceLabel, details.yearsOfExperience == null ? null : String(details.yearsOfExperience)],
+  ];
+  const INPUT =
+    "w-full rounded-xl border border-lav-mid bg-lav-light px-3 py-2.5 text-sm text-ink placeholder-ink-4 focus:border-brand focus:outline-none";
+
+  return (
+    <Card>
+      <div className="flex items-center justify-between">
+        <p className="text-sm font-bold text-brand">{t.detailsTitle}</p>
+        <button
+          type="button"
+          onClick={() => setEditing(true)}
+          className="rounded-full bg-lav-soft px-3 py-1 text-xs font-bold text-brand active:scale-95"
+        >
+          {t.detailsEdit}
+        </button>
+      </div>
+      <dl className="mt-3 space-y-2">
+        {rows.map(([label, value]) => (
+          <div key={label} className="flex items-baseline justify-between gap-3">
+            <dt className="flex-shrink-0 text-xs text-ink-3">{label}</dt>
+            <dd className={`min-w-0 truncate text-right text-sm ${value ? "font-semibold text-ink" : "text-ink-4"}`}>
+              {value ?? t.detailsEmpty}
+            </dd>
+          </div>
+        ))}
+      </dl>
+
+      {editing && (
+        <Modal title={t.detailsFormTitle} onClose={() => setEditing(false)}>
+          <form onSubmit={save} className="space-y-4">
+            <label className="block">
+              <span className="mb-1 block text-xs font-semibold text-ink-2">{o.nameLabel}</span>
+              <input className={INPUT} value={form.name} onChange={set("name")} required maxLength={80} />
+            </label>
+            <label className="block">
+              <span className="mb-1 block text-xs font-semibold text-ink-2">{o.companyLabel}</span>
+              <input
+                className={`${INPUT} disabled:opacity-60`}
+                value={form.currentCompany}
+                onChange={set("currentCompany")}
+                disabled={details.companyLocked}
+                maxLength={80}
+                placeholder={o.companyPlaceholder}
+              />
+              {details.companyLocked && <span className="mt-1 block text-[11px] text-ink-4">{t.detailsCompanyLocked}</span>}
+            </label>
+            <label className="block">
+              <span className="mb-1 block text-xs font-semibold text-ink-2">{o.roleLabel}</span>
+              <input className={INPUT} value={form.currentRole} onChange={set("currentRole")} maxLength={80} placeholder={o.rolePlaceholder} />
+            </label>
+            <label className="block">
+              <span className="mb-1 block text-xs font-semibold text-ink-2">{o.experienceLabel}</span>
+              <input
+                className={INPUT}
+                value={form.yearsOfExperience}
+                onChange={set("yearsOfExperience")}
+                type="number"
+                min={0}
+                max={70}
+                inputMode="numeric"
+                placeholder={o.experiencePlaceholder}
+              />
+            </label>
+            {error && <p className="text-[11px] font-semibold text-red-600">{error}</p>}
+            <button
+              type="submit"
+              disabled={saving}
+              className="w-full rounded-2xl bg-brand py-3 font-display text-sm font-black text-white active:scale-[0.98] disabled:opacity-50"
+            >
+              {saving ? t.detailsSaving : t.detailsSave}
+            </button>
+          </form>
+        </Modal>
+      )}
     </Card>
   );
 }

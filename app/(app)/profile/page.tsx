@@ -6,6 +6,7 @@ import { getDB } from "@/lib/db";
 import { getViewMode } from "@/lib/view-mode";
 import { resolveView } from "@/lib/views";
 import { getProfileStats } from "@/lib/profile";
+import { getOwnDetails } from "@/lib/profile-details";
 import { getCeoDashboard, getOrgParticipation } from "@/lib/ceo";
 import { ProfileView } from "./ProfileView";
 
@@ -20,10 +21,14 @@ export default async function ProfilePage() {
   const stats = await getProfileStats(session.user, session.user.id);
   const view = resolveView(session.user, await getViewMode());
   // Own record only — the session user's id, never a parameter.
-  const own = await getDB()
-    .prepare("SELECT personalEmail FROM user WHERE id = ?")
-    .bind(session.user.id)
-    .first<{ personalEmail: string | null }>();
+  const db = getDB();
+  const [own, details] = await Promise.all([
+    db
+      .prepare("SELECT personalEmail FROM user WHERE id = ?")
+      .bind(session.user.id)
+      .first<{ personalEmail: string | null }>(),
+    getOwnDetails(db, session.user.id),
+  ]);
 
   // The CEO/HR (org-scoped) profile goes with the CEO/HR view, not just the role.
   const org = view === "ceo_hr"
@@ -38,6 +43,7 @@ export default async function ProfilePage() {
       orgScore={org ? org[0] : null}
       orgParticipation={org ? org[1] : null}
       personalEmail={own?.personalEmail ?? null}
+      details={details}
     />
   );
 }
