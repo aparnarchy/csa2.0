@@ -237,6 +237,8 @@ export const COPY = {
     "flaggedIntroBefore": "You flagged",
     "flaggedIntroAfter": ". Here's what changed:",
     "didYouSeeDifference": "Did you see a difference?",
+    "followUpAsk": "Did you try the recommendation above?",
+    "followUpContext": "We suggested it after your answer to \"{question}\" in {week}.",
     "responseYes": "Yes",
     "responseMaybe": "Maybe",
     "responseNotYet": "Not yet",

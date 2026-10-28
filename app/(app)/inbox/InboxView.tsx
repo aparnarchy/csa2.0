@@ -317,10 +317,12 @@ function FollowUpActions({
 
   return (
     <div className="rounded-2xl bg-white p-3.5 shadow-card">
-      <p className="text-[11px] text-ink-4">
-        From your answer to &ldquo;{item.questionText}&rdquo; · {item.weekLabel}
+      {/* Ask first, then say which tip and answer it's about, so it never
+          reads like a random question (owner, 2026-10-28). */}
+      <p className="text-sm font-bold text-ink">{COPY.inbox.followUpAsk}</p>
+      <p className="mt-1 text-[11px] leading-snug text-ink-4">
+        {fill(COPY.inbox.followUpContext, { question: item.questionText, week: item.weekLabel })}
       </p>
-      <p className="mt-2 text-xs font-semibold text-ink-3">Were you able to act on it?</p>
       <div className="mt-2 flex gap-2">
         {[
           { key: "yes" as const, label: "Yes" },
